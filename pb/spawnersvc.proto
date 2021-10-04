@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+option go_package = "/pb";
+
+package pb;
+
+// The Spawner service definition 
+service SpawnerService {
+    // Spawn required cluster
+    rpc CreateCluster (ClusterRequest) returns (ClusterResponse) {}
+
+    // Spawn required instance
+    rpc AddNode (NodeSpawnRequest) returns (NodeSpawnResponse) {}
+
+    // Status of cluster
+    rpc ClusterStatus (ClusterStatusRequest) returns (ClusterStatusResponse) {}
+ 
+    // Delete Cluster
+    rpc DeleteCluster (ClusterDeleteRequest) returns (ClusterDeleteResponse) {}
+
+    // Delete Node
+    rpc DeleteNode (NodeDeleteRequest) returns (NodeDeleteResponse) {}
+}
+
+message NodeSpec {
+    string name = 1;
+    string instance = 2;
+    int32 diskSize = 3;
+}
+
+message ClusterRequest {
+    string provider = 1;
+    string region = 2;    
+    NodeSpec node = 3;
+    map<string, string> labels = 4;
+}
+
+message ClusterResponse {
+    string clusterName = 1;
+    string nodeGroupName = 2;
+    string error = 3;
+}
+
+message ClusterStatusRequest {
+    string clusterName = 1;
+}
+
+message ClusterStatusResponse {
+    string status = 1;
+    string error = 2;
+}
+
+message NodeSpawnRequest {
+    string clusterName = 1;
+    NodeSpec nodeSpec = 2;
+}
+
+message NodeSpawnResponse {
+    string error = 2;
+}
+
+message ClusterDeleteRequest {
+    string clusterName = 1;
+}
+
+message ClusterDeleteResponse {
+    string error = 1;
+}
+
+message NodeDeleteRequest {
+    string clusterName = 1;
+    string nodeGroupName = 2;
+}
+
+message NodeDeleteResponse {
+    string error = 1;
+}
