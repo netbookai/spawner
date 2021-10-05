@@ -33,8 +33,6 @@ require (
 require (
 	github.com/go-kit/kit v0.11.0
 	github.com/oklog/oklog v0.3.2
-	github.com/opentracing/opentracing-go v1.2.0
-	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/rancher/norman v0.0.0-20210709145327-afd06f533ca3
 	github.com/rancher/rancher/pkg/client v0.0.0-20210928015834-4df101e320c3
 	github.com/sony/gobreaker v0.4.1
