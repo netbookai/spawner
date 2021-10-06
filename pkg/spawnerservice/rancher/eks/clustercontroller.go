@@ -55,7 +55,7 @@ func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *pb.NodeDel
 	}
 
 	if index == -1 {
-		return rnchrClient.ClusterSpec{}, fmt.Errorf("no nodegroup with name %s in cluster %s")
+		return rnchrClient.ClusterSpec{}, fmt.Errorf("no nodegroup with name %s in cluster %s", nodeDeleteRequest.NodeGroupName, nodeDeleteRequest.ClusterName)
 	}
 
 	leftNg := (*cluster.EKSConfig.NodeGroups)[:index]

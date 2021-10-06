@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/go-kit/kit/log"
+
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/eks"
+	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 
 	rnchrTypes "github.com/rancher/norman/types"
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
@@ -16,16 +19,15 @@ import (
 
 type RancherController struct {
 	rancherClient *rnchrClient.Client
+	config        *util.Config
+	logger        *log.Logger
 }
 
-//TODO: Sid move to cofig
-const (
-	awsCredName = "AWS-rancher-dev"
-)
+func NewRancherController(logger log.Logger, config util.Config) RancherController {
 
-func NewRancherController() RancherController {
-	rancherClient, _ := common.CreateRancherClient()
-	return RancherController{rancherClient}
+	rancherClient, _ := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
+
+	return RancherController{rancherClient, &config, &logger}
 }
 
 func (svc RancherController) GetCluster(clusterName string) (*rnchrClient.Cluster, error) {
@@ -131,7 +133,7 @@ func (svc RancherController) AddNodeInternal(nodeSpawnRequest *pb.NodeSpawnReque
 }
 
 func (svc RancherController) CreateClusterInternal(clusterName string, clusterReq *pb.ClusterRequest) (*rnchrClient.Cluster, error) {
-	awsCred, _ := svc.GetCloudCreds(awsCredName)
+	awsCred, _ := svc.GetCloudCreds(svc.config.AwsCredName)
 
 	eksClustersInRegion, err := svc.GetEksClustersInRegion(clusterReq.Region)
 
@@ -241,6 +243,13 @@ func (svc RancherController) DeleteCluster(ctx context.Context, req *pb.ClusterD
 	}
 
 	err = svc.rancherClient.Cluster.Delete(cluster)
+
+	if err != nil {
+		return &pb.ClusterDeleteResponse{
+			Error: err.Error(),
+		}, err
+	}
+
 	return &pb.ClusterDeleteResponse{}, nil
 }
 
@@ -260,7 +269,7 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 		}, err
 	}
 
-	cluster, err = svc.UpdateCluster(cluster, newClusterSpec, map[string]interface{}{
+	_, err = svc.UpdateCluster(cluster, newClusterSpec, map[string]interface{}{
 		"name": cluster.AppliedSpec.EKSConfig.DisplayName})
 
 	if err != nil {

@@ -7,12 +7,6 @@ import (
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
-const (
-	username   = "token-wdjgf"
-	password   = "rsh4f2b2c78m6lb5dv9kqx4p47xx5bpl4drtfnkcfczbjnb9npn282"
-	rancherUrl = "https://dev-rancher-02.anatinuslabs.com/v3"
-)
-
 func Int64Ptr(i int64) *int64 {
 	return &i
 }
@@ -25,14 +19,14 @@ func BoolPtr(b bool) *bool {
 	return &b
 }
 
-func CreateRancherClient() (*rnchrClient.Client, error) {
+func CreateRancherClient(url string, accessKey string, secretKey string) (*rnchrClient.Client, error) {
 	rancherHttpClient := &http.Client{}
 
 	// TODO: Sid add timeout
 	rancherClientOpts := rnchrClientBase.ClientOpts{
-		URL:        rancherUrl,
-		AccessKey:  username,
-		SecretKey:  password,
+		URL:        url,
+		AccessKey:  accessKey,
+		SecretKey:  secretKey,
 		HTTPClient: rancherHttpClient,
 	}
 
