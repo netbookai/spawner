@@ -10,10 +10,10 @@
             "request": "launch",
             "mode": "auto",
             // "program": "${cwd}/pkg/spawnerservice"
-            // "program": "${cwd}/cmd/spawnersvc",
-            // "args": ["-grpc-addr=:8083", "-debug-addr=:8081"]
-            "program": "${cwd}/cmd/spawnercli",
-            "args": ["-grpc-addr=:8083", "-method=DeleteCluster"]
+            "program": "${cwd}/cmd/spawnersvc",
+            "args": ["-grpc-addr=:8083", "-debug-addr=:8081"]
+            // "program": "${cwd}/cmd/spawnercli",
+            // "args": ["-grpc-addr=:8083", "-method=DeleteCluster"]
         }
     ]
 }

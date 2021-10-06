@@ -8,6 +8,7 @@ import (
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
+	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 )
 
 type ClusterController interface {
@@ -18,11 +19,11 @@ type ClusterController interface {
 	DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error)
 }
 
-func New(logger log.Logger) ClusterController {
+func New(logger log.Logger, config util.Config) ClusterController {
 	var svc ClusterController
 	{
 		// TODO: Sid pass logger to impls and log
-		svc = rancher.NewRancherController()
+		svc = rancher.NewRancherController(logger, config)
 	}
 	return svc
 }

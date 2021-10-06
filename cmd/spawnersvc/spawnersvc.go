@@ -21,6 +21,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
+	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 )
 
 func main() {
@@ -44,6 +45,16 @@ func main() {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
+	var config util.Config
+	var err error
+	{
+		config, err = util.LoadConfig("../../")
+		if err != nil {
+			logger.Log("message", fmt.Errorf("error loading config"), "error", err.Error())
+		}
+
+	}
+
 	// Build the layers of the service "onion" from the inside out. First, the
 	// business logic service; then, the set of endpoints that wrap the service;
 	// and finally, a series of concrete transport adapters. The adapters, like
@@ -51,7 +62,7 @@ func main() {
 	// the interfaces that the transports expect. Note that we're not binding
 	// them to ports or anything yet; we'll do that next.
 	var (
-		service   = spawnerservice.New(logger)
+		service   = spawnerservice.New(logger, config)
 		endpoints = spwnendpoint.New(service)
 		// httpHandler    = spwntransport.NewHTTPHandler(endpoints, tracer, zipkinTracer, logger)
 		grpcServer = spwntransport.NewGRPCServer(endpoints, logger)
