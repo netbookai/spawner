@@ -26,6 +26,8 @@ type grpcServer struct {
 	addNode       grpctransport.Handler
 	deleteCluster grpctransport.Handler
 	deleteNode    grpctransport.Handler
+	createVol     grpctransport.Handler
+	deleteVol     grpctransport.Handler
 
 	pb.UnimplementedSpawnerServiceServer
 }
@@ -83,6 +85,27 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger log.Logger) pb.SpawnerServ
 			},
 			append(options)...,
 		),
+		createVol: grpctransport.NewServer(
+			endpoints.CreateVolEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
+
+		deleteVol: grpctransport.NewServer(
+			endpoints.DeleteVolEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
 	}
 }
 
@@ -124,6 +147,22 @@ func (s *grpcServer) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) 
 		return nil, err
 	}
 	return rep.(*pb.NodeDeleteResponse), nil
+}
+
+func (s *grpcServer) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
+	_, rep, err := s.createVol.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.CreateVolRes), nil
+}
+
+func (s *grpcServer) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
+	_, rep, err := s.deleteVol.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.DeleteVolRes), nil
 }
 
 // NewGRPCClient returns an AddService backed by a gRPC server at the other end
@@ -255,6 +294,50 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 		}))(deleteNodeEndpoint)
 	}
 
+	var createVolEndpoint endpoint.Endpoint
+	{
+		createVolEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"CreateVol",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.CreateVolRes{},
+			append(options)...,
+		).Endpoint()
+		createVolEndpoint = limiter(createVolEndpoint)
+		createVolEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "CreateVol",
+			Timeout: 30 * time.Second,
+		}))(createVolEndpoint)
+	}
+
+	var deleteVolEndpoint endpoint.Endpoint
+	{
+		deleteVolEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"DeleteVol",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.DeleteVolRes{},
+			append(options)...,
+		).Endpoint()
+		deleteVolEndpoint = limiter(deleteVolEndpoint)
+		deleteVolEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "DeleteVol",
+			Timeout: 30 * time.Second,
+		}))(deleteVolEndpoint)
+	}
+
 	// Returning the endpoint.Set as a service.Service relies on the
 	// endpoint.Set implementing the Service methods. That's just a simple bit
 	// of glue code.
@@ -264,6 +347,8 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 		AddNodeEndpoint:       addNodeEndpoint,
 		DeleteClusterEndpoint: deleteClusterEndpoint,
 		DeleteNodeEndpoint:    deleteNodeEndpoint,
+		CreateVolEndpoint:     createVolEndpoint,
+		DeleteVolEndpoint:     deleteVolEndpoint,
 	}
 }
 

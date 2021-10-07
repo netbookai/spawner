@@ -280,3 +280,11 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 
 	return &pb.NodeDeleteResponse{}, nil
 }
+
+func (svc RancherController) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
+	return &pb.CreateVolRes{}, nil
+}
+
+func (svc RancherController) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
+	return &pb.DeleteVolRes{}, nil
+}

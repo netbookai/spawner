@@ -2,7 +2,7 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
+    "version": "1.17.1",
     "configurations": [
         {
             "name": "Launch Package",
@@ -13,7 +13,7 @@
             "program": "${cwd}/cmd/spawnersvc",
             "args": ["-grpc-addr=:8083", "-debug-addr=:8081"]
             // "program": "${cwd}/cmd/spawnercli",
-            // "args": ["-grpc-addr=:8083", "-method=DeleteCluster"]
+            // "args": ["-grpc-addr=:8083", "-method=CreateVolume"]
         }
     ]
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/go-kit/kit/log"
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
+	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
 	"gitlab.com/netbook-devs/spawner-service/pkg/util"
@@ -17,6 +18,8 @@ type ClusterController interface {
 	AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error)
 	DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error)
 	DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error)
+	CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error)
+	DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error)
 }
 
 // func New(logger log.Logger, config util.Config) ClusterController {
@@ -30,12 +33,13 @@ type ClusterController interface {
 
 type SpawnerService struct {
 	rancherController ClusterController
-	// awsController awsController
+	awsController     aws.AWSController
 }
 
 func New(logger log.Logger, config util.Config) ClusterController {
 	return SpawnerService{
 		rancherController: rancher.NewRancherController(logger, config),
+		awsController:     aws.AWSController{},
 	}
 }
 
@@ -57,4 +61,12 @@ func (svc SpawnerService) DeleteCluster(ctx context.Context, req *pb.ClusterDele
 
 func (svc SpawnerService) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
 	return svc.rancherController.DeleteNode(ctx, req)
+}
+
+func (svc SpawnerService) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
+	return svc.awsController.CreateVol(ctx, req)
+}
+
+func (svc SpawnerService) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
+	return svc.awsController.DeleteVol(ctx, req)
 }

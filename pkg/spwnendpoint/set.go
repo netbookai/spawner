@@ -32,6 +32,8 @@ type Set struct {
 	AddNodeEndpoint       endpoint.Endpoint
 	DeleteClusterEndpoint endpoint.Endpoint
 	DeleteNodeEndpoint    endpoint.Endpoint
+	CreateVolEndpoint     endpoint.Endpoint
+	DeleteVolEndpoint     endpoint.Endpoint
 }
 
 // New returns a Set that wraps the provided server, and wires in all of the
@@ -74,12 +76,28 @@ func New(svc spawnerservice.ClusterController) Set {
 		deleteNodeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteNodeEndpoint)
 	}
 
+	var createVolEndpoint endpoint.Endpoint
+	{
+		createVolEndpoint = MakeCreateVolEndpoint(svc)
+		createVolEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createVolEndpoint)
+		createVolEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createVolEndpoint)
+	}
+
+	var deleteVolEndpoint endpoint.Endpoint
+	{
+		deleteVolEndpoint = MakeDeleteVolEndpoint(svc)
+		deleteVolEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(deleteVolEndpoint)
+		deleteVolEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteVolEndpoint)
+	}
+
 	return Set{
 		CreateClusterEndpoint: createClusterEndpoint,
 		CusterStatusEndpoint:  clusterStatusEndpoint,
 		AddNodeEndpoint:       addNodeEndpoint,
 		DeleteClusterEndpoint: deleteClusterEndpoint,
 		DeleteNodeEndpoint:    deleteNodeEndpoint,
+		CreateVolEndpoint:     createVolEndpoint,
+		DeleteVolEndpoint:     deleteVolEndpoint,
 	}
 }
 
@@ -179,6 +197,42 @@ func MakeNodeDeleteEndpoint(s spawnerservice.ClusterController) endpoint.Endpoin
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(*pb.NodeDeleteRequest)
 		resp, err := s.DeleteNode(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
+	resp, err := s.CreateVolEndpoint(ctx, req)
+	if err != nil {
+		return &pb.CreateVolRes{}, err
+	}
+	response := resp.(*pb.CreateVolRes)
+	// TODO: Shivani add error to CreateVolRes and use it here
+	return response, fmt.Errorf("")
+}
+
+func MakeCreateVolEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.CreateVolReq)
+		resp, err := s.CreateVol(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
+	resp, err := s.DeleteVolEndpoint(ctx, req)
+	if err != nil {
+		return &pb.DeleteVolRes{}, err
+	}
+	response := resp.(*pb.DeleteVolRes)
+	// TODO: Shivani add error to CreateVolRes and use it here
+	return response, fmt.Errorf("")
+}
+
+func MakeDeleteVolEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.DeleteVolReq)
+		resp, err := s.DeleteVol(ctx, req)
 		return resp, err
 	}
 }

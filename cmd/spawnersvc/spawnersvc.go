@@ -32,7 +32,7 @@ func main() {
 	var (
 		debugAddr = fs.String("debug-addr", ":8080", "Debug and metrics listen address")
 		// httpAddr       = fs.String("http-addr", ":8081", "HTTP listen address")
-		grpcAddr = fs.String("grpc-addr", "", "gRPC listen address")
+		grpcAddr = fs.String("grpc-addr", ":8083", "gRPC listen address")
 	)
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags]")
 	fs.Parse(os.Args[1:])

@@ -28,6 +28,10 @@ type SpawnerServiceClient interface {
 	DeleteCluster(ctx context.Context, in *ClusterDeleteRequest, opts ...grpc.CallOption) (*ClusterDeleteResponse, error)
 	// Delete Node
 	DeleteNode(ctx context.Context, in *NodeDeleteRequest, opts ...grpc.CallOption) (*NodeDeleteResponse, error)
+	//Create Volume
+	CreateVol(ctx context.Context, in *CreateVolReq, opts ...grpc.CallOption) (*CreateVolRes, error)
+	//Delete Vol
+	DeleteVol(ctx context.Context, in *DeleteVolReq, opts ...grpc.CallOption) (*DeleteVolRes, error)
 }
 
 type spawnerServiceClient struct {
@@ -83,6 +87,24 @@ func (c *spawnerServiceClient) DeleteNode(ctx context.Context, in *NodeDeleteReq
 	return out, nil
 }
 
+func (c *spawnerServiceClient) CreateVol(ctx context.Context, in *CreateVolReq, opts ...grpc.CallOption) (*CreateVolRes, error) {
+	out := new(CreateVolRes)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/CreateVol", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spawnerServiceClient) DeleteVol(ctx context.Context, in *DeleteVolReq, opts ...grpc.CallOption) (*DeleteVolRes, error) {
+	out := new(DeleteVolRes)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/DeleteVol", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SpawnerServiceServer is the server API for SpawnerService service.
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
@@ -97,6 +119,10 @@ type SpawnerServiceServer interface {
 	DeleteCluster(context.Context, *ClusterDeleteRequest) (*ClusterDeleteResponse, error)
 	// Delete Node
 	DeleteNode(context.Context, *NodeDeleteRequest) (*NodeDeleteResponse, error)
+	//Create Volume
+	CreateVol(context.Context, *CreateVolReq) (*CreateVolRes, error)
+	//Delete Vol
+	DeleteVol(context.Context, *DeleteVolReq) (*DeleteVolRes, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -118,6 +144,12 @@ func (UnimplementedSpawnerServiceServer) DeleteCluster(context.Context, *Cluster
 }
 func (UnimplementedSpawnerServiceServer) DeleteNode(context.Context, *NodeDeleteRequest) (*NodeDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteNode not implemented")
+}
+func (UnimplementedSpawnerServiceServer) CreateVol(context.Context, *CreateVolReq) (*CreateVolRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateVol not implemented")
+}
+func (UnimplementedSpawnerServiceServer) DeleteVol(context.Context, *DeleteVolReq) (*DeleteVolRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteVol not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
@@ -222,6 +254,42 @@ func _SpawnerService_DeleteNode_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SpawnerService_CreateVol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateVolReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).CreateVol(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SpawnerService/CreateVol",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).CreateVol(ctx, req.(*CreateVolReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpawnerService_DeleteVol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteVolReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).DeleteVol(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SpawnerService/DeleteVol",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).DeleteVol(ctx, req.(*DeleteVolReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SpawnerService_ServiceDesc is the grpc.ServiceDesc for SpawnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -249,7 +317,15 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "DeleteNode",
 			Handler:    _SpawnerService_DeleteNode_Handler,
 		},
+		{
+			MethodName: "CreateVol",
+			Handler:    _SpawnerService_CreateVol_Handler,
+		},
+		{
+			MethodName: "DeleteVol",
+			Handler:    _SpawnerService_DeleteVol_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "spawnersvc.proto",
+	Metadata: "pb/spawnersvc.proto",
 }
