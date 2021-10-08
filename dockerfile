@@ -12,3 +12,7 @@ COPY pkg ./pkg
 WORKDIR /spawnerservice/cmd/spawnersvc
 
 RUN go build
+
+WORKDIR /spawnerservice/cmd/spawnercli
+
+RUN go build

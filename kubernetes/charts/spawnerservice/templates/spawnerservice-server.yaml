@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spawnerservice-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: spawnerservice-deployment
+  template:
+    metadata:
+      labels:
+        name: spawnerservice-deployment
+    spec:
+      containers:
+      - name: application
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+        command: [ "/bin/sh", "-c", "--" ]
+        args: [ "cd /spawnerservice/cmd/spawnersvc && ./spawnersvc -grpc-addr=:8083 -debug-addr=:8081 " ]
+        ports:
+          - containerPort: 8083
