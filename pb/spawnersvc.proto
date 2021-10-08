@@ -26,6 +26,10 @@ service SpawnerService {
 
     //Delete Vol
     rpc DeleteVol(DeleteVolReq) returns (DeleteVolRes) {}
+
+    rpc CreateSnapshot( SnapshotRequest) returns (SnapshotResponse) {}
+
+    rpc CreateSnapshotAndDelete(SnapshotRequest) returns (SnapshotResponse) {}
 }
 
 message NodeSpec {
@@ -99,4 +103,11 @@ message DeleteVolReq{
 
 message DeleteVolRes{
     bool deleted=1;
+}
+
+message SnapshotRequest{
+    string volumeid=1;
+}
+message SnapshotResponse{
+    string snapshotid=1;
 }

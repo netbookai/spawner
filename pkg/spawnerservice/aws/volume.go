@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
+
+	//"net"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"gitlab.com/netbook-devs/spawner-service/pb"
-	grpc "google.golang.org/grpc"
+	//grpc "google.golang.org/grpc"
 )
 
 type server struct {
@@ -66,8 +67,43 @@ func (svc AWSController) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*
 }
 
 func (svc AWSController) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
-	fmt.Println("Starting DeleteVol()")
+	fmt.Println("DeleteVol() invoked with ", req)
 
+	volumeid := req.GetVolumeid()
+	deleted := DeleteVolInternal(volumeid)
+
+	res := &pb.DeleteVolRes{
+		Deleted: deleted,
+	}
+
+	return res, nil
+}
+
+func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+
+	fmt.Println("CreateSnapshot() invoked with ", req)
+	volumeid := req.GetVolumeid()
+	snapshotid, _ := SnapshotInternal(volumeid, false)
+
+	res := &pb.SnapshotResponse{
+		Snapshotid: snapshotid,
+	}
+	return res, nil
+}
+
+func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+
+	fmt.Println("CreateSnapshotAndDelete() invoked with ", req)
+	volumeid := req.GetVolumeid()
+	snapshotid, _ := SnapshotInternal(volumeid, true)
+
+	res := &pb.SnapshotResponse{
+		Snapshotid: snapshotid,
+	}
+	return res, nil
+}
+
+func DeleteVolInternal(volumeid string) (deleted bool) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-west-2")})
 	awsSvc := ec2.New(sess)
 
@@ -75,13 +111,12 @@ func (svc AWSController) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*
 		log.Fatalf("error starting aws session")
 	}
 
-	volumeid := req.GetVolumeid()
 	input := &ec2.DeleteVolumeInput{
 		VolumeId: aws.String(volumeid),
 	}
 
 	_, err = awsSvc.DeleteVolume(input)
-	deleted := true
+	deleted = true
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -96,27 +131,52 @@ func (svc AWSController) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*
 		deleted = false
 		log.Fatalf("error delete volume")
 	}
-	res := &pb.DeleteVolRes{
-		Deleted: deleted,
-	}
-
-	return res, nil
+	return deleted
 }
 
-func main() {
-	fmt.Println("hello world")
+func SnapshotInternal(volumeid string, deletevol bool) (snapshotid string, deleted bool) {
+	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-west-2")})
+	svc := ec2.New(sess)
 
-	lis, err := net.Listen("tcp", "0.0.0.0:50051")
+	input := &ec2.CreateSnapshotInput{
+		VolumeId: aws.String(volumeid),
+	}
 
+	result, err := svc.CreateSnapshot(input)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			fmt.Println(err.Error())
+		}
+		log.Fatalf("couldn't create snapshot ", err)
+	} else {
+		if deletevol == true {
+			deleted = DeleteVolInternal(volumeid)
+		}
 	}
-
-	s := grpc.NewServer()
-	pb.RegisterSpawnerServiceServer(s, &server{})
-
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
-
+	return *result.SnapshotId, deleted
 }
+
+// func main() {
+// 	fmt.Println("hello world")
+
+// 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
+
+// 	if err != nil {
+// 		log.Fatalf("failed to listen: %v", err)
+// 	}
+
+// 	s := grpc.NewServer()
+// 	pb.RegisterSpawnerServiceServer(s, &server{})
+
+// 	if err := s.Serve(lis); err != nil {
+// 		log.Fatalf("failed to serve: %v", err)
+// 	}
+
+// }

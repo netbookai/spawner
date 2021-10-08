@@ -32,6 +32,8 @@ type SpawnerServiceClient interface {
 	CreateVol(ctx context.Context, in *CreateVolReq, opts ...grpc.CallOption) (*CreateVolRes, error)
 	//Delete Vol
 	DeleteVol(ctx context.Context, in *DeleteVolReq, opts ...grpc.CallOption) (*DeleteVolRes, error)
+	CreateSnapshot(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error)
+	CreateSnapshotAndDelete(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error)
 }
 
 type spawnerServiceClient struct {
@@ -105,6 +107,24 @@ func (c *spawnerServiceClient) DeleteVol(ctx context.Context, in *DeleteVolReq, 
 	return out, nil
 }
 
+func (c *spawnerServiceClient) CreateSnapshot(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error) {
+	out := new(SnapshotResponse)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/CreateSnapshot", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spawnerServiceClient) CreateSnapshotAndDelete(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error) {
+	out := new(SnapshotResponse)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/CreateSnapshotAndDelete", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SpawnerServiceServer is the server API for SpawnerService service.
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
@@ -123,6 +143,8 @@ type SpawnerServiceServer interface {
 	CreateVol(context.Context, *CreateVolReq) (*CreateVolRes, error)
 	//Delete Vol
 	DeleteVol(context.Context, *DeleteVolReq) (*DeleteVolRes, error)
+	CreateSnapshot(context.Context, *SnapshotRequest) (*SnapshotResponse, error)
+	CreateSnapshotAndDelete(context.Context, *SnapshotRequest) (*SnapshotResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -150,6 +172,12 @@ func (UnimplementedSpawnerServiceServer) CreateVol(context.Context, *CreateVolRe
 }
 func (UnimplementedSpawnerServiceServer) DeleteVol(context.Context, *DeleteVolReq) (*DeleteVolRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVol not implemented")
+}
+func (UnimplementedSpawnerServiceServer) CreateSnapshot(context.Context, *SnapshotRequest) (*SnapshotResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshot not implemented")
+}
+func (UnimplementedSpawnerServiceServer) CreateSnapshotAndDelete(context.Context, *SnapshotRequest) (*SnapshotResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshotAndDelete not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
@@ -290,6 +318,42 @@ func _SpawnerService_DeleteVol_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SpawnerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).CreateSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SpawnerService/CreateSnapshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).CreateSnapshot(ctx, req.(*SnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpawnerService_CreateSnapshotAndDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).CreateSnapshotAndDelete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SpawnerService/CreateSnapshotAndDelete",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).CreateSnapshotAndDelete(ctx, req.(*SnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SpawnerService_ServiceDesc is the grpc.ServiceDesc for SpawnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -324,6 +388,14 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteVol",
 			Handler:    _SpawnerService_DeleteVol_Handler,
+		},
+		{
+			MethodName: "CreateSnapshot",
+			Handler:    _SpawnerService_CreateSnapshot_Handler,
+		},
+		{
+			MethodName: "CreateSnapshotAndDelete",
+			Handler:    _SpawnerService_CreateSnapshotAndDelete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

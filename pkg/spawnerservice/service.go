@@ -20,6 +20,8 @@ type ClusterController interface {
 	DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error)
 	CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error)
 	DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error)
+	CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error)
+	CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error)
 }
 
 // func New(logger log.Logger, config util.Config) ClusterController {
@@ -69,4 +71,12 @@ func (svc SpawnerService) CreateVol(ctx context.Context, req *pb.CreateVolReq) (
 
 func (svc SpawnerService) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
 	return svc.awsController.DeleteVol(ctx, req)
+}
+
+func (svc SpawnerService) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+	return svc.awsController.CreateSnapshot(ctx, req)
+}
+
+func (svc SpawnerService) CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+	return svc.awsController.CreateSnapshotAndDelete(ctx, req)
 }

@@ -21,13 +21,15 @@ import (
 )
 
 type grpcServer struct {
-	createCluster grpctransport.Handler
-	clusterStatus grpctransport.Handler
-	addNode       grpctransport.Handler
-	deleteCluster grpctransport.Handler
-	deleteNode    grpctransport.Handler
-	createVol     grpctransport.Handler
-	deleteVol     grpctransport.Handler
+	createCluster           grpctransport.Handler
+	clusterStatus           grpctransport.Handler
+	addNode                 grpctransport.Handler
+	deleteCluster           grpctransport.Handler
+	deleteNode              grpctransport.Handler
+	createVol               grpctransport.Handler
+	deleteVol               grpctransport.Handler
+	createSnapshot          grpctransport.Handler
+	createSnapshotAndDelete grpctransport.Handler
 
 	pb.UnimplementedSpawnerServiceServer
 }
@@ -106,6 +108,28 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger log.Logger) pb.SpawnerServ
 			},
 			append(options)...,
 		),
+
+		createSnapshot: grpctransport.NewServer(
+			endpoints.CreateSnapshotEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
+
+		createSnapshotAndDelete: grpctransport.NewServer(
+			endpoints.CreateSnapshotAndDeleteEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
 	}
 }
 
@@ -163,6 +187,22 @@ func (s *grpcServer) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.D
 		return nil, err
 	}
 	return rep.(*pb.DeleteVolRes), nil
+}
+
+func (s *grpcServer) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+	_, rep, err := s.createSnapshot.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.SnapshotResponse), nil
+}
+
+func (s *grpcServer) CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+	_, rep, err := s.createSnapshotAndDelete.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.SnapshotResponse), nil
 }
 
 // NewGRPCClient returns an AddService backed by a gRPC server at the other end
@@ -338,17 +378,63 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 		}))(deleteVolEndpoint)
 	}
 
+	var createSnapshotEndpoint endpoint.Endpoint
+	{
+		createSnapshotEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"CreateSnapshot",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.SnapshotResponse{},
+			append(options)...,
+		).Endpoint()
+		createSnapshotEndpoint = limiter(createSnapshotEndpoint)
+		createSnapshotEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "CreateSnapshot",
+			Timeout: 30 * time.Second,
+		}))(createSnapshotEndpoint)
+	}
+
+	var createSnapshotAndDeleteEndpoint endpoint.Endpoint
+	{
+		createSnapshotAndDeleteEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"CreateSnapshotAndDelete",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.SnapshotResponse{},
+			append(options)...,
+		).Endpoint()
+		createSnapshotAndDeleteEndpoint = limiter(createSnapshotAndDeleteEndpoint)
+		createSnapshotAndDeleteEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "CreateSnapshotAndDelete",
+			Timeout: 30 * time.Second,
+		}))(createSnapshotAndDeleteEndpoint)
+	}
+
 	// Returning the endpoint.Set as a service.Service relies on the
 	// endpoint.Set implementing the Service methods. That's just a simple bit
 	// of glue code.
 	return spwnendpoint.Set{
-		CreateClusterEndpoint: createClusterEndpoint,
-		CusterStatusEndpoint:  clusterStatusEndpoint,
-		AddNodeEndpoint:       addNodeEndpoint,
-		DeleteClusterEndpoint: deleteClusterEndpoint,
-		DeleteNodeEndpoint:    deleteNodeEndpoint,
-		CreateVolEndpoint:     createVolEndpoint,
-		DeleteVolEndpoint:     deleteVolEndpoint,
+		CreateClusterEndpoint:           createClusterEndpoint,
+		CusterStatusEndpoint:            clusterStatusEndpoint,
+		AddNodeEndpoint:                 addNodeEndpoint,
+		DeleteClusterEndpoint:           deleteClusterEndpoint,
+		DeleteNodeEndpoint:              deleteNodeEndpoint,
+		CreateVolEndpoint:               createVolEndpoint,
+		DeleteVolEndpoint:               deleteVolEndpoint,
+		CreateSnapshotEndpoint:          createSnapshotEndpoint,
+		CreateSnapshotAndDeleteEndpoint: createSnapshotAndDeleteEndpoint,
 	}
 }
 

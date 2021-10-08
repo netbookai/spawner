@@ -110,7 +110,11 @@ func main() {
 	}
 
 	deleteVolReq := &pb.DeleteVolReq{
-		Volumeid: "vol-0df458c3c0f6e19fa",
+		Volumeid: "vol-0d664685cf3577042",
+	}
+
+	snapshotReq := &pb.SnapshotRequest{
+		Volumeid: "vol-0187ea5c851bfee54",
 	}
 
 	switch *method {
@@ -160,6 +164,22 @@ func main() {
 
 	case "DeleteVolume":
 		v, err := svc.DeleteVol(context.Background(), deleteVolReq)
+		if err != nil && err.Error() != "" {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stdout, "%v", v)
+
+	case "css":
+		v, err := svc.CreateSnapshot(context.Background(), snapshotReq)
+		if err != nil && err.Error() != "" {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stdout, "%v", v)
+
+	case "cssd":
+		v, err := svc.CreateSnapshotAndDelete(context.Background(), snapshotReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)

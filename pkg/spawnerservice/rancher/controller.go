@@ -288,3 +288,11 @@ func (svc RancherController) CreateVol(ctx context.Context, req *pb.CreateVolReq
 func (svc RancherController) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
 	return &pb.DeleteVolRes{}, nil
 }
+
+func (svc RancherController) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+	return &pb.SnapshotResponse{}, nil
+}
+
+func (svc RancherController) CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+	return &pb.SnapshotResponse{}, nil
+}
