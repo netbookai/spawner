@@ -27,3 +27,10 @@
     go run spawncli.go -grpc-addr=:8083 -method=ClusterStatus
     ```
     This calls the ClusterStatus method on the gRPC service on port 8083
+
+# Creating a docker image
+
+1. Build docker image from projet root directory
+    ```
+    docker build -t spawnerservice:0.0.1 .
+    ```
