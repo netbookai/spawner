@@ -19,20 +19,6 @@ import (
 
 func main() {
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
-	//adding create volume service client
-
-	//createvol code
-	// fmt.Println("Hello I am a client")
-	// cc, _ := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	// // if err != nil {
-	// // 	fmt.Printf("can't connect: %v", err)
-	// // }
-
-	// defer cc.Close()
-
-	// volsvc := pb.aws.NewVolServiceClient(cc)
-
-	//crratevol code ends
 	var (
 		// httpAddr = fs.String("http-addr", "", "HTTP address of addsvc")
 		grpcAddr = fs.String("grpc-addr", "", "gRPC address of addsvc")
@@ -102,15 +88,15 @@ func main() {
 		NodeGroupName: "ng-sid-01",
 	}
 
-	createVolReq := &pb.CreateVolReq{
+	createVolumeReq := &pb.CreateVolumeRequest{
 		Availabilityzone: "us-west-2a",
 		Volumetype:       "gp2",
 		Size:             1,
 		Snapshotid:       "",
 	}
 
-	deleteVolReq := &pb.DeleteVolReq{
-		Volumeid: "vol-0d664685cf3577042",
+	deleteVolumeReq := &pb.DeleteVolumeRequest{
+		Volumeid: "vol-0f92bc5d6328b2559",
 	}
 
 	snapshotReq := &pb.SnapshotRequest{
@@ -155,7 +141,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%v", v)
 
 	case "CreateVolume":
-		v, err := svc.CreateVol(context.Background(), createVolReq)
+		v, err := svc.CreateVolume(context.Background(), createVolumeReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
@@ -163,14 +149,14 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%v", v)
 
 	case "DeleteVolume":
-		v, err := svc.DeleteVol(context.Background(), deleteVolReq)
+		v, err := svc.DeleteVolume(context.Background(), deleteVolumeReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Fprintf(os.Stdout, "%v", v)
 
-	case "css":
+	case "CreateSnapshot":
 		v, err := svc.CreateSnapshot(context.Background(), snapshotReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -178,7 +164,7 @@ func main() {
 		}
 		fmt.Fprintf(os.Stdout, "%v", v)
 
-	case "cssd":
+	case "CreateSnapshotAndDelete":
 		v, err := svc.CreateSnapshotAndDelete(context.Background(), snapshotReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)

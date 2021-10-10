@@ -29,9 +29,9 @@ type SpawnerServiceClient interface {
 	// Delete Node
 	DeleteNode(ctx context.Context, in *NodeDeleteRequest, opts ...grpc.CallOption) (*NodeDeleteResponse, error)
 	//Create Volume
-	CreateVol(ctx context.Context, in *CreateVolReq, opts ...grpc.CallOption) (*CreateVolRes, error)
+	CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error)
 	//Delete Vol
-	DeleteVol(ctx context.Context, in *DeleteVolReq, opts ...grpc.CallOption) (*DeleteVolRes, error)
+	DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error)
 }
@@ -89,18 +89,18 @@ func (c *spawnerServiceClient) DeleteNode(ctx context.Context, in *NodeDeleteReq
 	return out, nil
 }
 
-func (c *spawnerServiceClient) CreateVol(ctx context.Context, in *CreateVolReq, opts ...grpc.CallOption) (*CreateVolRes, error) {
-	out := new(CreateVolRes)
-	err := c.cc.Invoke(ctx, "/pb.SpawnerService/CreateVol", in, out, opts...)
+func (c *spawnerServiceClient) CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error) {
+	out := new(CreateVolumeResponse)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/CreateVolume", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *spawnerServiceClient) DeleteVol(ctx context.Context, in *DeleteVolReq, opts ...grpc.CallOption) (*DeleteVolRes, error) {
-	out := new(DeleteVolRes)
-	err := c.cc.Invoke(ctx, "/pb.SpawnerService/DeleteVol", in, out, opts...)
+func (c *spawnerServiceClient) DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error) {
+	out := new(DeleteVolumeResponse)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/DeleteVolume", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -140,9 +140,9 @@ type SpawnerServiceServer interface {
 	// Delete Node
 	DeleteNode(context.Context, *NodeDeleteRequest) (*NodeDeleteResponse, error)
 	//Create Volume
-	CreateVol(context.Context, *CreateVolReq) (*CreateVolRes, error)
+	CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error)
 	//Delete Vol
-	DeleteVol(context.Context, *DeleteVolReq) (*DeleteVolRes, error)
+	DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error)
 	CreateSnapshot(context.Context, *SnapshotRequest) (*SnapshotResponse, error)
 	CreateSnapshotAndDelete(context.Context, *SnapshotRequest) (*SnapshotResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
@@ -167,11 +167,11 @@ func (UnimplementedSpawnerServiceServer) DeleteCluster(context.Context, *Cluster
 func (UnimplementedSpawnerServiceServer) DeleteNode(context.Context, *NodeDeleteRequest) (*NodeDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteNode not implemented")
 }
-func (UnimplementedSpawnerServiceServer) CreateVol(context.Context, *CreateVolReq) (*CreateVolRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateVol not implemented")
+func (UnimplementedSpawnerServiceServer) CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateVolume not implemented")
 }
-func (UnimplementedSpawnerServiceServer) DeleteVol(context.Context, *DeleteVolReq) (*DeleteVolRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteVol not implemented")
+func (UnimplementedSpawnerServiceServer) DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteVolume not implemented")
 }
 func (UnimplementedSpawnerServiceServer) CreateSnapshot(context.Context, *SnapshotRequest) (*SnapshotResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshot not implemented")
@@ -282,38 +282,38 @@ func _SpawnerService_DeleteNode_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SpawnerService_CreateVol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateVolReq)
+func _SpawnerService_CreateVolume_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateVolumeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SpawnerServiceServer).CreateVol(ctx, in)
+		return srv.(SpawnerServiceServer).CreateVolume(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.SpawnerService/CreateVol",
+		FullMethod: "/pb.SpawnerService/CreateVolume",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SpawnerServiceServer).CreateVol(ctx, req.(*CreateVolReq))
+		return srv.(SpawnerServiceServer).CreateVolume(ctx, req.(*CreateVolumeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SpawnerService_DeleteVol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteVolReq)
+func _SpawnerService_DeleteVolume_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteVolumeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SpawnerServiceServer).DeleteVol(ctx, in)
+		return srv.(SpawnerServiceServer).DeleteVolume(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.SpawnerService/DeleteVol",
+		FullMethod: "/pb.SpawnerService/DeleteVolume",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SpawnerServiceServer).DeleteVol(ctx, req.(*DeleteVolReq))
+		return srv.(SpawnerServiceServer).DeleteVolume(ctx, req.(*DeleteVolumeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -382,12 +382,12 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SpawnerService_DeleteNode_Handler,
 		},
 		{
-			MethodName: "CreateVol",
-			Handler:    _SpawnerService_CreateVol_Handler,
+			MethodName: "CreateVolume",
+			Handler:    _SpawnerService_CreateVolume_Handler,
 		},
 		{
-			MethodName: "DeleteVol",
-			Handler:    _SpawnerService_DeleteVol_Handler,
+			MethodName: "DeleteVolume",
+			Handler:    _SpawnerService_DeleteVolume_Handler,
 		},
 		{
 			MethodName: "CreateSnapshot",

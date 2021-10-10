@@ -281,12 +281,12 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 	return &pb.NodeDeleteResponse{}, nil
 }
 
-func (svc RancherController) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
-	return &pb.CreateVolRes{}, nil
+func (svc RancherController) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
+	return &pb.CreateVolumeResponse{}, nil
 }
 
-func (svc RancherController) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
-	return &pb.DeleteVolRes{}, nil
+func (svc RancherController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
+	return &pb.DeleteVolumeResponse{}, nil
 }
 
 func (svc RancherController) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {

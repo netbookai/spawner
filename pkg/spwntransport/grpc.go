@@ -26,8 +26,8 @@ type grpcServer struct {
 	addNode                 grpctransport.Handler
 	deleteCluster           grpctransport.Handler
 	deleteNode              grpctransport.Handler
-	createVol               grpctransport.Handler
-	deleteVol               grpctransport.Handler
+	createVolume            grpctransport.Handler
+	deleteVolume            grpctransport.Handler
 	createSnapshot          grpctransport.Handler
 	createSnapshotAndDelete grpctransport.Handler
 
@@ -87,8 +87,8 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger log.Logger) pb.SpawnerServ
 			},
 			append(options)...,
 		),
-		createVol: grpctransport.NewServer(
-			endpoints.CreateVolEndpoint,
+		createVolume: grpctransport.NewServer(
+			endpoints.CreateVolumeEndpoint,
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
 			},
@@ -98,8 +98,8 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger log.Logger) pb.SpawnerServ
 			append(options)...,
 		),
 
-		deleteVol: grpctransport.NewServer(
-			endpoints.DeleteVolEndpoint,
+		deleteVolume: grpctransport.NewServer(
+			endpoints.DeleteVolumeEndpoint,
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
 			},
@@ -173,20 +173,20 @@ func (s *grpcServer) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) 
 	return rep.(*pb.NodeDeleteResponse), nil
 }
 
-func (s *grpcServer) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
-	_, rep, err := s.createVol.ServeGRPC(ctx, req)
+func (s *grpcServer) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
+	_, rep, err := s.createVolume.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.CreateVolRes), nil
+	return rep.(*pb.CreateVolumeResponse), nil
 }
 
-func (s *grpcServer) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
-	_, rep, err := s.deleteVol.ServeGRPC(ctx, req)
+func (s *grpcServer) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
+	_, rep, err := s.deleteVolume.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.DeleteVolRes), nil
+	return rep.(*pb.DeleteVolumeResponse), nil
 }
 
 func (s *grpcServer) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
@@ -334,48 +334,48 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 		}))(deleteNodeEndpoint)
 	}
 
-	var createVolEndpoint endpoint.Endpoint
+	var createVolumeEndpoint endpoint.Endpoint
 	{
-		createVolEndpoint = grpctransport.NewClient(
+		createVolumeEndpoint = grpctransport.NewClient(
 			conn,
 			"pb.SpawnerService",
-			"CreateVol",
+			"CreateVolume",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
 			},
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.CreateVolRes{},
+			pb.CreateVolumeResponse{},
 			append(options)...,
 		).Endpoint()
-		createVolEndpoint = limiter(createVolEndpoint)
-		createVolEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+		createVolumeEndpoint = limiter(createVolumeEndpoint)
+		createVolumeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
 			Name:    "CreateVol",
 			Timeout: 30 * time.Second,
-		}))(createVolEndpoint)
+		}))(createVolumeEndpoint)
 	}
 
-	var deleteVolEndpoint endpoint.Endpoint
+	var deleteVolumeEndpoint endpoint.Endpoint
 	{
-		deleteVolEndpoint = grpctransport.NewClient(
+		deleteVolumeEndpoint = grpctransport.NewClient(
 			conn,
 			"pb.SpawnerService",
-			"DeleteVol",
+			"DeleteVolume",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
 			},
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.DeleteVolRes{},
+			pb.DeleteVolumeResponse{},
 			append(options)...,
 		).Endpoint()
-		deleteVolEndpoint = limiter(deleteVolEndpoint)
-		deleteVolEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+		deleteVolumeEndpoint = limiter(deleteVolumeEndpoint)
+		deleteVolumeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
 			Name:    "DeleteVol",
 			Timeout: 30 * time.Second,
-		}))(deleteVolEndpoint)
+		}))(deleteVolumeEndpoint)
 	}
 
 	var createSnapshotEndpoint endpoint.Endpoint
@@ -431,8 +431,8 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 		AddNodeEndpoint:                 addNodeEndpoint,
 		DeleteClusterEndpoint:           deleteClusterEndpoint,
 		DeleteNodeEndpoint:              deleteNodeEndpoint,
-		CreateVolEndpoint:               createVolEndpoint,
-		DeleteVolEndpoint:               deleteVolEndpoint,
+		CreateVolumeEndpoint:            createVolumeEndpoint,
+		DeleteVolumeEndpoint:            deleteVolumeEndpoint,
 		CreateSnapshotEndpoint:          createSnapshotEndpoint,
 		CreateSnapshotAndDeleteEndpoint: createSnapshotAndDeleteEndpoint,
 	}

@@ -15,11 +15,17 @@ import (
 	//grpc "google.golang.org/grpc"
 )
 
-type server struct {
-	pb.UnimplementedSpawnerServiceServer
+func CreateAwsSession(region string) (awsSvc *ec2.EC2) {
+
+	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	awsSvc = ec2.New(sess)
+	if err != nil {
+		log.Fatalf("error starting aws session")
+	}
+	return awsSvc
 }
 
-func (svc AWSController) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
+func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
 	fmt.Println("CreateVol() invoked with ", req)
 	//getting input values
 	availabilityZone := req.GetAvailabilityzone()
@@ -28,12 +34,7 @@ func (svc AWSController) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*
 	snapshotId := req.GetSnapshotid()
 
 	//staring aws session
-	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-west-2")})
-	awsSvc := ec2.New(sess)
-
-	if err != nil {
-		log.Fatalf("error starting aws session")
-	}
+	awsSvc := CreateAwsSession("us-west-2")
 
 	//assigning input values for CreateVolume()
 	input := &ec2.CreateVolumeInput{
@@ -60,19 +61,19 @@ func (svc AWSController) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*
 	}
 	//fmt.Println(result)
 
-	res := &pb.CreateVolRes{
+	res := &pb.CreateVolumeResponse{
 		Volumeid: *result.VolumeId,
 	}
 	return res, nil
 }
 
-func (svc AWSController) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
+func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
 	fmt.Println("DeleteVol() invoked with ", req)
 
 	volumeid := req.GetVolumeid()
-	deleted := DeleteVolInternal(volumeid)
+	deleted := DeleteVolumeInternal(volumeid)
 
-	res := &pb.DeleteVolRes{
+	res := &pb.DeleteVolumeResponse{
 		Deleted: deleted,
 	}
 
@@ -83,7 +84,8 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.SnapshotReq
 
 	fmt.Println("CreateSnapshot() invoked with ", req)
 	volumeid := req.GetVolumeid()
-	snapshotid, _ := SnapshotInternal(volumeid, false)
+	deletevol := false
+	snapshotid, _ := SnapshotInternal(volumeid, deletevol)
 
 	res := &pb.SnapshotResponse{
 		Snapshotid: snapshotid,
@@ -95,7 +97,8 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Sn
 
 	fmt.Println("CreateSnapshotAndDelete() invoked with ", req)
 	volumeid := req.GetVolumeid()
-	snapshotid, _ := SnapshotInternal(volumeid, true)
+	deletevol := true
+	snapshotid, _ := SnapshotInternal(volumeid, deletevol)
 
 	res := &pb.SnapshotResponse{
 		Snapshotid: snapshotid,
@@ -103,7 +106,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Sn
 	return res, nil
 }
 
-func DeleteVolInternal(volumeid string) (deleted bool) {
+func DeleteVolumeInternal(volumeid string) (deleted bool) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-west-2")})
 	awsSvc := ec2.New(sess)
 
@@ -135,14 +138,14 @@ func DeleteVolInternal(volumeid string) (deleted bool) {
 }
 
 func SnapshotInternal(volumeid string, deletevol bool) (snapshotid string, deleted bool) {
-	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-west-2")})
-	svc := ec2.New(sess)
+	//staring aws session
+	awsSvc := CreateAwsSession("us-west-2")
 
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
 	}
 
-	result, err := svc.CreateSnapshot(input)
+	result, err := awsSvc.CreateSnapshot(input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
@@ -157,26 +160,8 @@ func SnapshotInternal(volumeid string, deletevol bool) (snapshotid string, delet
 		log.Fatalf("couldn't create snapshot ", err)
 	} else {
 		if deletevol == true {
-			deleted = DeleteVolInternal(volumeid)
+			deleted = DeleteVolumeInternal(volumeid)
 		}
 	}
 	return *result.SnapshotId, deleted
 }
-
-// func main() {
-// 	fmt.Println("hello world")
-
-// 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
-
-// 	if err != nil {
-// 		log.Fatalf("failed to listen: %v", err)
-// 	}
-
-// 	s := grpc.NewServer()
-// 	pb.RegisterSpawnerServiceServer(s, &server{})
-
-// 	if err := s.Serve(lis); err != nil {
-// 		log.Fatalf("failed to serve: %v", err)
-// 	}
-
-// }

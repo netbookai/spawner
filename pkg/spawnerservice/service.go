@@ -18,8 +18,8 @@ type ClusterController interface {
 	AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error)
 	DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error)
 	DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error)
-	CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error)
-	DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error)
+	CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error)
+	DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error)
 }
@@ -65,12 +65,12 @@ func (svc SpawnerService) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequ
 	return svc.rancherController.DeleteNode(ctx, req)
 }
 
-func (svc SpawnerService) CreateVol(ctx context.Context, req *pb.CreateVolReq) (*pb.CreateVolRes, error) {
-	return svc.awsController.CreateVol(ctx, req)
+func (svc SpawnerService) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
+	return svc.awsController.CreateVolume(ctx, req)
 }
 
-func (svc SpawnerService) DeleteVol(ctx context.Context, req *pb.DeleteVolReq) (*pb.DeleteVolRes, error) {
-	return svc.awsController.DeleteVol(ctx, req)
+func (svc SpawnerService) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
+	return svc.awsController.DeleteVolume(ctx, req)
 }
 
 func (svc SpawnerService) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {

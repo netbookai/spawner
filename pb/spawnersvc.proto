@@ -22,10 +22,10 @@ service SpawnerService {
     rpc DeleteNode (NodeDeleteRequest) returns (NodeDeleteResponse) {}
 
     //Create Volume
-    rpc CreateVol(CreateVolReq) returns (CreateVolRes) {}
+    rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse) {}
 
     //Delete Vol
-    rpc DeleteVol(DeleteVolReq) returns (DeleteVolRes) {}
+    rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse) {}
 
     rpc CreateSnapshot( SnapshotRequest) returns (SnapshotResponse) {}
 
@@ -86,22 +86,22 @@ message NodeDeleteResponse {
     string error = 1;
 }
 
-message CreateVolReq{
+message CreateVolumeRequest{
     string availabilityzone = 1;
     string volumetype =2;
     int64 size=3;
     string snapshotid=4; 
 }
 
-message CreateVolRes{
+message CreateVolumeResponse{
     string volumeid=1;
 }
 
-message DeleteVolReq{
+message DeleteVolumeRequest{
     string volumeid=1;
 }
 
-message DeleteVolRes{
+message DeleteVolumeResponse{
     bool deleted=1;
 }
 
