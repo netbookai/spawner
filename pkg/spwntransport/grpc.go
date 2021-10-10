@@ -189,20 +189,20 @@ func (s *grpcServer) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeReque
 	return rep.(*pb.DeleteVolumeResponse), nil
 }
 
-func (s *grpcServer) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+func (s *grpcServer) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
 	_, rep, err := s.createSnapshot.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.SnapshotResponse), nil
+	return rep.(*pb.CreateSnapshotResponse), nil
 }
 
-func (s *grpcServer) CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+func (s *grpcServer) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	_, rep, err := s.createSnapshotAndDelete.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.SnapshotResponse), nil
+	return rep.(*pb.CreateSnapshotAndDeleteResponse), nil
 }
 
 // NewGRPCClient returns an AddService backed by a gRPC server at the other end
@@ -390,7 +390,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.SnapshotResponse{},
+			pb.CreateSnapshotResponse{},
 			append(options)...,
 		).Endpoint()
 		createSnapshotEndpoint = limiter(createSnapshotEndpoint)
@@ -412,7 +412,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.SnapshotResponse{},
+			pb.CreateSnapshotAndDeleteResponse{},
 			append(options)...,
 		).Endpoint()
 		createSnapshotAndDeleteEndpoint = limiter(createSnapshotAndDeleteEndpoint)

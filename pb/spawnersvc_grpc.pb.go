@@ -32,8 +32,8 @@ type SpawnerServiceClient interface {
 	CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error)
 	//Delete Vol
 	DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error)
-	CreateSnapshot(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error)
-	CreateSnapshotAndDelete(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error)
+	CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error)
+	CreateSnapshotAndDelete(ctx context.Context, in *CreateSnapshotAndDeleteRequest, opts ...grpc.CallOption) (*CreateSnapshotAndDeleteResponse, error)
 }
 
 type spawnerServiceClient struct {
@@ -107,8 +107,8 @@ func (c *spawnerServiceClient) DeleteVolume(ctx context.Context, in *DeleteVolum
 	return out, nil
 }
 
-func (c *spawnerServiceClient) CreateSnapshot(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error) {
-	out := new(SnapshotResponse)
+func (c *spawnerServiceClient) CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error) {
+	out := new(CreateSnapshotResponse)
 	err := c.cc.Invoke(ctx, "/pb.SpawnerService/CreateSnapshot", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -116,8 +116,8 @@ func (c *spawnerServiceClient) CreateSnapshot(ctx context.Context, in *SnapshotR
 	return out, nil
 }
 
-func (c *spawnerServiceClient) CreateSnapshotAndDelete(ctx context.Context, in *SnapshotRequest, opts ...grpc.CallOption) (*SnapshotResponse, error) {
-	out := new(SnapshotResponse)
+func (c *spawnerServiceClient) CreateSnapshotAndDelete(ctx context.Context, in *CreateSnapshotAndDeleteRequest, opts ...grpc.CallOption) (*CreateSnapshotAndDeleteResponse, error) {
+	out := new(CreateSnapshotAndDeleteResponse)
 	err := c.cc.Invoke(ctx, "/pb.SpawnerService/CreateSnapshotAndDelete", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -143,8 +143,8 @@ type SpawnerServiceServer interface {
 	CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error)
 	//Delete Vol
 	DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error)
-	CreateSnapshot(context.Context, *SnapshotRequest) (*SnapshotResponse, error)
-	CreateSnapshotAndDelete(context.Context, *SnapshotRequest) (*SnapshotResponse, error)
+	CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error)
+	CreateSnapshotAndDelete(context.Context, *CreateSnapshotAndDeleteRequest) (*CreateSnapshotAndDeleteResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -173,10 +173,10 @@ func (UnimplementedSpawnerServiceServer) CreateVolume(context.Context, *CreateVo
 func (UnimplementedSpawnerServiceServer) DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVolume not implemented")
 }
-func (UnimplementedSpawnerServiceServer) CreateSnapshot(context.Context, *SnapshotRequest) (*SnapshotResponse, error) {
+func (UnimplementedSpawnerServiceServer) CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshot not implemented")
 }
-func (UnimplementedSpawnerServiceServer) CreateSnapshotAndDelete(context.Context, *SnapshotRequest) (*SnapshotResponse, error) {
+func (UnimplementedSpawnerServiceServer) CreateSnapshotAndDelete(context.Context, *CreateSnapshotAndDeleteRequest) (*CreateSnapshotAndDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshotAndDelete not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
@@ -319,7 +319,7 @@ func _SpawnerService_DeleteVolume_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _SpawnerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SnapshotRequest)
+	in := new(CreateSnapshotRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -331,13 +331,13 @@ func _SpawnerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context
 		FullMethod: "/pb.SpawnerService/CreateSnapshot",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SpawnerServiceServer).CreateSnapshot(ctx, req.(*SnapshotRequest))
+		return srv.(SpawnerServiceServer).CreateSnapshot(ctx, req.(*CreateSnapshotRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _SpawnerService_CreateSnapshotAndDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SnapshotRequest)
+	in := new(CreateSnapshotAndDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func _SpawnerService_CreateSnapshotAndDelete_Handler(srv interface{}, ctx contex
 		FullMethod: "/pb.SpawnerService/CreateSnapshotAndDelete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SpawnerServiceServer).CreateSnapshotAndDelete(ctx, req.(*SnapshotRequest))
+		return srv.(SpawnerServiceServer).CreateSnapshotAndDelete(ctx, req.(*CreateSnapshotAndDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

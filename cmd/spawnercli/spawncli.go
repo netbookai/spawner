@@ -93,14 +93,25 @@ func main() {
 		Volumetype:       "gp2",
 		Size:             1,
 		Snapshotid:       "",
+		Provider:         "aws",
+		Region:           "us-west-2",
 	}
 
 	deleteVolumeReq := &pb.DeleteVolumeRequest{
-		Volumeid: "vol-0f92bc5d6328b2559",
+		Volumeid: "vol-05d7e98ae385b2e29",
+		Provider: "aws",
+		Region:   "us-west-2",
 	}
 
-	snapshotReq := &pb.SnapshotRequest{
-		Volumeid: "vol-0187ea5c851bfee54",
+	createSnapshotReq := &pb.CreateSnapshotRequest{
+		Volumeid: "vol-07ccb258225e0e213",
+		Provider: "aws",
+		Region:   "us-west-2",
+	}
+	createSnapshotAndDeleteReq := &pb.CreateSnapshotAndDeleteRequest{
+		Volumeid: "vol-033eb2271582ebf28",
+		Provider: "aws",
+		Region:   "us-west-2",
 	}
 
 	switch *method {
@@ -157,7 +168,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%v", v)
 
 	case "CreateSnapshot":
-		v, err := svc.CreateSnapshot(context.Background(), snapshotReq)
+		v, err := svc.CreateSnapshot(context.Background(), createSnapshotReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
@@ -165,7 +176,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%v", v)
 
 	case "CreateSnapshotAndDelete":
-		v, err := svc.CreateSnapshotAndDelete(context.Background(), snapshotReq)
+		v, err := svc.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)

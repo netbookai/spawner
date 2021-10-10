@@ -255,37 +255,37 @@ func MakeDeleteVolumeEndpoint(s spawnerservice.ClusterController) endpoint.Endpo
 	}
 }
 
-func (s Set) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+func (s Set) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
 	resp, err := s.CreateSnapshotEndpoint(ctx, req)
 	if err != nil {
-		return &pb.SnapshotResponse{}, err
+		return &pb.CreateSnapshotResponse{}, err
 	}
-	response := resp.(*pb.SnapshotResponse)
+	response := resp.(*pb.CreateSnapshotResponse)
 	// TODO: Shivani add error to CreateVolRes and use it here
 	return response, fmt.Errorf("")
 }
 
 func MakeCreateSnapshotEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.SnapshotRequest)
+		req := request.(*pb.CreateSnapshotRequest)
 		resp, err := s.CreateSnapshot(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
+func (s Set) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	resp, err := s.CreateSnapshotAndDeleteEndpoint(ctx, req)
 	if err != nil {
-		return &pb.SnapshotResponse{}, err
+		return &pb.CreateSnapshotAndDeleteResponse{}, err
 	}
-	response := resp.(*pb.SnapshotResponse)
+	response := resp.(*pb.CreateSnapshotAndDeleteResponse)
 	// TODO: Shivani add error to CreateVolRes and use it here
 	return response, fmt.Errorf("")
 }
 
 func MakeCreateSnapshotAndDeleteEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.SnapshotRequest)
+		req := request.(*pb.CreateSnapshotAndDeleteRequest)
 		resp, err := s.CreateSnapshotAndDelete(ctx, req)
 		return resp, err
 	}

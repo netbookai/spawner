@@ -15,7 +15,8 @@ import (
 	//grpc "google.golang.org/grpc"
 )
 
-func CreateAwsSession(region string) (awsSvc *ec2.EC2) {
+func CreateAwsSession(provider string, region string) (awsSvc *ec2.EC2) {
+	//starts an AWS session
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	awsSvc = ec2.New(sess)
@@ -26,17 +27,18 @@ func CreateAwsSession(region string) (awsSvc *ec2.EC2) {
 }
 
 func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
+	//Creates an EBS volume
 	fmt.Println("CreateVol() invoked with ", req)
-	//getting input values
+
 	availabilityZone := req.GetAvailabilityzone()
 	volumeType := req.GetVolumetype()
 	size := req.GetSize()
 	snapshotId := req.GetSnapshotid()
+	provider := req.GetProvider()
+	region := req.GetRegion()
 
-	//staring aws session
-	awsSvc := CreateAwsSession("us-west-2")
+	awsSvc := CreateAwsSession(provider, region)
 
-	//assigning input values for CreateVolume()
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
 		VolumeType:       aws.String(volumeType),
@@ -44,7 +46,6 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 		SnapshotId:       aws.String(snapshotId),
 	}
 
-	//creating volume
 	result, err := awsSvc.CreateVolume(input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -59,7 +60,6 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 		}
 		log.Fatalf("failed to create vol: %v", err)
 	}
-	//fmt.Println(result)
 
 	res := &pb.CreateVolumeResponse{
 		Volumeid: *result.VolumeId,
@@ -68,10 +68,16 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 }
 
 func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
+	//Deletes an EBS volume
 	fmt.Println("DeleteVol() invoked with ", req)
 
 	volumeid := req.GetVolumeid()
-	deleted := DeleteVolumeInternal(volumeid)
+	provider := req.GetProvider()
+	region := req.GetRegion()
+
+	awsSvc := CreateAwsSession(provider, region)
+
+	deleted := DeleteVolumeInternal(volumeid, awsSvc)
 
 	res := &pb.DeleteVolumeResponse{
 		Deleted: deleted,
@@ -80,45 +86,50 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 	return res, nil
 }
 
-func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
-
+func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
+	//Creates a Snapshot of a volume
 	fmt.Println("CreateSnapshot() invoked with ", req)
-	volumeid := req.GetVolumeid()
-	deletevol := false
-	snapshotid, _ := SnapshotInternal(volumeid, deletevol)
 
-	res := &pb.SnapshotResponse{
+	volumeid := req.GetVolumeid()
+	provider := req.GetProvider()
+	region := req.GetRegion()
+
+	awsSvc := CreateAwsSession(provider, region)
+
+	snapshotid := SnapshotInternal(volumeid, awsSvc)
+
+	res := &pb.CreateSnapshotResponse{
 		Snapshotid: snapshotid,
 	}
 	return res, nil
 }
 
-func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.SnapshotRequest) (*pb.SnapshotResponse, error) {
-
+func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
+	//First Creates the snapshot of the volume then deletes the volume
 	fmt.Println("CreateSnapshotAndDelete() invoked with ", req)
-	volumeid := req.GetVolumeid()
-	deletevol := true
-	snapshotid, _ := SnapshotInternal(volumeid, deletevol)
 
-	res := &pb.SnapshotResponse{
+	volumeid := req.GetVolumeid()
+	provider := req.GetProvider()
+	region := req.GetRegion()
+
+	awsSvc := CreateAwsSession(provider, region)
+
+	snapshotid := SnapshotInternal(volumeid, awsSvc)
+	deleted := DeleteVolumeInternal(volumeid, awsSvc)
+
+	res := &pb.CreateSnapshotAndDeleteResponse{
 		Snapshotid: snapshotid,
+		Deleted:    deleted,
 	}
 	return res, nil
 }
 
-func DeleteVolumeInternal(volumeid string) (deleted bool) {
-	sess, err := session.NewSession(&aws.Config{Region: aws.String("us-west-2")})
-	awsSvc := ec2.New(sess)
-
-	if err != nil {
-		log.Fatalf("error starting aws session")
-	}
-
+func DeleteVolumeInternal(volumeid string, awsSvc *ec2.EC2) (deleted bool) {
 	input := &ec2.DeleteVolumeInput{
 		VolumeId: aws.String(volumeid),
 	}
 
-	_, err = awsSvc.DeleteVolume(input)
+	_, err := awsSvc.DeleteVolume(input)
 	deleted = true
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -132,15 +143,12 @@ func DeleteVolumeInternal(volumeid string) (deleted bool) {
 			fmt.Println(err.Error())
 		}
 		deleted = false
-		log.Fatalf("error delete volume")
+		log.Fatalf("error in deleting volume")
 	}
 	return deleted
 }
 
-func SnapshotInternal(volumeid string, deletevol bool) (snapshotid string, deleted bool) {
-	//staring aws session
-	awsSvc := CreateAwsSession("us-west-2")
-
+func SnapshotInternal(volumeid string, awsSvc *ec2.EC2) (snapshotid string) {
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
 	}
@@ -158,10 +166,6 @@ func SnapshotInternal(volumeid string, deletevol bool) (snapshotid string, delet
 			fmt.Println(err.Error())
 		}
 		log.Fatalf("couldn't create snapshot ", err)
-	} else {
-		if deletevol == true {
-			deleted = DeleteVolumeInternal(volumeid)
-		}
 	}
-	return *result.SnapshotId, deleted
+	return *result.SnapshotId
 }
