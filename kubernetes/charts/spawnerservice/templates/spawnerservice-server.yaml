@@ -18,5 +18,14 @@ spec:
         imagePullPolicy: {{ .Values.image.imagePullPolicy }}
         command: [ "/bin/sh", "-c", "--" ]
         args: [ "cd /spawnerservice/cmd/spawnersvc && ./spawnersvc -grpc-addr=:8083 -debug-addr=:8081 " ]
+        env:
+        - name: RANCHER_ADDRESS
+          value: {{ .Values.rancher.address }}
+        - name: RANCHER_USERNAME
+          value: {{ .Values.rancher.username }}
+        - name: RANCHER_PASSWORD
+          value: {{ .Values.rancher.password }}
+        - name: RANCHER_AWS_CRED_NAME
+          value: {{ .Values.rancher.aws_cred_name }}
         ports:
           - containerPort: 8083
