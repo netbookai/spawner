@@ -6,6 +6,7 @@ import (
 	"github.com/go-kit/kit/log"
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
+	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
 	"gitlab.com/netbook-devs/spawner-service/pkg/util"
@@ -17,6 +18,10 @@ type ClusterController interface {
 	AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error)
 	DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error)
 	DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error)
+	CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error)
+	DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error)
+	CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error)
+	CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error)
 }
 
 // func New(logger log.Logger, config util.Config) ClusterController {
@@ -30,12 +35,13 @@ type ClusterController interface {
 
 type SpawnerService struct {
 	rancherController ClusterController
-	// awsController awsController
+	awsController     aws.AWSController
 }
 
 func New(logger log.Logger, config util.Config) ClusterController {
 	return SpawnerService{
 		rancherController: rancher.NewRancherController(logger, config),
+		awsController:     aws.AWSController{},
 	}
 }
 
@@ -57,4 +63,20 @@ func (svc SpawnerService) DeleteCluster(ctx context.Context, req *pb.ClusterDele
 
 func (svc SpawnerService) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
 	return svc.rancherController.DeleteNode(ctx, req)
+}
+
+func (svc SpawnerService) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
+	return svc.awsController.CreateVolume(ctx, req)
+}
+
+func (svc SpawnerService) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
+	return svc.awsController.DeleteVolume(ctx, req)
+}
+
+func (svc SpawnerService) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
+	return svc.awsController.CreateSnapshot(ctx, req)
+}
+
+func (svc SpawnerService) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
+	return svc.awsController.CreateSnapshotAndDelete(ctx, req)
 }

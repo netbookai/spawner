@@ -13,7 +13,7 @@
             "program": "${cwd}/cmd/spawnersvc",
             "args": ["-grpc-addr=:8083", "-debug-addr=:8081"]
             // "program": "${cwd}/cmd/spawnercli",
-            // "args": ["-grpc-addr=:8083", "-method=DeleteCluster"]
+            // "args": ["-grpc-addr=:8083", "-method=CreateVolume"]
         }
     ]
 }
