@@ -34,3 +34,18 @@
     ```
     docker build -t spawnerservice:0.0.1 .
     ```
+
+# Running the app using helm
+
+1. Install the helm chart
+    ```
+     helm install spawnerservice kubernetes/charts/spawnerservice
+    ```
+    This will spawn a new service at `spawnerservice-service:80`
+2. Create a test deployment client pod and interact with server from the pod
+    ```
+    kubectl apply -f kubernetes/charts/netbook-kube2iam/templates/tests/go-client-pod.yaml
+    kubectl exec -it go-cli -- /bin/sh
+    ./spawnercli -grpc-addr=spawnerservice-service:80 -method=ClusterStatus
+    ```
+    

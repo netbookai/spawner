@@ -1,0 +1,5 @@
+rancher:
+  address: https://dev-rancher-02.anatinuslabs.com/v3
+  username: token-wdjgf
+  password: rsh4f2b2c78m6lb5dv9kqx4p47xx5bpl4drtfnkcfczbjnb9npn282
+  aws_cred_name: AWS-rancher-dev
