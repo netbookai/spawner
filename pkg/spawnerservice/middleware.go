@@ -5,8 +5,8 @@ import (
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 
-	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics"
+	"go.uber.org/zap"
 )
 
 // Middleware describes a service (as opposed to endpoint) middleware.
@@ -14,76 +14,76 @@ type Middleware func(ClusterController) ClusterController
 
 // LoggingMiddleware takes a logger as a dependency
 // and returns a service Middleware.
-func LoggingMiddleware(logger log.Logger) Middleware {
+func LoggingMiddleware(logger *zap.SugaredLogger) Middleware {
 	return func(next ClusterController) ClusterController {
 		return loggingMiddleware{logger, next}
 	}
 }
 
 type loggingMiddleware struct {
-	logger log.Logger
+	logger *zap.SugaredLogger
 	next   ClusterController
 }
 
 func (mw loggingMiddleware) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (res *pb.ClusterResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "CreateCluster", "provider", req.Provider, "region", req.Region, "node", req.Node, "labels", req.Labels, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "CreateCluster", "provider", req.Provider, "region", req.Region, "node", req.Node, "labels", req.Labels, "response", res, "error", err)
 	}()
 	return mw.next.CreateCluster(ctx, req)
 }
 
 func (mw loggingMiddleware) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (res *pb.ClusterDeleteResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "DeleteCluster", "name", req.ClusterName, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "DeleteCluster", "name", req.ClusterName, "response", res, "error", err)
 	}()
 	return mw.next.DeleteCluster(ctx, req)
 }
 
 func (mw loggingMiddleware) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (res *pb.ClusterStatusResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "ClusterStatus", "name", req.ClusterName, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "ClusterStatus", "name", req.ClusterName, "response", res, "error", err)
 	}()
 	return mw.next.ClusterStatus(ctx, req)
 }
 
 func (mw loggingMiddleware) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (res *pb.NodeSpawnResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "AddNode", "name", req.ClusterName, "nodespecinstance", req.NodeSpec.Instance, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "AddNode", "name", req.ClusterName, "nodespecinstance", req.NodeSpec.Instance, "response", res, "error", err)
 	}()
 	return mw.next.AddNode(ctx, req)
 }
 
 func (mw loggingMiddleware) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (res *pb.NodeDeleteResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "DeleteNode", "name", req.ClusterName, "nodegroupname", req.NodeGroupName, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "DeleteNode", "name", req.ClusterName, "nodegroupname", req.NodeGroupName, "response", res, "error", err)
 	}()
 	return mw.next.DeleteNode(ctx, req)
 }
 
 func (mw loggingMiddleware) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (res *pb.CreateVolumeResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "CreateVolume", "volumetype", req.Volumetype, "size", req.Size, "region", req.Region, "provider", req.Provider, "snapshotid", req.Snapshotid, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "CreateVolume", "volumetype", req.Volumetype, "size", req.Size, "region", req.Region, "provider", req.Provider, "snapshotid", req.Snapshotid, "response", res, "error", err)
 	}()
 	return mw.next.CreateVolume(ctx, req)
 }
 
 func (mw loggingMiddleware) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (res *pb.DeleteVolumeResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "DeleteVolume", "volumeid", req.Volumeid, "region", req.Region, "provider", req.Provider, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "DeleteVolume", "volumeid", req.Volumeid, "region", req.Region, "provider", req.Provider, "response", res, "error", err)
 	}()
 	return mw.next.DeleteVolume(ctx, req)
 }
 
 func (mw loggingMiddleware) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (res *pb.CreateSnapshotResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "CreateSnapshot", "volumeid", req.Volumeid, "region", req.Region, "provider", req.Provider, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "CreateSnapshot", "volumeid", req.Volumeid, "region", req.Region, "provider", req.Provider, "response", res, "error", err)
 	}()
 	return mw.next.CreateSnapshot(ctx, req)
 }
 
 func (mw loggingMiddleware) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (res *pb.CreateSnapshotAndDeleteResponse, err error) {
 	defer func() {
-		mw.logger.Log("method", "CreateSnapshotAndDelete", "volumeid", req.Volumeid, "region", req.Region, "provider", req.Provider, "res", res, "err", err)
+		mw.logger.Infow("spawnerservice", "method", "CreateSnapshotAndDelete", "volumeid", req.Volumeid, "region", req.Region, "provider", req.Provider, "response", res, "error", err)
 	}()
 	return mw.next.CreateSnapshotAndDelete(ctx, req)
 }

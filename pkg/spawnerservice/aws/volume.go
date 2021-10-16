@@ -2,33 +2,50 @@ package aws
 
 import (
 	"context"
-	"fmt"
-	"log"
-
-	//"net"
+	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"gitlab.com/netbook-devs/spawner-service/pb"
-	//grpc "google.golang.org/grpc"
+	"go.uber.org/zap"
 )
 
-func CreateAwsSession(provider string, region string) (awsSvc *ec2.EC2) {
+func CreateAwsSession(provider string, region string, logger *zap.SugaredLogger) (awsSvc *ec2.EC2) {
 	//starts an AWS session
 
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	awsSvc = ec2.New(sess)
+
 	if err != nil {
-		log.Fatalf("error starting aws session")
+		logger.Errorw("Can't start AWS session", "error", err)
+		os.Exit(1)
 	}
 	return awsSvc
 }
 
+func LogError(methodName string, logger *zap.SugaredLogger, err error) {
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				logger.Errorw("Error in ", "method : ", methodName, "error", aerr.Error())
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			logger.Errorw("Error in ", "method : ", methodName, "error", err.Error())
+		}
+		logger.Errorw("Error in ", "method : ", methodName, "error", err)
+	}
+}
+
 func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
 	//Creates an EBS volume
-	fmt.Println("CreateVol() invoked with ", req)
+
+	logger := svc.logger
 
 	availabilityZone := req.GetAvailabilityzone()
 	volumeType := req.GetVolumetype()
@@ -37,7 +54,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region)
+	awsSvc := CreateAwsSession(provider, region, logger)
 
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
@@ -47,19 +64,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 	}
 
 	result, err := awsSvc.CreateVolume(input)
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
-		}
-		log.Fatalf("failed to create vol: %v", err)
-	}
+	LogError("CreateVolume", logger, err)
 
 	res := &pb.CreateVolumeResponse{
 		Volumeid: *result.VolumeId,
@@ -69,15 +74,17 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 
 func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
 	//Deletes an EBS volume
-	fmt.Println("DeleteVol() invoked with ", req)
+	logger := svc.logger
 
 	volumeid := req.GetVolumeid()
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region)
+	awsSvc := CreateAwsSession(provider, region, logger)
 
-	deleted := DeleteVolumeInternal(volumeid, awsSvc)
+	deleted, err := DeleteVolumeInternal(volumeid, awsSvc)
+
+	LogError("DeleteVolume", logger, err)
 
 	res := &pb.DeleteVolumeResponse{
 		Deleted: deleted,
@@ -88,15 +95,16 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 
 func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
 	//Creates a Snapshot of a volume
-	fmt.Println("CreateSnapshot() invoked with ", req)
-
+	logger := svc.logger
 	volumeid := req.GetVolumeid()
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region)
+	awsSvc := CreateAwsSession(provider, region, logger)
 
-	snapshotid := SnapshotInternal(volumeid, awsSvc)
+	snapshotid, err := SnapshotInternal(volumeid, awsSvc)
+
+	LogError("CreateSnapshot", logger, err)
 
 	res := &pb.CreateSnapshotResponse{
 		Snapshotid: snapshotid,
@@ -106,16 +114,31 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 
 func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	//First Creates the snapshot of the volume then deletes the volume
-	fmt.Println("CreateSnapshotAndDelete() invoked with ", req)
+
+	logger := svc.logger
 
 	volumeid := req.GetVolumeid()
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region)
+	awsSvc := CreateAwsSession(provider, region, logger)
 
-	snapshotid := SnapshotInternal(volumeid, awsSvc)
-	deleted := DeleteVolumeInternal(volumeid, awsSvc)
+	snapshotid, errS := SnapshotInternal(volumeid, awsSvc)
+
+	deleted, errD := DeleteVolumeInternal(volumeid, awsSvc)
+
+	if errS != nil || errD != nil {
+		logger.Errorw("error in ", "method ", " CreateSnapshotAndDelete")
+
+		if errS != nil {
+			LogError("CreateSnapshot", logger, errS)
+		}
+
+		if errD != nil {
+			LogError("DeleteVolume", logger, errD)
+		}
+
+	}
 
 	res := &pb.CreateSnapshotAndDeleteResponse{
 		Snapshotid: snapshotid,
@@ -124,48 +147,23 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 	return res, nil
 }
 
-func DeleteVolumeInternal(volumeid string, awsSvc *ec2.EC2) (deleted bool) {
+func DeleteVolumeInternal(volumeid string, awsSvc *ec2.EC2) (deleted bool, err error) {
 	input := &ec2.DeleteVolumeInput{
 		VolumeId: aws.String(volumeid),
 	}
 
-	_, err := awsSvc.DeleteVolume(input)
+	_, err = awsSvc.DeleteVolume(input)
 	deleted = true
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
-		}
-		deleted = false
-		log.Fatalf("error in deleting volume")
-	}
-	return deleted
+
+	return deleted, err
 }
 
-func SnapshotInternal(volumeid string, awsSvc *ec2.EC2) (snapshotid string) {
+func SnapshotInternal(volumeid string, awsSvc *ec2.EC2) (snapshotid string, err error) {
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
 	}
 
 	result, err := awsSvc.CreateSnapshot(input)
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
-		}
-		log.Fatalf("couldn't create snapshot ", err)
-	}
-	return *result.SnapshotId
+
+	return *result.SnapshotId, err
 }

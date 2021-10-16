@@ -4,9 +4,16 @@ import (
 	"context"
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"go.uber.org/zap"
 )
 
 type AWSController struct {
+	logger *zap.SugaredLogger
+}
+
+func NewAWSController(logger *zap.SugaredLogger) AWSController {
+
+	return AWSController{logger}
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {

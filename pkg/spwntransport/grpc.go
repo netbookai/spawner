@@ -14,10 +14,11 @@ import (
 
 	"github.com/go-kit/kit/circuitbreaker"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/kit/log"
+	kitzap "github.com/go-kit/kit/log/zap"
 	"github.com/go-kit/kit/ratelimit"
 	"github.com/go-kit/kit/transport"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
+	"go.uber.org/zap"
 )
 
 type grpcServer struct {
@@ -37,9 +38,10 @@ type grpcServer struct {
 }
 
 // NewGRPCServer makes a set of endpoints available as a gRPC AddServer.
-func NewGRPCServer(endpoints spwnendpoint.Set, logger log.Logger) pb.SpawnerServiceServer {
+func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) pb.SpawnerServiceServer {
+	kitZapLogger := kitzap.NewZapSugarLogger(logger.Desugar(), zap.InfoLevel)
 	options := []grpctransport.ServerOption{
-		grpctransport.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		grpctransport.ServerErrorHandler(transport.NewLogErrorHandler(kitZapLogger)),
 	}
 
 	return &grpcServer{
@@ -247,7 +249,7 @@ func (s *grpcServer) CreateSnapshotAndDelete(ctx context.Context, req *pb.Create
 // of the conn. The caller is responsible for constructing the conn, and
 // eventually closing the underlying transport. We bake-in certain middlewares,
 // implementing the client library pattern.
-func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.ClusterController {
+func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerservice.ClusterController {
 	// We construct a single ratelimiter middleware, to limit the total outgoing
 	// QPS from this client to all methods on the remote instance. We also
 	// construct per-endpoint circuitbreaker middlewares to demonstrate how

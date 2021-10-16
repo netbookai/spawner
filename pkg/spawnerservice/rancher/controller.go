@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-kit/kit/log"
+	"go.uber.org/zap"
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
@@ -21,14 +21,14 @@ import (
 type RancherController struct {
 	rancherClient *rnchrClient.Client
 	config        *util.Config
-	logger        *log.Logger
+	logger        *zap.SugaredLogger
 }
 
-func NewRancherController(logger log.Logger, config util.Config) (RancherController, error) {
+func NewRancherController(logger *zap.SugaredLogger, config util.Config) RancherController {
 
 	rancherClient, err := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
 
-	return RancherController{rancherClient, &config, &logger}, err
+	return RancherController{rancherClient, &config, logger}
 }
 
 func (svc RancherController) GetCluster(clusterName string) (*rnchrClient.Cluster, error) {
@@ -101,7 +101,7 @@ func (svc RancherController) UpdateCluster(cluster *rnchrClient.Cluster, cluster
 
 	respCluster, err := svc.rancherClient.Cluster.Update(cluster, finalJson)
 
-	fmt.Println(respCluster)
+	svc.logger.Infow("respCluster", respCluster)
 
 	if err != nil {
 		return &rnchrClient.Cluster{}, fmt.Errorf("error updating cluster %s", cluster.Name)
@@ -172,7 +172,7 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 	cluster, err := svc.rancherClient.Cluster.Create(newCluster)
 
 	if err != nil {
-		fmt.Println(err)
+		svc.logger.Errorw("error", err)
 		return &rnchrClient.Cluster{}, err
 	}
 
@@ -226,7 +226,7 @@ func (svc RancherController) CreateCluster(ctx context.Context, req *pb.ClusterR
 	cluster, err := svc.CreateClusterInternal(clusterName, req)
 
 	if err != nil {
-		fmt.Println(fmt.Errorf("error creating cluster with name %s", clusterName))
+		svc.logger.Errorw("error creating cluster ", "clustername", clusterName)
 		return &pb.ClusterResponse{
 			Error: err.Error(),
 		}, err

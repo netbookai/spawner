@@ -124,6 +124,7 @@ message CreateVolumeRequest{
 
 message CreateVolumeResponse{
     string volumeid=1;
+    string error=2;
 }
 
 message DeleteVolumeRequest{
@@ -134,6 +135,7 @@ message DeleteVolumeRequest{
 
 message DeleteVolumeResponse{
     bool deleted=1;
+    string error=2;
 }
 
 message CreateSnapshotRequest{
@@ -144,6 +146,7 @@ message CreateSnapshotRequest{
 
 message CreateSnapshotResponse{
     string snapshotid=1;
+    string error=2;
 }
 
 message CreateSnapshotAndDeleteRequest{
@@ -155,4 +158,5 @@ message CreateSnapshotAndDeleteRequest{
 message CreateSnapshotAndDeleteResponse{
     string snapshotid=1;
     bool deleted=2;
+    string error=3;
 }

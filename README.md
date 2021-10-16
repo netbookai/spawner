@@ -50,7 +50,6 @@
     ```
     helm install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml
     ```
-
     Service will be running at `spawnerservice-service:80` inside k8s cluster
 
 2. Test server deployment

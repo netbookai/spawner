@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics"
+	"go.uber.org/zap"
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
@@ -44,6 +44,7 @@ type SpawnerService struct {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func New(logger log.Logger, config util.Config) ClusterController {
 	rancherController, err := rancher.NewRancherController(logger, config)
 	if err != nil {
@@ -55,11 +56,14 @@ func New(logger log.Logger, config util.Config) ClusterController {
 		awsController:     aws.AWSController{},
 =======
 func New(logger log.Logger, config util.Config, ints metrics.Counter) ClusterController {
+=======
+func New(logger *zap.SugaredLogger, config util.Config, ints metrics.Counter) ClusterController {
+>>>>>>> 9142f5a (Added zap sugar logger for logging)
 	var svc ClusterController
 	{
 		svc = SpawnerService{
 			rancherController: rancher.NewRancherController(logger, config),
-			awsController:     aws.AWSController{},
+			awsController:     aws.NewAWSController(logger),
 		}
 		svc = LoggingMiddleware(logger)(svc)
 		svc = InstrumentingMiddleware(ints)(svc)

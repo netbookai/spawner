@@ -13,7 +13,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-logfmt/logfmt v0.5.0 // indirect
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -38,6 +38,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/streadway/handy v0.0.0-20200128134331-0f66f006fb2e // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.7.0 // indirect
 	golang.org/x/net v0.0.0-20211005215030-d2e5035098b3 // indirect
 	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef // indirect
 	golang.org/x/text v0.3.7 // indirect
@@ -51,12 +53,14 @@ require (
 require (
 	github.com/aws/aws-sdk-go v1.40.56
 	github.com/go-kit/kit v0.11.0
+	github.com/go-kit/log v0.2.0
 	github.com/oklog/oklog v0.3.2
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rancher/norman v0.0.0-20210709145327-afd06f533ca3
 	github.com/rancher/rancher/pkg/client v0.0.0-20211012231222-6c49a519b5e5
 	github.com/sony/gobreaker v0.4.1
 	github.com/spf13/viper v1.9.0
+	go.uber.org/zap v1.19.1
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1

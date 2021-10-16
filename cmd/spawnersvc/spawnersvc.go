@@ -10,27 +10,30 @@ import (
 	"syscall"
 	"text/tabwriter"
 
-	"github.com/oklog/oklog/pkg/group"
-
-	"google.golang.org/grpc"
-
-	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
 	kitgrpc "github.com/go-kit/kit/transport/grpc"
+	"github.com/oklog/oklog/pkg/group"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
-
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
 	"gitlab.com/netbook-devs/spawner-service/pkg/util"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 func main() {
 	// Define our flags. Your service probably won't need to bind listeners for
 	// *all* supported transports, or support both Zipkin and LightStep, and so
 	// on, but we do it here for demonstration purposes.
+
+	// Create a single zap sugar logger, which we'll use and give to other components.
+	var logger, _ = zap.NewDevelopment()
+	var sugar = logger.Sugar()
+	defer sugar.Sync()
+
 	fs := flag.NewFlagSet("spawnersvc", flag.ExitOnError)
 	var (
 		debugAddr = fs.String("debug-addr", ":8080", "Debug and metrics listen address")
@@ -40,20 +43,12 @@ func main() {
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags]")
 	fs.Parse(os.Args[1:])
 
-	// Create a single logger, which we'll use and give to other components.
-	var logger log.Logger
-	{
-		logger = log.NewLogfmtLogger(os.Stderr)
-		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-		logger = log.With(logger, "caller", log.DefaultCaller)
-	}
-
 	var config util.Config
 	var err error
 	{
 		config, err = util.LoadConfig("../../")
 		if err != nil {
-			logger.Log("message", fmt.Errorf("error loading config"), "error", err.Error())
+			sugar.Errorw("error loading config", "error", err.Error())
 		}
 
 	}
@@ -64,8 +59,8 @@ func main() {
 	{
 		// Business-level metrics.
 		ints = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-			Namespace: "example",
-			Subsystem: "addsvc",
+			Namespace: "spawnerservice",
+			Subsystem: "spawnerservice",
 			Name:      "integers_summed",
 			Help:      "Total number of method calls",
 		}, []string{})
@@ -75,8 +70,8 @@ func main() {
 	{
 		// Endpoint-level metrics.
 		duration = prometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
-			Namespace: "example",
-			Subsystem: "addsvc",
+			Namespace: "spawnerservice",
+			Subsystem: "spawnerservice",
 			Name:      "request_duration_seconds",
 			Help:      "Request duration in seconds.",
 		}, []string{"method", "success"})
@@ -89,10 +84,10 @@ func main() {
 	// the interfaces that the transports expect. Note that we're not binding
 	// them to ports or anything yet; we'll do that next.
 	var (
-		service   = spawnerservice.New(logger, config, ints)
-		endpoints = spwnendpoint.New(service, logger, duration)
+		service   = spawnerservice.New(sugar, config, ints)
+		endpoints = spwnendpoint.New(service, sugar, duration)
 		// httpHandler    = spwntransport.NewHTTPHandler(endpoints, tracer, zipkinTracer, logger)
-		grpcServer = spwntransport.NewGRPCServer(endpoints, logger)
+		grpcServer = spwntransport.NewGRPCServer(endpoints, sugar)
 	)
 
 	// Now we're to the part of the func main where we want to start actually
@@ -114,11 +109,11 @@ func main() {
 		// routes, and so on.
 		debugListener, err := net.Listen("tcp", *debugAddr)
 		if err != nil {
-			logger.Log("transport", "debug/HTTP", "during", "Listen", "err", err)
+			sugar.Errorw("error in debugListener", "transport", "debug/HTTP", "during", "Listen", "error", err)
 			os.Exit(1)
 		}
 		g.Add(func() error {
-			logger.Log("transport", "debug/HTTP", "addr", *debugAddr)
+			sugar.Infow("error in debugListener", "transport", "debug/HTTP", "debugAddr", *debugAddr)
 			return http.Serve(debugListener, http.DefaultServeMux)
 		}, func(error) {
 			debugListener.Close()
@@ -142,11 +137,11 @@ func main() {
 		// The gRPC listener mounts the Go kit gRPC server we created.
 		grpcListener, err := net.Listen("tcp", *grpcAddr)
 		if err != nil {
-			logger.Log("transport", "gRPC", "during", "Listen", "err", err)
+			sugar.Errorw("error in grpcListener", "transport", "gRPC", "during", "Listen", "err", err)
 			os.Exit(1)
 		}
 		g.Add(func() error {
-			logger.Log("transport", "gRPC", "addr", *grpcAddr)
+			sugar.Infow("in main", "transport", "gRPC", "grpcAddr", *grpcAddr)
 			// we add the Go Kit gRPC Interceptor to our gRPC service as it is used by
 			// the here demonstrated zipkin tracing middleware.
 			baseServer := grpc.NewServer(grpc.UnaryInterceptor(kitgrpc.Interceptor))
@@ -172,7 +167,7 @@ func main() {
 			close(cancelInterrupt)
 		})
 	}
-	logger.Log("exit", g.Run())
+	sugar.Infow("main", "exit", g.Run())
 }
 
 func usageFor(fs *flag.FlagSet, short string) func() {
