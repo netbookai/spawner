@@ -5,8 +5,8 @@
 replicaCount: 1
 
 image:
-  repository: spawnerservice
-  pullPolicy: Never
+  repository: "registry.gitlab.com/netbook-devs/spawner-service/spawnerservice"
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.1"
 
@@ -34,3 +34,5 @@ rancher:
   username: username
   password: password
   aws_cred_name: aws_cred_name
+
+docker: docker

@@ -29,3 +29,5 @@ spec:
           value: {{ .Values.rancher.aws_cred_name }}
         ports:
           - containerPort: 8083
+      imagePullSecrets:
+        - name: dockerconfigjson-gitlab

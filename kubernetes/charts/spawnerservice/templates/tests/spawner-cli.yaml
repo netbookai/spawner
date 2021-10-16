@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: spawner-cli
+  labels:
+    name: spawner-cli
+spec:
+  containers:
+  - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+    imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+    command: [ "/bin/sh", "-c", "--" ]
+    args: [ "while true; do sleep 30; done;" ]
+    name: spawner-cli
+  imagePullSecrets:
+  - name: dockerconfigjson-gitlab
