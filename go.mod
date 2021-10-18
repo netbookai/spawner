@@ -57,7 +57,7 @@ require (
 	github.com/oklog/oklog v0.3.2
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rancher/norman v0.0.0-20210709145327-afd06f533ca3
-	github.com/rancher/rancher/pkg/client v0.0.0-20211012231222-6c49a519b5e5
+	github.com/rancher/rancher/pkg/client v0.0.0-20211018155735-0716b8536337
 	github.com/sony/gobreaker v0.4.1
 	github.com/spf13/viper v1.9.0
 	go.uber.org/zap v1.19.1

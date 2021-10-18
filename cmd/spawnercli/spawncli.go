@@ -132,49 +132,49 @@ func main() {
 			sugar.Errorw("error creating cluster", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "CreateCluster method", v)
+		sugar.Infow("CreateCluster method", "response", v)
 	case "AddToken":
 		v, err := svc.AddToken(context.Background(), addTokenReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error adding token", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "AddToken method", v)
+		sugar.Infow("AddToken method", "reponse", v)
 	case "GetToken":
 		v, err := svc.GetToken(context.Background(), getTokenReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error getting token", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "GetToken method", v)
+		sugar.Infow("GetToken method", "response", v)
 	case "ClusterStatus":
 		v, err := svc.ClusterStatus(context.Background(), clusterStatusReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error fetching cluster status", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "ClusterStatus method", v)
+		sugar.Infow("ClusterStatus method", "response", v)
 	case "AddNode":
 		v, err := svc.AddNode(context.Background(), addNodeReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error adding node", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "AddNode method", v)
+		sugar.Infow("AddNode method", "response", v)
 	case "DeleteCluster":
 		v, err := svc.DeleteCluster(context.Background(), deleteClusterReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error deleting cluster", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "DeleteCluster method", v)
+		sugar.Infow("DeleteCluster method", "response", v)
 	case "DeleteNode":
 		v, err := svc.DeleteNode(context.Background(), deleteNodeReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error deleting node", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "DeleteNode method", v)
+		sugar.Infow("DeleteNode method", "response", v)
 
 	case "CreateVolume":
 		v, err := svc.CreateVolume(context.Background(), createVolumeReq)
@@ -182,7 +182,7 @@ func main() {
 			sugar.Errorw("error creating volume", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "CreateVolume method", v)
+		sugar.Infow("CreateVolume method", "response", v)
 
 	case "DeleteVolume":
 		v, err := svc.DeleteVolume(context.Background(), deleteVolumeReq)
@@ -190,7 +190,7 @@ func main() {
 			sugar.Errorw("error deleting volume", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "DeleteVolume method", v)
+		sugar.Infow("DeleteVolume method", "response", v)
 
 	case "CreateSnapshot":
 		v, err := svc.CreateSnapshot(context.Background(), createSnapshotReq)
@@ -198,7 +198,7 @@ func main() {
 			sugar.Errorw("error creating snapshot", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "CreateSnapshot method", v)
+		sugar.Infow("CreateSnapshot method", "response", v)
 
 	case "CreateSnapshotAndDelete":
 		v, err := svc.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)
@@ -206,7 +206,7 @@ func main() {
 			sugar.Errorw("error creating snapshot and deleting volume", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("response", "CreateSnapshotAndDelete method", v)
+		sugar.Infow("CreateSnapshotAndDelete method", "response", v)
 
 	default:
 		sugar.Infow("error: invalid method", "method", *method)

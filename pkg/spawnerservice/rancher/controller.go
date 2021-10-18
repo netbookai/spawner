@@ -26,7 +26,10 @@ type RancherController struct {
 
 func NewRancherController(logger *zap.SugaredLogger, config util.Config) RancherController {
 
-	rancherClient, _ := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
+	rancherClient, err := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
+	if err != nil {
+		logger.Errorw("error creating rancher client", "error", err)
+	}
 
 	return RancherController{rancherClient, &config, logger}
 }
@@ -101,7 +104,7 @@ func (svc RancherController) UpdateCluster(cluster *rnchrClient.Cluster, cluster
 
 	respCluster, err := svc.rancherClient.Cluster.Update(cluster, finalJson)
 
-	svc.logger.Infow("respCluster", respCluster)
+	svc.logger.Infow("in UpdateCluster method", "respCluster", respCluster)
 
 	if err != nil {
 		return &rnchrClient.Cluster{}, fmt.Errorf("error updating cluster %s", cluster.Name)
@@ -172,7 +175,7 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 	cluster, err := svc.rancherClient.Cluster.Create(newCluster)
 
 	if err != nil {
-		svc.logger.Errorw("error", err)
+		svc.logger.Errorw("error creating new cluster", "error", err)
 		return &rnchrClient.Cluster{}, err
 	}
 
