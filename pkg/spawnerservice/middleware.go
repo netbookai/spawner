@@ -88,6 +88,20 @@ func (mw loggingMiddleware) CreateSnapshotAndDelete(ctx context.Context, req *pb
 	return mw.next.CreateSnapshotAndDelete(ctx, req)
 }
 
+func (mw loggingMiddleware) AddToken(ctx context.Context, req *pb.AddTokenRequest) (res *pb.AddTokenResponse, err error) {
+	defer func() {
+		mw.logger.Infow("spawnerservice", "method", "AddToken", "response", res, "error", err)
+	}()
+	return mw.next.AddToken(ctx, req)
+}
+
+func (mw loggingMiddleware) GetToken(ctx context.Context, req *pb.GetTokenRequest) (res *pb.GetTokenResponse, err error) {
+	defer func() {
+		mw.logger.Infow("spawnerservice", "method", "GetToken", "response", res, "error", err)
+	}()
+	return mw.next.GetToken(ctx, req)
+}
+
 // InstrumentingMiddleware returns a service middleware that instruments
 // the number of integers summed and characters concatenated over the lifetime of
 // the service.
@@ -152,6 +166,18 @@ func (mw instrumentingMiddleware) CreateSnapshot(ctx context.Context, req *pb.Cr
 
 func (mw instrumentingMiddleware) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	v, err := mw.next.CreateSnapshotAndDelete(ctx, req)
+	mw.ints.Add(float64(1))
+	return v, err
+}
+
+func (mw instrumentingMiddleware) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	v, err := mw.next.AddToken(ctx, req)
+	mw.ints.Add(float64(1))
+	return v, err
+}
+
+func (mw instrumentingMiddleware) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	v, err := mw.next.GetToken(ctx, req)
 	mw.ints.Add(float64(1))
 	return v, err
 }

@@ -2,8 +2,6 @@ package spawnerservice
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/go-kit/kit/metrics"
 	"go.uber.org/zap"
@@ -43,22 +41,7 @@ type SpawnerService struct {
 	awsController     ClusterController
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-func New(logger log.Logger, config util.Config) ClusterController {
-	rancherController, err := rancher.NewRancherController(logger, config)
-	if err != nil {
-		fmt.Println(fmt.Errorf("error creating rancher client %s", err))
-		os.Exit(1)
-	}
-	return SpawnerService{
-		rancherController: rancherController,
-		awsController:     aws.AWSController{},
-=======
-func New(logger log.Logger, config util.Config, ints metrics.Counter) ClusterController {
-=======
 func New(logger *zap.SugaredLogger, config util.Config, ints metrics.Counter) ClusterController {
->>>>>>> 9142f5a (Added zap sugar logger for logging)
 	var svc ClusterController
 	{
 		svc = SpawnerService{
@@ -67,7 +50,6 @@ func New(logger *zap.SugaredLogger, config util.Config, ints metrics.Counter) Cl
 		}
 		svc = LoggingMiddleware(logger)(svc)
 		svc = InstrumentingMiddleware(ints)(svc)
->>>>>>> 7984f17 (Implemented logging middleware for cluster controller)
 	}
 	return svc
 }

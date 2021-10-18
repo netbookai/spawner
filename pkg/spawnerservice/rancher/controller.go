@@ -26,7 +26,7 @@ type RancherController struct {
 
 func NewRancherController(logger *zap.SugaredLogger, config util.Config) RancherController {
 
-	rancherClient, err := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
+	rancherClient, _ := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
 
 	return RancherController{rancherClient, &config, logger}
 }

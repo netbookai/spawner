@@ -52,6 +52,8 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		addTokenEndpoint = MakeAddTokenEndpoint(svc)
 		addTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(addTokenEndpoint)
 		addTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addTokenEndpoint)
+		addTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddToken"))(createClusterEndpoint)
+		addTokenEndpoint = InstrumentingMiddleware(duration.With("method", "AddToken"))(createClusterEndpoint)
 	}
 
 	var getTokenEndpoint endpoint.Endpoint
@@ -59,6 +61,8 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		getTokenEndpoint = MakeGetTokenEndpoint(svc)
 		getTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getTokenEndpoint)
 		getTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getTokenEndpoint)
+		getTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetToken"))(createClusterEndpoint)
+		getTokenEndpoint = InstrumentingMiddleware(duration.With("method", "GetToken"))(createClusterEndpoint)
 	}
 
 	var clusterStatusEndpoint endpoint.Endpoint

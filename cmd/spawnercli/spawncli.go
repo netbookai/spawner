@@ -139,14 +139,14 @@ func main() {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "AddToken method", v)
 	case "GetToken":
 		v, err := svc.GetToken(context.Background(), getTokenReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "GetToken method", v)
 	case "ClusterStatus":
 		v, err := svc.ClusterStatus(context.Background(), clusterStatusReq)
 		if err != nil && err.Error() != "" {
