@@ -22,6 +22,8 @@ import (
 
 type grpcServer struct {
 	createCluster           grpctransport.Handler
+	addToken                grpctransport.Handler
+	getToken                grpctransport.Handler
 	clusterStatus           grpctransport.Handler
 	addNode                 grpctransport.Handler
 	deleteCluster           grpctransport.Handler
@@ -45,6 +47,26 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger log.Logger) pb.SpawnerServ
 			endpoints.CreateClusterEndpoint,
 			decodeGRPCClusterRequest,
 			encodeGRPCClusterResponse,
+			append(options)...,
+		),
+		addToken: grpctransport.NewServer(
+			endpoints.AddTokenEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
+		getToken: grpctransport.NewServer(
+			endpoints.GetTokenEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
 			append(options)...,
 		),
 		clusterStatus: grpctransport.NewServer(
@@ -139,6 +161,22 @@ func (s *grpcServer) CreateCluster(ctx context.Context, req *pb.ClusterRequest) 
 		return nil, err
 	}
 	return rep.(*pb.ClusterResponse), nil
+}
+
+func (s *grpcServer) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	_, rep, err := s.addToken.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.AddTokenResponse), nil
+}
+
+func (s *grpcServer) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	_, rep, err := s.getToken.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.GetTokenResponse), nil
 }
 
 func (s *grpcServer) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
@@ -244,6 +282,50 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 			Name:    "CreateCluster",
 			Timeout: 30 * time.Second,
 		}))(createClusterEndpoint)
+	}
+
+	var addTokenEndpoint endpoint.Endpoint
+	{
+		addTokenEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"AddToken",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.AddTokenResponse{},
+			append(options)...,
+		).Endpoint()
+		addTokenEndpoint = limiter(addTokenEndpoint)
+		addTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "AddToken",
+			Timeout: 30 * time.Second,
+		}))(addTokenEndpoint)
+	}
+
+	var getTokenEndpoint endpoint.Endpoint
+	{
+		getTokenEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"GetToken",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.GetTokenResponse{},
+			append(options)...,
+		).Endpoint()
+		getTokenEndpoint = limiter(getTokenEndpoint)
+		getTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "GetToken",
+			Timeout: 30 * time.Second,
+		}))(getTokenEndpoint)
 	}
 
 	var clusterStatusEndpoint endpoint.Endpoint
@@ -427,6 +509,8 @@ func NewGRPCClient(conn *grpc.ClientConn, logger log.Logger) spawnerservice.Clus
 	// of glue code.
 	return spwnendpoint.Set{
 		CreateClusterEndpoint:           createClusterEndpoint,
+		AddTokenEndpoint:                addTokenEndpoint,
+		GetTokenEndpoint:                getTokenEndpoint,
 		CusterStatusEndpoint:            clusterStatusEndpoint,
 		AddNodeEndpoint:                 addNodeEndpoint,
 		DeleteClusterEndpoint:           deleteClusterEndpoint,

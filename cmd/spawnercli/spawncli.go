@@ -64,8 +64,18 @@ func main() {
 		Labels:   map[string]string{},
 	}
 
+	addTokenReq := &pb.AddTokenRequest{
+		ClusterName: "aws-us-west-2-eks-4",
+		Region:      "us-west-2",
+	}
+
+	getTokenReq := &pb.GetTokenRequest{
+		ClusterName: "infra-test",
+		Region:      "us-west-2",
+	}
+
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "aws-us-west-2-eks-7",
+		ClusterName: "infra-test",
 	}
 
 	addNode := &pb.NodeSpec{
@@ -117,6 +127,20 @@ func main() {
 	switch *method {
 	case "CreateCluster":
 		v, err := svc.CreateCluster(context.Background(), createClusterReq)
+		if err != nil && err.Error() != "" {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stdout, "%v", v)
+	case "AddToken":
+		v, err := svc.AddToken(context.Background(), addTokenReq)
+		if err != nil && err.Error() != "" {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Fprintf(os.Stdout, "%v", v)
+	case "GetToken":
+		v, err := svc.GetToken(context.Background(), getTokenReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
