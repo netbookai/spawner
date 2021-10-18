@@ -17,7 +17,7 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.imagePullPolicy }}
         command: [ "/bin/sh", "-c", "--" ]
-        args: [ "cd /spawnerservice/cmd/spawnersvc && ./spawnersvc -grpc-addr=:8083 -debug-addr=:8081 " ]
+        args: [ "cd /spawnerservice/cmd/spawnersvc && ./spawnersvc -grpc-addr=:8083 -debug-addr=:8081" ]
         env:
         - name: RANCHER_ADDRESS
           value: {{ .Values.rancher.address }}

@@ -2,10 +2,9 @@ package spawnerservice
 
 import (
 	"context"
-	"fmt"
-	"os"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics"
+	"go.uber.org/zap"
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
@@ -39,19 +38,20 @@ type ClusterController interface {
 
 type SpawnerService struct {
 	rancherController ClusterController
-	awsController     aws.AWSController
+	awsController     ClusterController
 }
 
-func New(logger log.Logger, config util.Config) ClusterController {
-	rancherController, err := rancher.NewRancherController(logger, config)
-	if err != nil {
-		fmt.Println(fmt.Errorf("error creating rancher client %s", err))
-		os.Exit(1)
+func New(logger *zap.SugaredLogger, config util.Config, ints metrics.Counter) ClusterController {
+	var svc ClusterController
+	{
+		svc = SpawnerService{
+			rancherController: rancher.NewRancherController(logger, config),
+			awsController:     aws.NewAWSController(logger),
+		}
+		svc = LoggingMiddleware(logger)(svc)
+		svc = InstrumentingMiddleware(ints)(svc)
 	}
-	return SpawnerService{
-		rancherController: rancherController,
-		awsController:     aws.AWSController{},
-	}
+	return svc
 }
 
 func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {

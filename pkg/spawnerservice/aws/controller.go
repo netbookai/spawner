@@ -4,9 +4,16 @@ import (
 	"context"
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"go.uber.org/zap"
 )
 
 type AWSController struct {
+	logger *zap.SugaredLogger
+}
+
+func NewAWSController(logger *zap.SugaredLogger) AWSController {
+
+	return AWSController{logger}
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
@@ -23,4 +30,12 @@ func (svc AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDelet
 }
 func (svc AWSController) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
 	return &pb.NodeDeleteResponse{}, nil
+}
+
+func (svc AWSController) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	return &pb.AddTokenResponse{}, nil
+}
+
+func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	return &pb.GetTokenResponse{}, nil
 }
