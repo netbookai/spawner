@@ -8,21 +8,24 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"google.golang.org/grpc"
-
-	"github.com/go-kit/kit/log"
-
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 func main() {
+
+	var logger, _ = zap.NewDevelopment()
+	var sugar = logger.Sugar()
+	defer sugar.Sync()
+
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
 	var (
 		// httpAddr = fs.String("http-addr", "", "HTTP address of addsvc")
-		grpcAddr = fs.String("grpc-addr", "", "gRPC address of addsvc")
-		method   = fs.String("method", "CreateCluster", "CreateCluster")
+		grpcAddr = fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
+		method   = fs.String("method", "ClusterStatus", "ClusterStatus")
 	)
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
@@ -32,23 +35,21 @@ func main() {
 		svc spawnerservice.ClusterController
 		err error
 	)
-	// if *httpAddr != "" {
-	// 	// svc, err = spwntransport.NewHTTPClient(*httpAddr, log.NewNopLogger())
-	// } else if *grpcAddr != "" {
+
 	if *grpcAddr != "" {
 		conn, err := grpc.Dial(*grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v", err)
+			sugar.Errorw("error connecting to remote", "error", err)
 			os.Exit(1)
 		}
 		defer conn.Close()
-		svc = spwntransport.NewGRPCClient(conn, log.NewNopLogger())
+		svc = spwntransport.NewGRPCClient(conn, zap.NewNop().Sugar())
 	} else {
-		fmt.Fprintf(os.Stderr, "error: no remote address specified\n")
+		sugar.Errorw("error connecting to remote", "error", err)
 		os.Exit(1)
 	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		sugar.Errorw("error connecting to remote", "error", err)
 		os.Exit(1)
 	}
 
@@ -64,8 +65,18 @@ func main() {
 		Labels:   map[string]string{},
 	}
 
+	addTokenReq := &pb.AddTokenRequest{
+		ClusterName: "aws-us-west-2-eks-4",
+		Region:      "us-west-2",
+	}
+
+	getTokenReq := &pb.GetTokenRequest{
+		ClusterName: "infra-test",
+		Region:      "us-west-2",
+	}
+
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "aws-us-west-2-eks-7",
+		ClusterName: "infra-test",
 	}
 
 	addNode := &pb.NodeSpec{
@@ -118,73 +129,87 @@ func main() {
 	case "CreateCluster":
 		v, err := svc.CreateCluster(context.Background(), createClusterReq)
 		if err != nil && err.Error() != "" {
+			sugar.Errorw("error creating cluster", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("response", "CreateCluster method", v)
+	case "AddToken":
+		v, err := svc.AddToken(context.Background(), addTokenReq)
+		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "AddToken method", v)
+	case "GetToken":
+		v, err := svc.GetToken(context.Background(), getTokenReq)
+		if err != nil && err.Error() != "" {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		sugar.Infow("response", "GetToken method", v)
 	case "ClusterStatus":
 		v, err := svc.ClusterStatus(context.Background(), clusterStatusReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error fetching cluster status", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "ClusterStatus method", v)
 	case "AddNode":
 		v, err := svc.AddNode(context.Background(), addNodeReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error adding node", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "AddNode method", v)
 	case "DeleteCluster":
 		v, err := svc.DeleteCluster(context.Background(), deleteClusterReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error deleting cluster", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "DeleteCluster method", v)
 	case "DeleteNode":
 		v, err := svc.DeleteNode(context.Background(), deleteNodeReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error deleting node", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "DeleteNode method", v)
 
 	case "CreateVolume":
 		v, err := svc.CreateVolume(context.Background(), createVolumeReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error creating volume", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "CreateVolume method", v)
 
 	case "DeleteVolume":
 		v, err := svc.DeleteVolume(context.Background(), deleteVolumeReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error deleting volume", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "DeleteVolume method", v)
 
 	case "CreateSnapshot":
 		v, err := svc.CreateSnapshot(context.Background(), createSnapshotReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error creating snapshot", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "CreateSnapshot method", v)
 
 	case "CreateSnapshotAndDelete":
 		v, err := svc.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)
 		if err != nil && err.Error() != "" {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			sugar.Errorw("error creating snapshot and deleting volume", "error", err)
 			os.Exit(1)
 		}
-		fmt.Fprintf(os.Stdout, "%v", v)
+		sugar.Infow("response", "CreateSnapshotAndDelete method", v)
 
 	default:
-		fmt.Fprintf(os.Stderr, "error: invalid method %q\n", *method)
+		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
 	}
 }
@@ -195,6 +220,7 @@ func usageFor(fs *flag.FlagSet, short string) func() {
 		fmt.Fprintf(os.Stderr, "  %s\n", short)
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "FLAGS\n")
+
 		w := tabwriter.NewWriter(os.Stderr, 0, 2, 2, ' ', 0)
 		fs.VisitAll(func(f *flag.Flag) {
 			fmt.Fprintf(w, "\t-%s %s\t%s\n", f.Name, f.DefValue, f.Usage)

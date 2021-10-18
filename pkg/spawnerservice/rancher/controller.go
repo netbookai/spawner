@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-kit/kit/log"
+	"go.uber.org/zap"
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/eks"
 	"gitlab.com/netbook-devs/spawner-service/pkg/util"
@@ -20,14 +21,14 @@ import (
 type RancherController struct {
 	rancherClient *rnchrClient.Client
 	config        *util.Config
-	logger        *log.Logger
+	logger        *zap.SugaredLogger
 }
 
-func NewRancherController(logger log.Logger, config util.Config) RancherController {
+func NewRancherController(logger *zap.SugaredLogger, config util.Config) RancherController {
 
 	rancherClient, _ := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
 
-	return RancherController{rancherClient, &config, &logger}
+	return RancherController{rancherClient, &config, logger}
 }
 
 func (svc RancherController) GetCluster(clusterName string) (*rnchrClient.Cluster, error) {
@@ -44,6 +45,22 @@ func (svc RancherController) GetCluster(clusterName string) (*rnchrClient.Cluste
 	clusterSpec := clusterSpecList.Data[0]
 
 	return &clusterSpec, nil
+}
+
+func (svc RancherController) GetClusterID(clusterName string) (string, error) {
+	clusterSpecList, err := svc.rancherClient.Cluster.ListAll(
+		&rnchrTypes.ListOpts{
+			Filters: map[string]interface{}{"name": clusterName},
+		},
+	)
+
+	if err != nil || len(clusterSpecList.Data) <= 0 {
+		return ("no cluster found with clustername " + clusterName), err
+	}
+
+	clusterSpec := clusterSpecList.Data[0].ID
+
+	return clusterSpec, err
 }
 
 func (svc RancherController) GetEksClustersInRegion(region string) ([]rnchrClient.Cluster, error) {
@@ -84,7 +101,7 @@ func (svc RancherController) UpdateCluster(cluster *rnchrClient.Cluster, cluster
 
 	respCluster, err := svc.rancherClient.Cluster.Update(cluster, finalJson)
 
-	fmt.Println(respCluster)
+	svc.logger.Infow("respCluster", respCluster)
 
 	if err != nil {
 		return &rnchrClient.Cluster{}, fmt.Errorf("error updating cluster %s", cluster.Name)
@@ -155,7 +172,7 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 	cluster, err := svc.rancherClient.Cluster.Create(newCluster)
 
 	if err != nil {
-		fmt.Println(err)
+		svc.logger.Errorw("error", err)
 		return &rnchrClient.Cluster{}, err
 	}
 
@@ -188,13 +205,28 @@ func (svc RancherController) GetKubeConfig(clusterName string) (string, error) {
 	return yaml.Config, nil
 }
 
+func (svc RancherController) CreateToken(clusterName string, region string) (string, error) {
+	clusterID, err := svc.GetClusterID(clusterName)
+
+	newTokenVar := &rnchrClient.Token{
+		ClusterID:   clusterID,
+		TTLMillis:   2592000000,
+		Description: "Automated Token for " + clusterName,
+	}
+	newToken, err := svc.rancherClient.Token.Create(newTokenVar)
+
+	status, err := aws.CreateAwsSecret(clusterName, clusterID, newToken.Token, region)
+
+	return status, err
+}
+
 func (svc RancherController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	clusterName := fmt.Sprintf("%s-%s", req.Provider, req.Region)
 
 	cluster, err := svc.CreateClusterInternal(clusterName, req)
 
 	if err != nil {
-		fmt.Println(fmt.Errorf("error creating cluster with name %s", clusterName))
+		svc.logger.Errorw("error creating cluster ", "clustername", clusterName)
 		return &pb.ClusterResponse{
 			Error: err.Error(),
 		}, err
@@ -205,6 +237,34 @@ func (svc RancherController) CreateCluster(ctx context.Context, req *pb.ClusterR
 		NodeGroupName: *(*cluster.EKSConfig.NodeGroups)[0].NodegroupName,
 		Error:         "",
 	}, nil
+}
+
+func (svc RancherController) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	status, err := svc.CreateToken(req.ClusterName, req.Region)
+
+	if err != nil {
+		return &pb.AddTokenResponse{
+			Error: err.Error(),
+		}, err
+	}
+
+	return &pb.AddTokenResponse{
+		Status: status,
+	}, err
+}
+
+func (svc RancherController) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	token, err := aws.GetAwsSecret(req.ClusterName, req.Region)
+
+	if err != nil {
+		return &pb.GetTokenResponse{
+			Token: "",
+		}, err
+	}
+
+	return &pb.GetTokenResponse{
+		Token: token,
+	}, err
 }
 
 func (svc RancherController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {

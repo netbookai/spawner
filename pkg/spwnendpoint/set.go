@@ -5,22 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	// stdopentracing "github.com/opentracing/opentracing-go"
-	// stdzipkin "github.com/openzipkin/zipkin-go"
-
 	"github.com/go-kit/kit/circuitbreaker"
 	"github.com/go-kit/kit/endpoint"
-
-	// "github.com/go-kit/kit/log"
-	// "github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/ratelimit"
-	// "github.com/go-kit/kit/tracing/opentracing"
-	// "github.com/go-kit/kit/tracing/zipkin"
 	"github.com/sony/gobreaker"
-	"golang.org/x/time/rate"
-
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
+	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 // Set collects all of the endpoints that compose an add service. It's meant to
@@ -28,6 +21,8 @@ import (
 // parameter.
 type Set struct {
 	CreateClusterEndpoint           endpoint.Endpoint
+	AddTokenEndpoint                endpoint.Endpoint
+	GetTokenEndpoint                endpoint.Endpoint
 	CusterStatusEndpoint            endpoint.Endpoint
 	AddNodeEndpoint                 endpoint.Endpoint
 	DeleteClusterEndpoint           endpoint.Endpoint
@@ -40,7 +35,7 @@ type Set struct {
 
 // New returns a Set that wraps the provided server, and wires in all of the
 // expected endpoint middlewares via the various parameters.
-func New(svc spawnerservice.ClusterController) Set {
+func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, duration metrics.Histogram) Set {
 	var createClusterEndpoint endpoint.Endpoint
 	{
 		createClusterEndpoint = MakeCreateClusterEndpoint(svc)
@@ -48,6 +43,26 @@ func New(svc spawnerservice.ClusterController) Set {
 		// Note, rate is defined as a time interval between requests.
 		createClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createClusterEndpoint)
 		createClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createClusterEndpoint)
+		createClusterEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateCluster"))(createClusterEndpoint)
+		createClusterEndpoint = InstrumentingMiddleware(duration.With("method", "CreateCluster"))(createClusterEndpoint)
+	}
+
+	var addTokenEndpoint endpoint.Endpoint
+	{
+		addTokenEndpoint = MakeAddTokenEndpoint(svc)
+		addTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(addTokenEndpoint)
+		addTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addTokenEndpoint)
+		addTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddToken"))(createClusterEndpoint)
+		addTokenEndpoint = InstrumentingMiddleware(duration.With("method", "AddToken"))(createClusterEndpoint)
+	}
+
+	var getTokenEndpoint endpoint.Endpoint
+	{
+		getTokenEndpoint = MakeGetTokenEndpoint(svc)
+		getTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getTokenEndpoint)
+		getTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getTokenEndpoint)
+		getTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetToken"))(createClusterEndpoint)
+		getTokenEndpoint = InstrumentingMiddleware(duration.With("method", "GetToken"))(createClusterEndpoint)
 	}
 
 	var clusterStatusEndpoint endpoint.Endpoint
@@ -55,6 +70,8 @@ func New(svc spawnerservice.ClusterController) Set {
 		clusterStatusEndpoint = MakeCusterStatusEndpoint(svc)
 		clusterStatusEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(clusterStatusEndpoint)
 		clusterStatusEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(clusterStatusEndpoint)
+		clusterStatusEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "ClusterStatus"))(clusterStatusEndpoint)
+		clusterStatusEndpoint = InstrumentingMiddleware(duration.With("method", "ClusterStatus"))(clusterStatusEndpoint)
 	}
 
 	var addNodeEndpoint endpoint.Endpoint
@@ -62,6 +79,8 @@ func New(svc spawnerservice.ClusterController) Set {
 		addNodeEndpoint = MakeAddNodeEndpoint(svc)
 		addNodeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(addNodeEndpoint)
 		addNodeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addNodeEndpoint)
+		addNodeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddNode"))(addNodeEndpoint)
+		addNodeEndpoint = InstrumentingMiddleware(duration.With("method", "AddNode"))(addNodeEndpoint)
 	}
 
 	var deleteClusterEndpoint endpoint.Endpoint
@@ -69,6 +88,8 @@ func New(svc spawnerservice.ClusterController) Set {
 		deleteClusterEndpoint = MakeClusterDeleteEndpoint(svc)
 		deleteClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(deleteClusterEndpoint)
 		deleteClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteClusterEndpoint)
+		deleteClusterEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "DeleteCluster"))(deleteClusterEndpoint)
+		deleteClusterEndpoint = InstrumentingMiddleware(duration.With("method", "DeleteCluster"))(deleteClusterEndpoint)
 	}
 
 	var deleteNodeEndpoint endpoint.Endpoint
@@ -76,6 +97,8 @@ func New(svc spawnerservice.ClusterController) Set {
 		deleteNodeEndpoint = MakeNodeDeleteEndpoint(svc)
 		deleteNodeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(deleteNodeEndpoint)
 		deleteNodeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteNodeEndpoint)
+		deleteNodeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "DeleteNode"))(deleteNodeEndpoint)
+		deleteNodeEndpoint = InstrumentingMiddleware(duration.With("method", "DeleteNode"))(deleteNodeEndpoint)
 	}
 
 	var createVolumeEndpoint endpoint.Endpoint
@@ -83,6 +106,8 @@ func New(svc spawnerservice.ClusterController) Set {
 		createVolumeEndpoint = MakeCreateVolumeEndpoint(svc)
 		createVolumeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createVolumeEndpoint)
 		createVolumeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createVolumeEndpoint)
+		createVolumeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateVolume"))(createVolumeEndpoint)
+		createVolumeEndpoint = InstrumentingMiddleware(duration.With("method", "CreateVolume"))(createVolumeEndpoint)
 	}
 
 	var deleteVolumeEndpoint endpoint.Endpoint
@@ -90,6 +115,8 @@ func New(svc spawnerservice.ClusterController) Set {
 		deleteVolumeEndpoint = MakeDeleteVolumeEndpoint(svc)
 		deleteVolumeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(deleteVolumeEndpoint)
 		deleteVolumeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteVolumeEndpoint)
+		deleteVolumeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "DeleteVolume"))(deleteVolumeEndpoint)
+		deleteVolumeEndpoint = InstrumentingMiddleware(duration.With("method", "DeleteVolume"))(deleteVolumeEndpoint)
 	}
 
 	var createSnapshotEndpoint endpoint.Endpoint
@@ -97,6 +124,8 @@ func New(svc spawnerservice.ClusterController) Set {
 		createSnapshotEndpoint = MakeCreateSnapshotEndpoint(svc)
 		createSnapshotEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createSnapshotEndpoint)
 		createSnapshotEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createSnapshotEndpoint)
+		createSnapshotEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateSnapshot"))(createSnapshotEndpoint)
+		createSnapshotEndpoint = InstrumentingMiddleware(duration.With("method", "CreateSnapshot"))(createSnapshotEndpoint)
 	}
 
 	var createSnapshotAndDeleteEndpoint endpoint.Endpoint
@@ -104,10 +133,14 @@ func New(svc spawnerservice.ClusterController) Set {
 		createSnapshotAndDeleteEndpoint = MakeCreateSnapshotAndDeleteEndpoint(svc)
 		createSnapshotAndDeleteEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createSnapshotAndDeleteEndpoint)
 		createSnapshotAndDeleteEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createSnapshotAndDeleteEndpoint)
+		createSnapshotAndDeleteEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateSnapshotAndDelete"))(createSnapshotAndDeleteEndpoint)
+		createSnapshotAndDeleteEndpoint = InstrumentingMiddleware(duration.With("method", "CreateSnapshotAndDelete"))(createSnapshotAndDeleteEndpoint)
 	}
 
 	return Set{
 		CreateClusterEndpoint:           createClusterEndpoint,
+		AddTokenEndpoint:                addTokenEndpoint,
+		GetTokenEndpoint:                getTokenEndpoint,
 		CusterStatusEndpoint:            clusterStatusEndpoint,
 		AddNodeEndpoint:                 addNodeEndpoint,
 		DeleteClusterEndpoint:           deleteClusterEndpoint,
@@ -135,6 +168,46 @@ func MakeCreateClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endp
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(*pb.ClusterRequest)
 		resp, err := s.CreateCluster(ctx, req)
+		return resp, err
+	}
+}
+
+// Implements the service interface, so Set may be used as a service.
+// This is primarily useful in the context of a client library.
+func (s Set) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	resp, err := s.AddTokenEndpoint(ctx, req)
+	if err != nil {
+		return &pb.AddTokenResponse{}, err
+	}
+	response := resp.(*pb.AddTokenResponse)
+	return response, fmt.Errorf(response.Error)
+}
+
+// MakeAddTokenEndpoint constructs a AddToken endpoint wrapping the service.
+func MakeAddTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.AddTokenRequest)
+		resp, err := s.AddToken(ctx, req)
+		return resp, err
+	}
+}
+
+// Implements the service interface, so Set may be used as a service.
+// This is primarily useful in the context of a client library.
+func (s Set) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	resp, err := s.GetTokenEndpoint(ctx, req)
+	if err != nil {
+		return &pb.GetTokenResponse{}, err
+	}
+	response := resp.(*pb.GetTokenResponse)
+	return response, fmt.Errorf(response.Error)
+}
+
+// MakeGetTokenEndpoint constructs a GetToken endpoint wrapping the service.
+func MakeGetTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.GetTokenRequest)
+		resp, err := s.GetToken(ctx, req)
 		return resp, err
 	}
 }
@@ -225,8 +298,7 @@ func (s Set) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb
 		return &pb.CreateVolumeResponse{}, err
 	}
 	response := resp.(*pb.CreateVolumeResponse)
-	// TODO: Shivani add error to CreateVolRes and use it here
-	return response, fmt.Errorf("")
+	return response, fmt.Errorf(response.Error)
 }
 
 func MakeCreateVolumeEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
@@ -243,8 +315,7 @@ func (s Set) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb
 		return &pb.DeleteVolumeResponse{}, err
 	}
 	response := resp.(*pb.DeleteVolumeResponse)
-	// TODO: Shivani add error to CreateVolRes and use it here
-	return response, fmt.Errorf("")
+	return response, fmt.Errorf(response.Error)
 }
 
 func MakeDeleteVolumeEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
@@ -261,8 +332,7 @@ func (s Set) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) 
 		return &pb.CreateSnapshotResponse{}, err
 	}
 	response := resp.(*pb.CreateSnapshotResponse)
-	// TODO: Shivani add error to CreateVolRes and use it here
-	return response, fmt.Errorf("")
+	return response, fmt.Errorf(response.Error)
 }
 
 func MakeCreateSnapshotEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
@@ -279,8 +349,7 @@ func (s Set) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshot
 		return &pb.CreateSnapshotAndDeleteResponse{}, err
 	}
 	response := resp.(*pb.CreateSnapshotAndDeleteResponse)
-	// TODO: Shivani add error to CreateVolRes and use it here
-	return response, fmt.Errorf("")
+	return response, fmt.Errorf(response.Error)
 }
 
 func MakeCreateSnapshotAndDeleteEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {

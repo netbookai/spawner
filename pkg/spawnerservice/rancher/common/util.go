@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"net/http"
 
 	rnchrClientBase "github.com/rancher/norman/clientbase"
@@ -30,7 +31,10 @@ func CreateRancherClient(url string, accessKey string, secretKey string) (*rnchr
 		HTTPClient: rancherHttpClient,
 	}
 
-	rancherClient, _ := rnchrClient.NewClient(&rancherClientOpts)
-
+	rancherClient, err := rnchrClient.NewClient(&rancherClientOpts)
+	if err != nil {
+		fmt.Println(fmt.Errorf("error creating rancher client %s", err))
+		return rancherClient, err
+	}
 	return rancherClient, nil
 }

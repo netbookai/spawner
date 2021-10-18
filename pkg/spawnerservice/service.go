@@ -3,7 +3,8 @@ package spawnerservice
 import (
 	"context"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics"
+	"go.uber.org/zap"
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
@@ -14,6 +15,8 @@ import (
 
 type ClusterController interface {
 	CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error)
+	AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error)
+	GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error)
 	ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error)
 	AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error)
 	DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error)
@@ -35,18 +38,32 @@ type ClusterController interface {
 
 type SpawnerService struct {
 	rancherController ClusterController
-	awsController     aws.AWSController
+	awsController     ClusterController
 }
 
-func New(logger log.Logger, config util.Config) ClusterController {
-	return SpawnerService{
-		rancherController: rancher.NewRancherController(logger, config),
-		awsController:     aws.AWSController{},
+func New(logger *zap.SugaredLogger, config util.Config, ints metrics.Counter) ClusterController {
+	var svc ClusterController
+	{
+		svc = SpawnerService{
+			rancherController: rancher.NewRancherController(logger, config),
+			awsController:     aws.NewAWSController(logger),
+		}
+		svc = LoggingMiddleware(logger)(svc)
+		svc = InstrumentingMiddleware(ints)(svc)
 	}
+	return svc
 }
 
 func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	return svc.rancherController.CreateCluster(ctx, req)
+}
+
+func (svc SpawnerService) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	return svc.rancherController.AddToken(ctx, req)
+}
+
+func (svc SpawnerService) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	return svc.rancherController.GetToken(ctx, req)
 }
 
 func (svc SpawnerService) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {

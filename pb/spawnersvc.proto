@@ -9,6 +9,12 @@ service SpawnerService {
     // Spawn required cluster
     rpc CreateCluster (ClusterRequest) returns (ClusterResponse) {}
 
+    //Create add token to secret manager
+    rpc AddToken (AddTokenRequest) returns (AddTokenResponse) {}
+
+    //Create get token to secret manager
+    rpc GetToken (GetTokenRequest) returns (GetTokenResponse) {}   
+    
     // Spawn required instance
     rpc AddNode (NodeSpawnRequest) returns (NodeSpawnResponse) {}
 
@@ -60,6 +66,27 @@ message ClusterStatusResponse {
     string error = 2;
 }
 
+message AddTokenRequest{
+    string clusterName = 1;
+    string region = 2;
+}
+
+message AddTokenResponse{
+    string status = 1;
+    string error =2;
+}
+
+message GetTokenRequest{
+    string clusterName = 1;
+    string region = 2;
+}
+
+message GetTokenResponse{
+    string token =1;
+    string status = 2;
+    string error = 3;
+}
+
 message NodeSpawnRequest {
     string clusterName = 1;
     NodeSpec nodeSpec = 2;
@@ -97,6 +124,7 @@ message CreateVolumeRequest{
 
 message CreateVolumeResponse{
     string volumeid=1;
+    string error=2;
 }
 
 message DeleteVolumeRequest{
@@ -107,6 +135,7 @@ message DeleteVolumeRequest{
 
 message DeleteVolumeResponse{
     bool deleted=1;
+    string error=2;
 }
 
 message CreateSnapshotRequest{
@@ -117,6 +146,7 @@ message CreateSnapshotRequest{
 
 message CreateSnapshotResponse{
     string snapshotid=1;
+    string error=2;
 }
 
 message CreateSnapshotAndDeleteRequest{
@@ -128,4 +158,5 @@ message CreateSnapshotAndDeleteRequest{
 message CreateSnapshotAndDeleteResponse{
     string snapshotid=1;
     bool deleted=2;
+    string error=3;
 }
