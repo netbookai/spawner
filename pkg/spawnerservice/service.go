@@ -2,6 +2,8 @@ package spawnerservice
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/go-kit/kit/log"
 
@@ -14,6 +16,8 @@ import (
 
 type ClusterController interface {
 	CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error)
+	AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error)
+	GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error)
 	ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error)
 	AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error)
 	DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error)
@@ -39,14 +43,27 @@ type SpawnerService struct {
 }
 
 func New(logger log.Logger, config util.Config) ClusterController {
+	rancherController, err := rancher.NewRancherController(logger, config)
+	if err != nil {
+		fmt.Println(fmt.Errorf("error creating rancher client %s", err))
+		os.Exit(1)
+	}
 	return SpawnerService{
-		rancherController: rancher.NewRancherController(logger, config),
+		rancherController: rancherController,
 		awsController:     aws.AWSController{},
 	}
 }
 
 func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	return svc.rancherController.CreateCluster(ctx, req)
+}
+
+func (svc SpawnerService) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	return svc.rancherController.AddToken(ctx, req)
+}
+
+func (svc SpawnerService) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	return svc.rancherController.GetToken(ctx, req)
 }
 
 func (svc SpawnerService) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {

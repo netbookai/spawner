@@ -28,6 +28,8 @@ import (
 // parameter.
 type Set struct {
 	CreateClusterEndpoint           endpoint.Endpoint
+	AddTokenEndpoint                endpoint.Endpoint
+	GetTokenEndpoint                endpoint.Endpoint
 	CusterStatusEndpoint            endpoint.Endpoint
 	AddNodeEndpoint                 endpoint.Endpoint
 	DeleteClusterEndpoint           endpoint.Endpoint
@@ -48,6 +50,20 @@ func New(svc spawnerservice.ClusterController) Set {
 		// Note, rate is defined as a time interval between requests.
 		createClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createClusterEndpoint)
 		createClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createClusterEndpoint)
+	}
+
+	var addTokenEndpoint endpoint.Endpoint
+	{
+		addTokenEndpoint = MakeAddTokenEndpoint(svc)
+		addTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(addTokenEndpoint)
+		addTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addTokenEndpoint)
+	}
+
+	var getTokenEndpoint endpoint.Endpoint
+	{
+		getTokenEndpoint = MakeGetTokenEndpoint(svc)
+		getTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getTokenEndpoint)
+		getTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getTokenEndpoint)
 	}
 
 	var clusterStatusEndpoint endpoint.Endpoint
@@ -108,6 +124,8 @@ func New(svc spawnerservice.ClusterController) Set {
 
 	return Set{
 		CreateClusterEndpoint:           createClusterEndpoint,
+		AddTokenEndpoint:                addTokenEndpoint,
+		GetTokenEndpoint:                getTokenEndpoint,
 		CusterStatusEndpoint:            clusterStatusEndpoint,
 		AddNodeEndpoint:                 addNodeEndpoint,
 		DeleteClusterEndpoint:           deleteClusterEndpoint,
@@ -135,6 +153,46 @@ func MakeCreateClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endp
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(*pb.ClusterRequest)
 		resp, err := s.CreateCluster(ctx, req)
+		return resp, err
+	}
+}
+
+// Implements the service interface, so Set may be used as a service.
+// This is primarily useful in the context of a client library.
+func (s Set) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+	resp, err := s.AddTokenEndpoint(ctx, req)
+	if err != nil {
+		return &pb.AddTokenResponse{}, err
+	}
+	response := resp.(*pb.AddTokenResponse)
+	return response, fmt.Errorf(response.Error)
+}
+
+// MakeAddTokenEndpoint constructs a AddToken endpoint wrapping the service.
+func MakeAddTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.AddTokenRequest)
+		resp, err := s.AddToken(ctx, req)
+		return resp, err
+	}
+}
+
+// Implements the service interface, so Set may be used as a service.
+// This is primarily useful in the context of a client library.
+func (s Set) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+	resp, err := s.GetTokenEndpoint(ctx, req)
+	if err != nil {
+		return &pb.GetTokenResponse{}, err
+	}
+	response := resp.(*pb.GetTokenResponse)
+	return response, fmt.Errorf(response.Error)
+}
+
+// MakeGetTokenEndpoint constructs a GetToken endpoint wrapping the service.
+func MakeGetTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.GetTokenRequest)
+		resp, err := s.GetToken(ctx, req)
 		return resp, err
 	}
 }

@@ -36,7 +36,6 @@ require (
 	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e // indirect
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0 // indirect
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apimachinery v0.21.3 // indirect
@@ -48,7 +47,7 @@ require (
 	github.com/go-kit/kit v0.11.0
 	github.com/oklog/oklog v0.3.2
 	github.com/rancher/norman v0.0.0-20210709145327-afd06f533ca3
-	github.com/rancher/rancher/pkg/client v0.0.0-20210928015834-4df101e320c3
+	github.com/rancher/rancher/pkg/client v0.0.0-20211012231222-6c49a519b5e5
 	github.com/sony/gobreaker v0.4.1
 	github.com/spf13/viper v1.9.0
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
