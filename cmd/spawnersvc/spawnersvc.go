@@ -15,7 +15,10 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics/prometheus"
 	kitgrpc "github.com/go-kit/kit/transport/grpc"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
@@ -55,6 +58,30 @@ func main() {
 
 	}
 
+	// Create the (sparse) metrics we'll use in the service. They, too, are
+	// dependencies that we pass to components that use them.
+	var ints metrics.Counter
+	{
+		// Business-level metrics.
+		ints = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+			Namespace: "example",
+			Subsystem: "addsvc",
+			Name:      "integers_summed",
+			Help:      "Total number of method calls",
+		}, []string{})
+	}
+
+	var duration metrics.Histogram
+	{
+		// Endpoint-level metrics.
+		duration = prometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+			Namespace: "example",
+			Subsystem: "addsvc",
+			Name:      "request_duration_seconds",
+			Help:      "Request duration in seconds.",
+		}, []string{"method", "success"})
+	}
+
 	// Build the layers of the service "onion" from the inside out. First, the
 	// business logic service; then, the set of endpoints that wrap the service;
 	// and finally, a series of concrete transport adapters. The adapters, like
@@ -62,8 +89,8 @@ func main() {
 	// the interfaces that the transports expect. Note that we're not binding
 	// them to ports or anything yet; we'll do that next.
 	var (
-		service   = spawnerservice.New(logger, config)
-		endpoints = spwnendpoint.New(service)
+		service   = spawnerservice.New(logger, config, ints)
+		endpoints = spwnendpoint.New(service, logger, duration)
 		// httpHandler    = spwntransport.NewHTTPHandler(endpoints, tracer, zipkinTracer, logger)
 		grpcServer = spwntransport.NewGRPCServer(endpoints, logger)
 	)

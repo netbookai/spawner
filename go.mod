@@ -9,6 +9,8 @@ replace (
 
 require (
 	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
@@ -20,10 +22,14 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/client_model v0.2.0 // indirect
+	github.com/prometheus/common v0.26.0 // indirect
+	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rancher/wrangler v0.8.6-0.20210819203859-0babd42fbad8 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
@@ -46,6 +52,7 @@ require (
 	github.com/aws/aws-sdk-go v1.40.56
 	github.com/go-kit/kit v0.11.0
 	github.com/oklog/oklog v0.3.2
+	github.com/prometheus/client_golang v1.11.0
 	github.com/rancher/norman v0.0.0-20210709145327-afd06f533ca3
 	github.com/rancher/rancher/pkg/client v0.0.0-20211012231222-6c49a519b5e5
 	github.com/sony/gobreaker v0.4.1

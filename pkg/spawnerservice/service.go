@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics"
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
@@ -39,9 +40,10 @@ type ClusterController interface {
 
 type SpawnerService struct {
 	rancherController ClusterController
-	awsController     aws.AWSController
+	awsController     ClusterController
 }
 
+<<<<<<< HEAD
 func New(logger log.Logger, config util.Config) ClusterController {
 	rancherController, err := rancher.NewRancherController(logger, config)
 	if err != nil {
@@ -51,7 +53,19 @@ func New(logger log.Logger, config util.Config) ClusterController {
 	return SpawnerService{
 		rancherController: rancherController,
 		awsController:     aws.AWSController{},
+=======
+func New(logger log.Logger, config util.Config, ints metrics.Counter) ClusterController {
+	var svc ClusterController
+	{
+		svc = SpawnerService{
+			rancherController: rancher.NewRancherController(logger, config),
+			awsController:     aws.AWSController{},
+		}
+		svc = LoggingMiddleware(logger)(svc)
+		svc = InstrumentingMiddleware(ints)(svc)
+>>>>>>> 7984f17 (Implemented logging middleware for cluster controller)
 	}
+	return svc
 }
 
 func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
