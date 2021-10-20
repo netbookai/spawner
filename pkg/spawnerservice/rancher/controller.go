@@ -196,8 +196,8 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 		awsCred,
 		clusterReq,
 		clusterName,
-		map[string]string{"name": clusterName, "creator": "spawner-service"},
-		map[string]string{"creator": "spawner-service"},
+		map[string]string{"name": clusterName, "creator": "spawner-service", "provisioner": "rancher"},
+		map[string]string{"creator": "spawner-service", "provisioner": "rancher"},
 		subnets)
 
 	cluster, err := svc.rancherClient.Cluster.Create(newCluster)
