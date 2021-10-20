@@ -15,6 +15,8 @@ import (
 
 type ClusterController interface {
 	CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error)
+	GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error)
+	GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error)
 	AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error)
 	GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error)
 	ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error)
@@ -26,15 +28,6 @@ type ClusterController interface {
 	CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error)
 }
-
-// func New(logger log.Logger, config util.Config) ClusterController {
-// 	var svc ClusterController
-// 	{
-// 		// TODO: Sid pass logger to impls and log
-// 		svc = rancher.NewRancherController(logger, config)
-// 	}
-// 	return svc
-// }
 
 type SpawnerService struct {
 	rancherController ClusterController
@@ -56,6 +49,14 @@ func New(logger *zap.SugaredLogger, config util.Config, ints metrics.Counter) Cl
 
 func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	return svc.rancherController.CreateCluster(ctx, req)
+}
+
+func (svc SpawnerService) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+	return svc.rancherController.GetCluster(ctx, req)
+}
+
+func (svc SpawnerService) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+	return svc.rancherController.GetClusters(ctx, req)
 }
 
 func (svc SpawnerService) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {

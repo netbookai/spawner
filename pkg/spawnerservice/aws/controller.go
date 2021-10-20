@@ -19,6 +19,12 @@ func NewAWSController(logger *zap.SugaredLogger) AWSController {
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	return &pb.ClusterResponse{}, nil
 }
+func (svc AWSController) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+	return &pb.ClusterSpec{}, nil
+}
+func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+	return &pb.GetClustersResponse{}, nil
+}
 func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
 	return &pb.ClusterStatusResponse{}, nil
 }

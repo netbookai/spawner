@@ -25,6 +25,8 @@ type grpcServer struct {
 	createCluster           grpctransport.Handler
 	addToken                grpctransport.Handler
 	getToken                grpctransport.Handler
+	getClusters             grpctransport.Server
+	getCluster              grpctransport.Server
 	clusterStatus           grpctransport.Handler
 	addNode                 grpctransport.Handler
 	deleteCluster           grpctransport.Handler
@@ -63,6 +65,26 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) pb.Spa
 		),
 		getToken: grpctransport.NewServer(
 			endpoints.GetTokenEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
+		getClusters: *grpctransport.NewServer(
+			endpoints.GetClustersEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
+		getCluster: *grpctransport.NewServer(
+			endpoints.GetClusterEndpoint,
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
 			},
@@ -181,6 +203,22 @@ func (s *grpcServer) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb
 	return rep.(*pb.GetTokenResponse), nil
 }
 
+func (s *grpcServer) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+	_, rep, err := s.getClusters.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.GetClustersResponse), nil
+}
+
+func (s *grpcServer) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+	_, rep, err := s.getCluster.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.ClusterSpec), nil
+}
+
 func (s *grpcServer) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
 	_, rep, err := s.clusterStatus.ServeGRPC(ctx, req)
 	if err != nil {
@@ -284,6 +322,50 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			Name:    "CreateCluster",
 			Timeout: 30 * time.Second,
 		}))(createClusterEndpoint)
+	}
+
+	var getClustersEndpoint endpoint.Endpoint
+	{
+		getClustersEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"GetClusters",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.GetClustersResponse{},
+			append(options)...,
+		).Endpoint()
+		getClustersEndpoint = limiter(getClustersEndpoint)
+		getClustersEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "GetClusters",
+			Timeout: 30 * time.Second,
+		}))(getClustersEndpoint)
+	}
+
+	var getClusterEndpoint endpoint.Endpoint
+	{
+		getClusterEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"GetCluster",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.ClusterSpec{},
+			append(options)...,
+		).Endpoint()
+		getClusterEndpoint = limiter(getClusterEndpoint)
+		getClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "GetCluster",
+			Timeout: 30 * time.Second,
+		}))(getClusterEndpoint)
 	}
 
 	var addTokenEndpoint endpoint.Endpoint
@@ -513,6 +595,8 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 		CreateClusterEndpoint:           createClusterEndpoint,
 		AddTokenEndpoint:                addTokenEndpoint,
 		GetTokenEndpoint:                getTokenEndpoint,
+		GetClustersEndpoint:             getClustersEndpoint,
+		GetClusterEndpoint:              getClusterEndpoint,
 		CusterStatusEndpoint:            clusterStatusEndpoint,
 		AddNodeEndpoint:                 addNodeEndpoint,
 		DeleteClusterEndpoint:           deleteClusterEndpoint,

@@ -15,12 +15,18 @@ service SpawnerService {
     //Create get token to secret manager
     rpc GetToken (GetTokenRequest) returns (GetTokenResponse) {}   
     
+    // Get Cluster
+    rpc GetCluster (GetClusterRequest) returns (ClusterSpec) {}
+
+    // Get Clusters
+    rpc GetClusters (GetClustersRequest) returns (GetClustersResponse) {}
+
     // Spawn required instance
     rpc AddNode (NodeSpawnRequest) returns (NodeSpawnResponse) {}
 
     // Status of cluster
     rpc ClusterStatus (ClusterStatusRequest) returns (ClusterStatusResponse) {}
- 
+
     // Delete Cluster
     rpc DeleteCluster (ClusterDeleteRequest) returns (ClusterDeleteResponse) {}
 
@@ -42,13 +48,40 @@ message NodeSpec {
     string name = 1;
     string instance = 2;
     int32 diskSize = 3;
+    string hostName = 4;
+    string state = 5;
+    string uuid = 6;
+    string ipAddr = 7;
+    string availabilityzone = 8;
+    string clusterId = 9;
+    map<string, string> labels = 10;
 }
 
 message ClusterRequest {
     string provider = 1;
-    string region = 2;    
+    string region = 2;
     NodeSpec node = 3;
     map<string, string> labels = 4;
+}
+
+message GetClusterRequest {
+    string clusterName = 1;
+}
+
+message GetClustersRequest {
+    string provider = 1;
+    string region = 2;
+    string scope = 3;
+}
+
+message ClusterSpec {
+    string name = 1;
+    string clusterId = 2;
+    repeated NodeSpec nodeSpec = 3;
+}
+
+message GetClustersResponse {
+    repeated ClusterSpec clusters = 1;
 }
 
 message ClusterResponse {

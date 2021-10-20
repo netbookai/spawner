@@ -79,6 +79,16 @@ func main() {
 		ClusterName: "infra-test",
 	}
 
+	getClustersReq := &pb.GetClustersRequest{
+		Provider: "aws",
+		Region:   "us-west-2",
+		Scope:    "public",
+	}
+
+	getClusterReq := &pb.GetClusterRequest{
+		ClusterName: "infra-test",
+	}
+
 	addNode := &pb.NodeSpec{
 		Name:     "ng-04",
 		Instance: "t2.medium",
@@ -147,6 +157,20 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("GetToken method", "response", v)
+	case "GetCluster":
+		v, err := svc.GetCluster(context.Background(), getClusterReq)
+		if err != nil && err.Error() != "" {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetCluster method", "response", v)
+	case "GetClusters":
+		v, err := svc.GetClusters(context.Background(), getClustersReq)
+		if err != nil && err.Error() != "" {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetClusters method", "response", v)
 	case "ClusterStatus":
 		v, err := svc.ClusterStatus(context.Background(), clusterStatusReq)
 		if err != nil && err.Error() != "" {

@@ -39,6 +39,20 @@ func (mw loggingMiddleware) DeleteCluster(ctx context.Context, req *pb.ClusterDe
 	return mw.next.DeleteCluster(ctx, req)
 }
 
+func (mw loggingMiddleware) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (res *pb.ClusterSpec, err error) {
+	defer func() {
+		mw.logger.Infow("spawnerservice", "method", "GetCluster", "name", req.ClusterName, "response", res, "error", err)
+	}()
+	return mw.next.GetCluster(ctx, req)
+}
+
+func (mw loggingMiddleware) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (res *pb.GetClustersResponse, err error) {
+	defer func() {
+		mw.logger.Infow("spawnerservice", "method", "GetClusters", "provider", req.Provider, "region", req.Region, "scope", req.Scope, "response", res, "error", err)
+	}()
+	return mw.next.GetClusters(ctx, req)
+}
+
 func (mw loggingMiddleware) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (res *pb.ClusterStatusResponse, err error) {
 	defer func() {
 		mw.logger.Infow("spawnerservice", "method", "ClusterStatus", "name", req.ClusterName, "response", res, "error", err)
@@ -118,6 +132,18 @@ type instrumentingMiddleware struct {
 
 func (mw instrumentingMiddleware) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	v, err := mw.next.CreateCluster(ctx, req)
+	mw.ints.Add(float64(1))
+	return v, err
+}
+
+func (mw instrumentingMiddleware) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (res *pb.ClusterSpec, err error) {
+	v, err := mw.next.GetCluster(ctx, req)
+	mw.ints.Add(float64(1))
+	return v, err
+}
+
+func (mw instrumentingMiddleware) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (res *pb.GetClustersResponse, err error) {
+	v, err := mw.next.GetClusters(ctx, req)
 	mw.ints.Add(float64(1))
 	return v, err
 }

@@ -23,6 +23,8 @@ type Set struct {
 	CreateClusterEndpoint           endpoint.Endpoint
 	AddTokenEndpoint                endpoint.Endpoint
 	GetTokenEndpoint                endpoint.Endpoint
+	GetClustersEndpoint             endpoint.Endpoint
+	GetClusterEndpoint              endpoint.Endpoint
 	CusterStatusEndpoint            endpoint.Endpoint
 	AddNodeEndpoint                 endpoint.Endpoint
 	DeleteClusterEndpoint           endpoint.Endpoint
@@ -39,7 +41,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var createClusterEndpoint endpoint.Endpoint
 	{
 		createClusterEndpoint = MakeCreateClusterEndpoint(svc)
-		// Sum is limited to 1 request per second with burst of 1 request.
+		// CreateCluster is limited to 1 request per second with burst of 1 request.
 		// Note, rate is defined as a time interval between requests.
 		createClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createClusterEndpoint)
 		createClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createClusterEndpoint)
@@ -47,13 +49,33 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		createClusterEndpoint = InstrumentingMiddleware(duration.With("method", "CreateCluster"))(createClusterEndpoint)
 	}
 
+	var getClustersEndpoint endpoint.Endpoint
+	{
+		getClustersEndpoint = MakeGetClustersEndpoint(svc)
+		// GetClusters is limited to 1 request per second with burst of 1 request.
+		// Note, rate is defined as a time interval between requests.
+		getClustersEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getClustersEndpoint)
+		getClustersEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getClustersEndpoint)
+		getClustersEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetClusters"))(getClustersEndpoint)
+		getClustersEndpoint = InstrumentingMiddleware(duration.With("method", "GetClusters"))(getClustersEndpoint)
+	}
+
+	var getClusterEndpoint endpoint.Endpoint
+	{
+		getClusterEndpoint = MakeGetClusterEndpoint(svc)
+		getClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getClusterEndpoint)
+		getClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getClusterEndpoint)
+		getClusterEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetCluster"))(getClusterEndpoint)
+		getClusterEndpoint = InstrumentingMiddleware(duration.With("method", "GetCluster"))(getClusterEndpoint)
+	}
+
 	var addTokenEndpoint endpoint.Endpoint
 	{
 		addTokenEndpoint = MakeAddTokenEndpoint(svc)
 		addTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(addTokenEndpoint)
 		addTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addTokenEndpoint)
-		addTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddToken"))(createClusterEndpoint)
-		addTokenEndpoint = InstrumentingMiddleware(duration.With("method", "AddToken"))(createClusterEndpoint)
+		addTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddToken"))(addTokenEndpoint)
+		addTokenEndpoint = InstrumentingMiddleware(duration.With("method", "AddToken"))(addTokenEndpoint)
 	}
 
 	var getTokenEndpoint endpoint.Endpoint
@@ -61,8 +83,8 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		getTokenEndpoint = MakeGetTokenEndpoint(svc)
 		getTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getTokenEndpoint)
 		getTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getTokenEndpoint)
-		getTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetToken"))(createClusterEndpoint)
-		getTokenEndpoint = InstrumentingMiddleware(duration.With("method", "GetToken"))(createClusterEndpoint)
+		getTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetToken"))(getTokenEndpoint)
+		getTokenEndpoint = InstrumentingMiddleware(duration.With("method", "GetToken"))(getTokenEndpoint)
 	}
 
 	var clusterStatusEndpoint endpoint.Endpoint
@@ -141,6 +163,8 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		CreateClusterEndpoint:           createClusterEndpoint,
 		AddTokenEndpoint:                addTokenEndpoint,
 		GetTokenEndpoint:                getTokenEndpoint,
+		GetClustersEndpoint:             getClustersEndpoint,
+		GetClusterEndpoint:              getClusterEndpoint,
 		CusterStatusEndpoint:            clusterStatusEndpoint,
 		AddNodeEndpoint:                 addNodeEndpoint,
 		DeleteClusterEndpoint:           deleteClusterEndpoint,
@@ -356,6 +380,40 @@ func MakeCreateSnapshotAndDeleteEndpoint(s spawnerservice.ClusterController) end
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(*pb.CreateSnapshotAndDeleteRequest)
 		resp, err := s.CreateSnapshotAndDelete(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+	resp, err := s.GetClustersEndpoint(ctx, req)
+	if err != nil {
+		return &pb.GetClustersResponse{}, err
+	}
+	response := resp.(*pb.GetClustersResponse)
+	return response, fmt.Errorf("")
+}
+
+func MakeGetClustersEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.GetClustersRequest)
+		resp, err := s.GetClusters(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+	resp, err := s.GetClusterEndpoint(ctx, req)
+	if err != nil {
+		return &pb.ClusterSpec{}, err
+	}
+	response := resp.(*pb.ClusterSpec)
+	return response, fmt.Errorf("")
+}
+
+func MakeGetClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.GetClusterRequest)
+		resp, err := s.GetCluster(ctx, req)
 		return resp, err
 	}
 }
