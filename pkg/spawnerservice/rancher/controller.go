@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"go.uber.org/zap"
 
@@ -34,7 +33,7 @@ func NewRancherController(logger *zap.SugaredLogger, config util.Config) Rancher
 	return RancherController{rancherClient, &config, logger}
 }
 
-func (svc RancherController) GetCluster(clusterName string) (*rnchrClient.Cluster, error) {
+func (svc RancherController) GetClusterInternal(clusterName string) (*rnchrClient.Cluster, error) {
 	clusterSpecList, err := svc.rancherClient.Cluster.ListAll(
 		&rnchrTypes.ListOpts{
 			Filters: map[string]interface{}{"name": clusterName},
@@ -66,6 +65,21 @@ func (svc RancherController) GetClusterID(clusterName string) (string, error) {
 	return clusterSpec, err
 }
 
+func (svc RancherController) GetClusterNodes(clusterId string) ([]rnchrClient.Node, error) {
+	nodesList, err := svc.rancherClient.Node.ListAll(
+		&rnchrTypes.ListOpts{
+			Filters: map[string]interface{}{"clusterId": clusterId},
+		},
+	)
+
+	if err != nil {
+		svc.logger.Errorw("error getting cluster nodes", "clusterid", clusterId, "error", err)
+		return []rnchrClient.Node{}, err
+	}
+
+	return nodesList.Data, err
+}
+
 func (svc RancherController) GetEksClustersInRegion(region string) ([]rnchrClient.Cluster, error) {
 	clusterSpecList, err := svc.rancherClient.Cluster.ListAll(
 		&rnchrTypes.ListOpts{
@@ -74,6 +88,7 @@ func (svc RancherController) GetEksClustersInRegion(region string) ([]rnchrClien
 	)
 
 	if err != nil || len(clusterSpecList.Data) <= 0 {
+		svc.logger.Errorw("error getting eks clusters in region", "region", region, "error", err)
 		return []rnchrClient.Cluster{}, fmt.Errorf("error finding eks clusters")
 	}
 
@@ -85,6 +100,8 @@ func (svc RancherController) GetEksClustersInRegion(region string) ([]rnchrClien
 		}
 	}
 
+	svc.logger.Info("got eks clusters in region", "region", region, "clusters", clustersInRegion)
+
 	return clustersInRegion, nil
 }
 
@@ -94,6 +111,7 @@ func (svc RancherController) UpdateCluster(cluster *rnchrClient.Cluster, cluster
 
 	configJson, err := json.Marshal(clusterConfigPatch)
 	if err != nil {
+		svc.logger.Errorw("error marshaling clusterconfigpatch", "clusterid", cluster.ID, "error", err)
 		return &rnchrClient.Cluster{}, fmt.Errorf("error marshaling clusterconfigpatch")
 	}
 	json.Unmarshal(configJson, &finalJson)
@@ -107,6 +125,7 @@ func (svc RancherController) UpdateCluster(cluster *rnchrClient.Cluster, cluster
 	svc.logger.Infow("in UpdateCluster method", "respCluster", respCluster)
 
 	if err != nil {
+		svc.logger.Errorw("error updating cluster", "clusterid", cluster.ID, "error", err)
 		return &rnchrClient.Cluster{}, fmt.Errorf("error updating cluster %s", cluster.Name)
 	}
 
@@ -121,6 +140,7 @@ func (svc RancherController) GetCloudCreds(credName string) (rnchrClient.CloudCr
 	)
 
 	if len(list.Data) <= 0 {
+		svc.logger.Errorw("could not find credential with name", "name", credName)
 		return rnchrClient.CloudCredential{}, fmt.Errorf("could not find credential with name %s", credName)
 	}
 
@@ -128,17 +148,17 @@ func (svc RancherController) GetCloudCreds(credName string) (rnchrClient.CloudCr
 }
 
 func (svc RancherController) AddNodeInternal(nodeSpawnRequest *pb.NodeSpawnRequest) (*rnchrClient.Cluster, error) {
-	cluster, err := svc.GetCluster(nodeSpawnRequest.ClusterName)
+	cluster, err := svc.GetClusterInternal(nodeSpawnRequest.ClusterName)
 
 	if err != nil {
+		svc.logger.Errorw("error getting cluster internal", "cluster", nodeSpawnRequest.ClusterName, "error", err)
 		return &rnchrClient.Cluster{}, fmt.Errorf("error getting cluster %v", err)
 	}
 
-	// nodeGroupCount := len(*cluster.EKSConfig.NodeGroups)
-	// newNodeGroupName := "ng-" + strconv.Itoa(nodeGroupCount+1)
 	newClusterSpec, err := eks.AddNodeGroup(cluster, nodeSpawnRequest, map[string]string{})
 
 	if err != nil {
+		svc.logger.Errorw("error adding node group to eks cluster", "cluster", nodeSpawnRequest.ClusterName, "error", err)
 		return &rnchrClient.Cluster{}, fmt.Errorf("error adding node %v", err)
 	}
 
@@ -146,6 +166,7 @@ func (svc RancherController) AddNodeInternal(nodeSpawnRequest *pb.NodeSpawnReque
 		"name": cluster.AppliedSpec.EKSConfig.DisplayName})
 
 	if err != nil {
+		svc.logger.Errorw("error updating cluster", "cluster", nodeSpawnRequest.ClusterName, "error", err)
 		return &rnchrClient.Cluster{}, fmt.Errorf("error updating cluster %v", err)
 	}
 
@@ -158,6 +179,7 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 	eksClustersInRegion, err := svc.GetEksClustersInRegion(clusterReq.Region)
 
 	if err != nil {
+		svc.logger.Errorw("error creating cluster failed at getting clusters in region", "cluster", clusterName, "clusterrequest", clusterReq, "error", err)
 		return &rnchrClient.Cluster{}, fmt.Errorf("creating cluster failed at getting clusters in region with err %s", err)
 	}
 
@@ -170,9 +192,16 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 		}
 	}
 
-	newCluster := eks.CreateCluster(awsCred, clusterReq, clusterName+"-eks-"+strconv.Itoa(len(eksClustersInRegion)+1), map[string]string{}, map[string]string{}, subnets)
+	newCluster := eks.CreateCluster(
+		awsCred,
+		clusterReq,
+		clusterName,
+		map[string]string{"name": clusterName, "creator": "spawner-service", "provisioner": "rancher"},
+		map[string]string{"creator": "spawner-service", "provisioner": "rancher"},
+		subnets)
 
 	cluster, err := svc.rancherClient.Cluster.Create(newCluster)
+	svc.logger.Infow("new cluster created", "cluster", clusterName)
 
 	if err != nil {
 		svc.logger.Errorw("error creating new cluster", "error", err)
@@ -183,9 +212,10 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 }
 
 func (svc RancherController) GetClusterStatusInternal(req *pb.ClusterStatusRequest) (string, error) {
-	cluster, err := svc.GetCluster(req.ClusterName)
+	cluster, err := svc.GetClusterInternal(req.ClusterName)
 
 	if err != nil {
+		svc.logger.Errorw("error getting cluster status internal", "cluster", req.ClusterName, "clusterstatusrequest", req, "error", err)
 		return "", err
 	}
 
@@ -193,7 +223,7 @@ func (svc RancherController) GetClusterStatusInternal(req *pb.ClusterStatusReque
 }
 
 func (svc RancherController) GetKubeConfig(clusterName string) (string, error) {
-	cluster, err := svc.GetCluster(clusterName)
+	cluster, err := svc.GetClusterInternal(clusterName)
 
 	if err != nil {
 		return "", fmt.Errorf("error getting cluster with name %s", clusterName)
@@ -210,6 +240,10 @@ func (svc RancherController) GetKubeConfig(clusterName string) (string, error) {
 
 func (svc RancherController) CreateToken(clusterName string, region string) (string, error) {
 	clusterID, err := svc.GetClusterID(clusterName)
+	if err != nil {
+		svc.logger.Errorw("error getting getting clusterid", "cluster", clusterName, "error", err)
+		return "", err
+	}
 
 	newTokenVar := &rnchrClient.Token{
 		ClusterID:   clusterID,
@@ -217,8 +251,14 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 		Description: "Automated Token for " + clusterName,
 	}
 	newToken, err := svc.rancherClient.Token.Create(newTokenVar)
+	if err != nil {
+		svc.logger.Errorw("error getting creating new token", "cluster", clusterName, "error", err)
+	}
 
 	status, err := aws.CreateAwsSecret(clusterName, clusterID, newToken.Token, region)
+	if err != nil {
+		svc.logger.Errorw("error creating new aws secret", "cluster", clusterName, "clusterid", clusterID, "region", region, "error", err)
+	}
 
 	return status, err
 }
@@ -297,7 +337,7 @@ func (svc RancherController) AddNode(ctx context.Context, req *pb.NodeSpawnReque
 }
 
 func (svc RancherController) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
-	cluster, err := svc.GetCluster(req.ClusterName)
+	cluster, err := svc.GetClusterInternal(req.ClusterName)
 
 	if err != nil {
 		return &pb.ClusterDeleteResponse{
@@ -317,7 +357,7 @@ func (svc RancherController) DeleteCluster(ctx context.Context, req *pb.ClusterD
 }
 
 func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
-	cluster, err := svc.GetCluster(req.ClusterName)
+	cluster, err := svc.GetClusterInternal(req.ClusterName)
 
 	if err != nil {
 		return &pb.NodeDeleteResponse{
@@ -358,4 +398,88 @@ func (svc RancherController) CreateSnapshot(ctx context.Context, req *pb.CreateS
 
 func (svc RancherController) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	return &pb.CreateSnapshotAndDeleteResponse{}, nil
+}
+
+func (svc RancherController) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+	clusterSpecList, err := svc.rancherClient.Cluster.ListAll(
+		&rnchrTypes.ListOpts{
+			Filters: map[string]interface{}{"name": req.ClusterName},
+		},
+	)
+
+	if err != nil || len(clusterSpecList.Data) <= 0 {
+		svc.logger.Errorw("no cluster found with name", "cluster", req.ClusterName, "getclusterrequest", req, "error", err)
+		return &pb.ClusterSpec{}, fmt.Errorf("no cluster found with clustername %s", req.ClusterName)
+	}
+
+	cluster := clusterSpecList.Data[0]
+
+	svc.logger.Infow("got cluster in getcluster", "cluster", req.ClusterName, "clusterobj", cluster)
+
+	nodes, err := svc.GetClusterNodes(cluster.ID)
+	if err != nil {
+		svc.logger.Errorw("error getting nodes for cluster", "cluster", req.ClusterName, "clusterobj", cluster, "error", err)
+		return &pb.ClusterSpec{}, fmt.Errorf("error getting nodes for clustername %s", req.ClusterName)
+	}
+
+	var nodeSpecList []*pb.NodeSpec
+	for _, node := range nodes {
+		nodeSpecList = append(nodeSpecList, &pb.NodeSpec{
+			Name: node.Name,
+			// TODO: Sid add disksize
+			Instance: node.Labels["node.kubernetes.io/instance-type"],
+			// DiskSize: ,
+			HostName:         node.Hostname,
+			State:            node.State,
+			Uuid:             node.UUID,
+			IpAddr:           node.IPAddress,
+			ClusterId:        node.ClusterID,
+			Labels:           node.Labels,
+			Availabilityzone: node.Labels["topology.kubernetes.io/zone"],
+		})
+	}
+
+	resp := pb.ClusterSpec{
+		Name:      cluster.Name,
+		ClusterId: cluster.ID,
+		NodeSpec:  nodeSpecList,
+	}
+
+	return &resp, nil
+}
+
+func (svc RancherController) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+	if req.Provider == "aws" && req.Scope == "public" {
+		clusters, err := svc.GetEksClustersInRegion(req.Region)
+
+		if err != nil {
+			svc.logger.Errorw("error getting cluster in getclusters", "getclustersrequest", req, "error", err)
+			return &pb.GetClustersResponse{}, err
+		}
+
+		resp := pb.GetClustersResponse{
+			Clusters: [](*pb.ClusterSpec){},
+		}
+		for _, cluster := range clusters {
+			nodes := []*pb.NodeSpec{}
+
+			for _, node := range *cluster.EKSConfig.NodeGroups {
+				nodes = append(nodes, &pb.NodeSpec{
+					Name:     *node.NodegroupName,
+					Instance: *node.InstanceType,
+					DiskSize: int32(*node.DiskSize),
+				})
+			}
+
+			resp.Clusters = append(resp.Clusters, &pb.ClusterSpec{
+				Name:     cluster.Name,
+				NodeSpec: nodes,
+			})
+		}
+
+		return &resp, nil
+	} else {
+		svc.logger.Errorw("provider or scope not supported yet", "getclustersrequest", req)
+		return &pb.GetClustersResponse{}, fmt.Errorf("provider %s not supported yet", req.Provider)
+	}
 }

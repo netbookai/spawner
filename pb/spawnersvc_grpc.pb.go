@@ -24,6 +24,10 @@ type SpawnerServiceClient interface {
 	AddToken(ctx context.Context, in *AddTokenRequest, opts ...grpc.CallOption) (*AddTokenResponse, error)
 	//Create get token to secret manager
 	GetToken(ctx context.Context, in *GetTokenRequest, opts ...grpc.CallOption) (*GetTokenResponse, error)
+	// Get Cluster
+	GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*ClusterSpec, error)
+	// Get Clusters
+	GetClusters(ctx context.Context, in *GetClustersRequest, opts ...grpc.CallOption) (*GetClustersResponse, error)
 	// Spawn required instance
 	AddNode(ctx context.Context, in *NodeSpawnRequest, opts ...grpc.CallOption) (*NodeSpawnResponse, error)
 	// Status of cluster
@@ -69,6 +73,24 @@ func (c *spawnerServiceClient) AddToken(ctx context.Context, in *AddTokenRequest
 func (c *spawnerServiceClient) GetToken(ctx context.Context, in *GetTokenRequest, opts ...grpc.CallOption) (*GetTokenResponse, error) {
 	out := new(GetTokenResponse)
 	err := c.cc.Invoke(ctx, "/pb.SpawnerService/GetToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spawnerServiceClient) GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*ClusterSpec, error) {
+	out := new(ClusterSpec)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/GetCluster", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spawnerServiceClient) GetClusters(ctx context.Context, in *GetClustersRequest, opts ...grpc.CallOption) (*GetClustersResponse, error) {
+	out := new(GetClustersResponse)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/GetClusters", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +179,10 @@ type SpawnerServiceServer interface {
 	AddToken(context.Context, *AddTokenRequest) (*AddTokenResponse, error)
 	//Create get token to secret manager
 	GetToken(context.Context, *GetTokenRequest) (*GetTokenResponse, error)
+	// Get Cluster
+	GetCluster(context.Context, *GetClusterRequest) (*ClusterSpec, error)
+	// Get Clusters
+	GetClusters(context.Context, *GetClustersRequest) (*GetClustersResponse, error)
 	// Spawn required instance
 	AddNode(context.Context, *NodeSpawnRequest) (*NodeSpawnResponse, error)
 	// Status of cluster
@@ -186,6 +212,12 @@ func (UnimplementedSpawnerServiceServer) AddToken(context.Context, *AddTokenRequ
 }
 func (UnimplementedSpawnerServiceServer) GetToken(context.Context, *GetTokenRequest) (*GetTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetToken not implemented")
+}
+func (UnimplementedSpawnerServiceServer) GetCluster(context.Context, *GetClusterRequest) (*ClusterSpec, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCluster not implemented")
+}
+func (UnimplementedSpawnerServiceServer) GetClusters(context.Context, *GetClustersRequest) (*GetClustersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetClusters not implemented")
 }
 func (UnimplementedSpawnerServiceServer) AddNode(context.Context, *NodeSpawnRequest) (*NodeSpawnResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddNode not implemented")
@@ -274,6 +306,42 @@ func _SpawnerService_GetToken_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).GetToken(ctx, req.(*GetTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpawnerService_GetCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClusterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).GetCluster(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SpawnerService/GetCluster",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).GetCluster(ctx, req.(*GetClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpawnerService_GetClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetClustersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).GetClusters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SpawnerService/GetClusters",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).GetClusters(ctx, req.(*GetClustersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -440,6 +508,14 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetToken",
 			Handler:    _SpawnerService_GetToken_Handler,
+		},
+		{
+			MethodName: "GetCluster",
+			Handler:    _SpawnerService_GetCluster_Handler,
+		},
+		{
+			MethodName: "GetClusters",
+			Handler:    _SpawnerService_GetClusters_Handler,
 		},
 		{
 			MethodName: "AddNode",

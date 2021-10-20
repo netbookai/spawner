@@ -53,7 +53,6 @@ require (
 require (
 	github.com/aws/aws-sdk-go v1.40.56
 	github.com/go-kit/kit v0.11.0
-	github.com/go-kit/log v0.2.0
 	github.com/oklog/oklog v0.3.2
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rancher/norman v0.0.0-20210709145327-afd06f533ca3
