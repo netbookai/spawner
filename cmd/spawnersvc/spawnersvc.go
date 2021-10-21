@@ -84,7 +84,7 @@ func main() {
 	// the interfaces that the transports expect. Note that we're not binding
 	// them to ports or anything yet; we'll do that next.
 	var (
-		service   = spawnerservice.New(sugar, config, ints)
+		service   = spawnerservice.New(sugar, &config, ints)
 		endpoints = spwnendpoint.New(service, sugar, duration)
 		// httpHandler    = spwntransport.NewHTTPHandler(endpoints, tracer, zipkinTracer, logger)
 		grpcServer = spwntransport.NewGRPCServer(endpoints, sugar)
