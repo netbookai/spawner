@@ -216,27 +216,11 @@ func (svc RancherController) GetKubeConfig(clusterName string) (string, error) {
 }
 
 func (svc RancherController) CreateToken(clusterName string, region string) (string, error) {
-	clusterId, err := svc.GetClusterID(clusterName)
+	clusterID, err := svc.GetClusterID(clusterName)
+
 	if err != nil {
-		svc.logger.Errorw("error getting clusterid", "cluster", clusterName, "error", err)
+		svc.logger.Errorw("error getting cluster id ", "clustername", clusterName)
 		return "", err
-	}
-
-	existingTokens, listErr := svc.rancherClient.Token.ListAll(
-		&rnchrTypes.ListOpts{
-			// This filter does not seem to work
-			Filters: map[string]interface{}{"clusterId": clusterId},
-		},
-	)
-	if listErr != nil {
-		svc.logger.Warnw("error getting tokens for cluster", "cluster", "clusterId", clusterId, clusterName, "error", listErr)
-	}
-
-	for _, tok := range existingTokens.Data {
-		if tok.ClusterID == clusterId {
-			svc.logger.Warnw("token already exists for cluster", "cluster", clusterName, "clusterId", clusterId, "region", region)
-			return "token already exists for cluster", nil
-		}
 	}
 
 	newTokenVar := &rnchrClient.Token{
@@ -244,7 +228,12 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 		TTLMillis:   2592000000,
 		Description: "Automated Token for " + clusterName,
 	}
-	newToken, _ := svc.spawnerServiceRancher.CreateToken(newTokenVar)
+	newToken, err := svc.spawnerServiceRancher.CreateToken(newTokenVar)
+
+	if err != nil {
+		svc.logger.Errorw("error creating token ", "clustername", clusterName)
+		return "", err
+	}
 
 	status, err := aws.CreateAwsSecret(clusterName, clusterId, newToken.Token, region)
 	if err != nil {
