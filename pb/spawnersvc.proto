@@ -115,9 +115,10 @@ message GetTokenRequest{
 }
 
 message GetTokenResponse{
-    string token =1;
-    string status = 2;
-    string error = 3;
+    string token = 1;
+    string rancherServer = 2;
+    string status = 3;
+    string error = 4;
 }
 
 message NodeSpawnRequest {

@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
@@ -300,13 +302,16 @@ func (svc RancherController) GetToken(ctx context.Context, req *pb.GetTokenReque
 	token, err := aws.GetAwsSecret(req.ClusterName, req.Region)
 
 	if err != nil {
+		svc.logger.Errorw("error getting AWS secret", "cluster", req.ClusterName, "region", req.Region, "error", err)
 		return &pb.GetTokenResponse{
 			Token: "",
-		}, err
+			Error: "error getting AWSSecret",
+		}, status.Errorf(codes.Internal, "error getting Aws secret")
 	}
 
 	return &pb.GetTokenResponse{
-		Token: token,
+		Token:         token,
+		RancherServer: svc.config.RancherAddr,
 	}, err
 }
 
