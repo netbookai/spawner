@@ -2,7 +2,6 @@ package aws
 
 import (
 	"context"
-	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -10,19 +9,24 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-func CreateAwsSession(provider string, region string, logger *zap.SugaredLogger) (awsSvc *ec2.EC2) {
+func CreateAwsSession(provider string, region string, logger *zap.SugaredLogger) (awsSvc *ec2.EC2, err error) {
 	//starts an AWS session
 
-	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
-	awsSvc = ec2.New(sess)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(region),
+	})
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
-		os.Exit(1)
+		return nil, err
 	}
-	return awsSvc
+	awsSvc = ec2.New(sess)
+
+	return awsSvc, err
 }
 
 func LogError(methodName string, logger *zap.SugaredLogger, err error) {
@@ -54,7 +58,11 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, logger)
+	if err != nil {
+		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
+		return &pb.CreateVolumeResponse{}, status.Errorf(codes.Internal, "error creating AWS session")
+	}
 
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
@@ -80,7 +88,11 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, logger)
+	if err != nil {
+		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
+		return &pb.DeleteVolumeResponse{}, status.Errorf(codes.Internal, "error creating AWS session")
+	}
 
 	deleted, err := DeleteVolumeInternal(volumeid, awsSvc)
 
@@ -100,7 +112,11 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, logger)
+	if err != nil {
+		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
+		return &pb.CreateSnapshotResponse{}, status.Errorf(codes.Internal, "error creating AWS session")
+	}
 
 	snapshotid, err := SnapshotInternal(volumeid, awsSvc)
 
@@ -121,7 +137,11 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, logger)
+	if err != nil {
+		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
+		return &pb.CreateSnapshotAndDeleteResponse{}, status.Errorf(codes.Internal, "error creating AWS session")
+	}
 
 	snapshotid, errS := SnapshotInternal(volumeid, awsSvc)
 

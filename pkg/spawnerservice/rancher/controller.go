@@ -266,7 +266,10 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 }
 
 func (svc RancherController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
-	clusterName := fmt.Sprintf("%s-%s", req.Provider, req.Region)
+	var clusterName string
+	if clusterName = req.ClusterName; len(clusterName) == 0 {
+		clusterName = fmt.Sprintf("%s-%s", req.Provider, req.Region)
+	}
 
 	cluster, err := svc.CreateClusterInternal(clusterName, req)
 
@@ -274,7 +277,22 @@ func (svc RancherController) CreateCluster(ctx context.Context, req *pb.ClusterR
 		svc.logger.Errorw("error creating cluster ", "clustername", clusterName)
 		return &pb.ClusterResponse{
 			Error: err.Error(),
-		}, err
+		}, status.Errorf(codes.Internal, "error creating cluster")
+	}
+
+	_, err = svc.CreateToken(clusterName, req.Region)
+	if err != nil {
+		svc.logger.Errorw("error creating cluster token", "clustername", clusterName)
+		_, delErr := svc.DeleteCluster(ctx, &pb.ClusterDeleteRequest{
+			ClusterName: clusterName,
+		})
+		if delErr != nil {
+			svc.logger.Errorw("error deleting cluster", "cluster", clusterName, "error", delErr)
+		}
+
+		return &pb.ClusterResponse{
+			Error: err.Error(),
+		}, status.Errorf(codes.Internal, "error creating cluster token")
 	}
 
 	return &pb.ClusterResponse{

@@ -58,10 +58,11 @@ message NodeSpec {
 }
 
 message ClusterRequest {
-    string provider = 1;
-    string region = 2;
-    NodeSpec node = 3;
-    map<string, string> labels = 4;
+    string clusterName = 1;
+    string provider = 2;
+    string region = 3;
+    NodeSpec node = 4;
+    map<string, string> labels = 5;
 }
 
 message GetClusterRequest {
