@@ -6,6 +6,7 @@ import (
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 )
 
 func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRequest, tags map[string]string) (rnchrClient.ClusterSpec, error) {
@@ -111,6 +112,7 @@ func CreateCluster(awsCred rnchrClient.CloudCredential, clusterReq *pb.ClusterRe
 			Subnets:                &subnets,
 			Tags:                   &clusterTags,
 		},
+		Labels:                  util.SimpleReplaceMerge(map[string]string{"creator": "spawner-service", "provisioner": "rancher"}, clusterReq.Labels),
 		WindowsPreferedCluster:  false,
 		EnableClusterAlerting:   false,
 		EnableClusterMonitoring: false,
