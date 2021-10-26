@@ -18,6 +18,8 @@ type SessionManagerClientMock struct {
 	CreateClusterMock      func(cluster *rnchrClient.Cluster) (*rnchrClient.Cluster, error)
 	GetKubeConfigMock      func(cluster *rnchrClient.Cluster) (*rnchrClient.GenerateKubeConfigOutput, error)
 	CreateTokenMock        func(newTokenVar *rnchrClient.Token) (*rnchrClient.Token, error)
+	ListTokensMock         func(clusterId string) (*rnchrClient.TokenCollection, error)
+	ListNodesMock          func(clusterId string) (*rnchrClient.NodeCollection, error)
 	DeleteClusterMock      func(cluster *rnchrClient.Cluster) error
 }
 
@@ -49,6 +51,13 @@ func (sm SessionManagerClientMock) CreateToken(newTokenVar *rnchrClient.Token) (
 	return sm.CreateTokenMock(newTokenVar)
 }
 
+func (sm SessionManagerClientMock) ListTokens(clusterId string) (*rnchrClient.TokenCollection, error) {
+	return sm.ListTokensMock(clusterId)
+}
+
+func (sm SessionManagerClientMock) ListNodes(clusterId string) (*rnchrClient.NodeCollection, error) {
+	return sm.ListNodesMock(clusterId)
+}
 func (sm SessionManagerClientMock) DeleteCluster(cluster *rnchrClient.Cluster) error {
 	return sm.DeleteClusterMock(cluster)
 }
@@ -61,12 +70,12 @@ func TestGetCluster(t *testing.T) {
 		testCluster.Name = clusterName
 		r.Data = append(r.Data, testCluster)
 		return &r, nil
-	}, nil, nil, nil, nil, nil, nil, nil}
+	}, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 	svc := NewRancherController(ms, nil, sugar)
 
 	clusterName := "test"
 
-	resp, err := svc.GetCluster(clusterName)
+	resp, err := svc.GetClusterInternal(clusterName)
 
 	if err != nil {
 		t.Errorf("error in calling get cluster: %s", err)
@@ -85,7 +94,7 @@ func TestGetClusterID(t *testing.T) {
 		testCluster.ID = "1"
 		r.Data = append(r.Data, testCluster)
 		return &r, nil
-	}, nil, nil, nil, nil, nil, nil, nil}
+	}, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 	svc := NewRancherController(ms, nil, sugar)
 
 	clusterName := "test"
@@ -127,7 +136,7 @@ func TestGetEksClustersInRegion(t *testing.T) {
 		testCluster3.EKSConfig = &eksConfig3
 		r.Data = append(r.Data, testCluster3)
 		return &r, nil
-	}, nil, nil, nil, nil, nil, nil}
+	}, nil, nil, nil, nil, nil, nil, nil, nil}
 	svc := NewRancherController(ms, nil, sugar)
 
 	region := "us-west-1"
@@ -161,7 +170,7 @@ func TestUpdateCluster(t *testing.T) {
 		cluster.Name = updateJson["name"].(string)
 		cluster.ID = updateJson["id"].(string)
 		return cluster, nil
-	}, nil, nil, nil, nil, nil}
+	}, nil, nil, nil, nil, nil, nil, nil}
 	svc := NewRancherController(ms, nil, sugar)
 
 	clusterName := "test"
@@ -198,7 +207,7 @@ func TestGetKubeConfig(t *testing.T) {
 	}, nil, nil, nil, nil, func(cluster *rnchrClient.Cluster) (*rnchrClient.GenerateKubeConfigOutput, error) {
 		kubeconfig := rnchrClient.GenerateKubeConfigOutput{cluster.Name}
 		return &kubeconfig, nil
-	}, nil, nil}
+	}, nil, nil, nil, nil}
 	svc := NewRancherController(ms, nil, sugar)
 
 	clusterName := "test"
