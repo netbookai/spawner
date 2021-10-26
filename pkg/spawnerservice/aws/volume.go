@@ -2,9 +2,11 @@ package aws
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"gitlab.com/netbook-devs/spawner-service/pb"
@@ -13,11 +15,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func CreateAwsSession(provider string, region string, logger *zap.SugaredLogger) (awsSvc *ec2.EC2, err error) {
+func CreateAwsSession(provider string, region string, sessionName string, logger *zap.SugaredLogger) (awsSvc *ec2.EC2, err error) {
 	//starts an AWS session
+	accessKey, secretID, sessiontoken, stserr := GetCredsFromSTS(sessionName)
+	if stserr != nil {
+		logger.Errorw("Error getting Credentials")
+	}
 
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
+		Region:      aws.String(region),
+		Credentials: credentials.NewStaticCredentials(accessKey, secretID, sessiontoken),
 	})
 
 	if err != nil {
@@ -48,7 +55,7 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 
 func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
 	//Creates an EBS volume
-
+	sessionName := "AWS create volume sesion, at " + time.Stamp
 	logger := svc.logger
 
 	availabilityZone := req.GetAvailabilityzone()
@@ -58,7 +65,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc, err := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, sessionName, logger)
 	if err != nil {
 		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
 		return &pb.CreateVolumeResponse{}, status.Errorf(codes.Internal, "error creating AWS session")
@@ -82,13 +89,14 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 
 func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
 	//Deletes an EBS volume
+	sessionName := "AWS delete volume session, at " + time.Stamp
 	logger := svc.logger
 
 	volumeid := req.GetVolumeid()
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc, err := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, sessionName, logger)
 	if err != nil {
 		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
 		return &pb.DeleteVolumeResponse{}, status.Errorf(codes.Internal, "error creating AWS session")
@@ -107,12 +115,13 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 
 func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
 	//Creates a Snapshot of a volume
+	sessionName := "AWS create snapshot session, at " + time.Stamp
 	logger := svc.logger
 	volumeid := req.GetVolumeid()
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc, err := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, sessionName, logger)
 	if err != nil {
 		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
 		return &pb.CreateSnapshotResponse{}, status.Errorf(codes.Internal, "error creating AWS session")
@@ -130,14 +139,14 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 
 func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	//First Creates the snapshot of the volume then deletes the volume
-
+	sessionName := "AWS create snapshot and delete session, at " + time.Stamp
 	logger := svc.logger
 
 	volumeid := req.GetVolumeid()
 	provider := req.GetProvider()
 	region := req.GetRegion()
 
-	awsSvc, err := CreateAwsSession(provider, region, logger)
+	awsSvc, err := CreateAwsSession(provider, region, sessionName, logger)
 	if err != nil {
 		svc.logger.Errorw("error creating AWS session", "provider", provider, "region", region, "createvolrequest", req, "error", err)
 		return &pb.CreateSnapshotAndDeleteResponse{}, status.Errorf(codes.Internal, "error creating AWS session")

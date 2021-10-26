@@ -24,6 +24,7 @@ services:
 stages:
 - test
 - build
+- deploy
 
 sast:
   stage: test
@@ -37,6 +38,17 @@ docker_creation:
     - docker login --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD  $CI_REGISTRY
     - docker build -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile .
     - docker push registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA
+  only:
+    refs:
+      - main
+
+helm_deploy:
+  stage: deploy
+  script:
+  - sh .gitlab/ci-scripts/helm.sh
+  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set image.tag=$CI_COMMIT_SHORT_SHA
+  environment:
+    name: development
   only:
     refs:
       - main

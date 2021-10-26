@@ -19,8 +19,8 @@ import (
 
 type RancherController struct {
 	spawnerServiceRancher RancherClient
-	config               *util.Config
-	logger               *zap.SugaredLogger
+	config                *util.Config
+	logger                *zap.SugaredLogger
 }
 
 func NewRancherController(spawnerServiceRancher RancherClient, config *util.Config, logger *zap.SugaredLogger) RancherController {
@@ -212,28 +212,28 @@ func (svc RancherController) GetKubeConfig(clusterName string) (string, error) {
 }
 
 func (svc RancherController) CreateToken(clusterName string, region string) (string, error) {
-	clusterID, err := svc.GetClusterID(clusterName)
+	clusterId, err := svc.GetClusterID(clusterName)
 
 	if err != nil {
-		svc.logger.Errorw("error getting cluster id ", "clustername", clusterName, "error", err)
+		svc.logger.Errorw("error getting clusterid", "cluster", clusterName, "error", err)
 		return "", err
 	}
 
-	existingTokens, listErr := svc.spawnerServiceRancher.ListTokens(clusterID)
+	existingTokens, listErr := svc.spawnerServiceRancher.ListTokens(clusterId)
 
 	if listErr != nil {
-		svc.logger.Warnw("error getting tokens for cluster", "cluster", clusterName, "clusterId", clusterID, "error", listErr)
+		svc.logger.Warnw("error getting tokens for cluster", "cluster", "clusterId", clusterId, clusterName, "error", listErr)
 	}
 
 	for _, tok := range existingTokens.Data {
-		if tok.ClusterID == clusterID {
-			svc.logger.Warnw("token already exists for cluster", "cluster", clusterName, "clusterId", clusterID, "region", region)
+		if tok.ClusterID == clusterId {
+			svc.logger.Warnw("token already exists for cluster", "cluster", clusterName, "clusterId", clusterId, "region", region)
 			return "token already exists for cluster", nil
 		}
 	}
 
 	newTokenVar := &rnchrClient.Token{
-		ClusterID:   clusterID,
+		ClusterID:   clusterId,
 		TTLMillis:   2592000000,
 		Description: "Automated Token for " + clusterName,
 	}
@@ -244,9 +244,9 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 		return "", err
 	}
 
-	status, err := aws.CreateAwsSecret(clusterName, clusterID, newToken.Token, region)
+	status, err := aws.CreateAwsSecret(clusterName, clusterId, newToken.Token, region)
 	if err != nil {
-		svc.logger.Errorw("error creating new aws secret", "cluster", clusterName, "clusterid", clusterID, "region", region, "error", err)
+		svc.logger.Errorw("error creating new aws secret", "cluster", clusterName, "clusterid", clusterId, "region", region, "error", err)
 	}
 
 	return status, err

@@ -111,7 +111,7 @@ func (mw loggingMiddleware) AddToken(ctx context.Context, req *pb.AddTokenReques
 
 func (mw loggingMiddleware) GetToken(ctx context.Context, req *pb.GetTokenRequest) (res *pb.GetTokenResponse, err error) {
 	defer func() {
-		mw.logger.Infow("spawnerservice", "method", "GetToken", "response", res, "error", err)
+		mw.logger.Infow("spawnerservice", "method", "GetToken", "error", err)
 	}()
 	return mw.next.GetToken(ctx, req)
 }
