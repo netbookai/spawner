@@ -17,6 +17,8 @@ type RancherClient interface {
 	CreateCluster(cluster *rnchrClient.Cluster) (*rnchrClient.Cluster, error)
 	GetKubeConfig(cluster *rnchrClient.Cluster) (*rnchrClient.GenerateKubeConfigOutput, error)
 	CreateToken(newTokenVar *rnchrClient.Token) (*rnchrClient.Token, error)
+	ListTokens(clusterId string) (*rnchrClient.TokenCollection, error)
+	ListNodes(clusterId string) (*rnchrClient.NodeCollection, error)
 	DeleteCluster(cluster *rnchrClient.Cluster) error
 }
 
@@ -71,6 +73,27 @@ func (svc SpawnerServiceRancher) CreateToken(newTokenVar *rnchrClient.Token) (*r
 	newToken, err := svc.rancherClient.Token.Create(newTokenVar)
 
 	return newToken, err
+}
+
+func (svc SpawnerServiceRancher) ListTokens(clusterId string) (*rnchrClient.TokenCollection, error) {
+	existingTokens, err := svc.rancherClient.Token.ListAll(
+		&rnchrTypes.ListOpts{
+			// This filter does not seem to work
+			Filters: map[string]interface{}{"clusterId": clusterId},
+		},
+	)
+
+	return existingTokens, err
+}
+
+func (svc SpawnerServiceRancher) ListNodes(clusterId string) (*rnchrClient.NodeCollection, error) {
+	nodesList, err := svc.rancherClient.Node.ListAll(
+		&rnchrTypes.ListOpts{
+			Filters: map[string]interface{}{"clusterId": clusterId},
+		},
+	)
+
+	return nodesList, err
 }
 
 func (svc SpawnerServiceRancher) DeleteCluster(cluster *rnchrClient.Cluster) error {
