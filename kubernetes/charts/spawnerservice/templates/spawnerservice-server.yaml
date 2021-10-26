@@ -16,8 +16,8 @@ spec:
       - name: application
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.imagePullPolicy }}
-        command: [ "/bin/sh", "-c", "--" ]
-        args: [ "cd /spawnerservice/cmd/spawnersvc && ./spawnersvc -grpc-addr=:8083 -debug-addr=:8081" ]
+        command: [ "/go/bin/spawnersvc"]
+        args: [ " -grpc-addr=:8083 -debug-addr=:8081" ]
         env:
         - name: RANCHER_ADDRESS
           value: {{ .Values.rancher.address }}
@@ -27,7 +27,9 @@ spec:
           value: {{ .Values.rancher.password }}
         - name: RANCHER_AWS_CRED_NAME
           value: {{ .Values.rancher.aws_cred_name }}
+
         ports:
           - containerPort: 8083
       imagePullSecrets:
         - name: dockerconfigjson-gitlab
+      serviceAccountName: awskube2iam

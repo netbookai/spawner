@@ -2,18 +2,74 @@ package aws
 
 import (
 	"encoding/base64"
+	"fmt"
 	"log"
+	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-func CreateAwsSecretSession(provider string, region string) (awsSecSvc *secretsmanager.SecretsManager) {
-	//starts an AWS session
+func GetCredsFromSTS(sessionName string) (string, string, string, error) {
+	svc := sts.New(session.New())
+	web_identity_token, err := os.ReadFile("/var/run/secrets/eks.amazonaws.com/serviceaccount/token")
+	if err != nil {
+		fmt.Errorf("Error reading token")
+	}
+	input := &sts.AssumeRoleWithWebIdentityInput{
+		DurationSeconds:  aws.Int64(900),
+		RoleArn:          aws.String(os.Getenv("AWS_ROLE_ARN")),
+		RoleSessionName:  aws.String("SecretsConnection"),
+		WebIdentityToken: aws.String(string(web_identity_token)),
+	}
 
-	sess, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	result, err := svc.AssumeRoleWithWebIdentity(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case sts.ErrCodeMalformedPolicyDocumentException:
+				fmt.Println(sts.ErrCodeMalformedPolicyDocumentException, aerr.Error())
+			case sts.ErrCodePackedPolicyTooLargeException:
+				fmt.Println(sts.ErrCodePackedPolicyTooLargeException, aerr.Error())
+			case sts.ErrCodeIDPRejectedClaimException:
+				fmt.Println(sts.ErrCodeIDPRejectedClaimException, aerr.Error())
+			case sts.ErrCodeIDPCommunicationErrorException:
+				fmt.Println(sts.ErrCodeIDPCommunicationErrorException, aerr.Error())
+			case sts.ErrCodeInvalidIdentityTokenException:
+				fmt.Println(sts.ErrCodeInvalidIdentityTokenException, aerr.Error())
+			case sts.ErrCodeExpiredTokenException:
+				fmt.Println(sts.ErrCodeExpiredTokenException, aerr.Error())
+			case sts.ErrCodeRegionDisabledException:
+				fmt.Println(sts.ErrCodeRegionDisabledException, aerr.Error())
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			fmt.Println(err.Error())
+		}
+
+	}
+	return *result.Credentials.AccessKeyId, *result.Credentials.SecretAccessKey, *result.Credentials.SessionToken, nil
+}
+
+func CreateAwsSecretSession(provider string, region string, sessionName string) (awsSecSvc *secretsmanager.SecretsManager) {
+	//starts an AWS session
+	accessKey, secretID, sessiontoken, stserr := GetCredsFromSTS(sessionName)
+	if stserr != nil {
+		log.Fatalf("Error getting Credentials")
+	}
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: credentials.NewStaticCredentials(accessKey, secretID, sessiontoken),
+	})
 	awsSecSvc = secretsmanager.New(sess)
 	if err != nil {
 		log.Fatalf("error starting aws session")
@@ -22,8 +78,8 @@ func CreateAwsSecretSession(provider string, region string) (awsSecSvc *secretsm
 }
 
 func CreateAwsSecret(clusterName string, clusterID string, token string, region string) (string, error) {
-
-	awsSecSvc := CreateAwsSecretSession("aws", region)
+	sessionName := "AWS create sercet sesion, at " + time.Stamp
+	awsSecSvc := CreateAwsSecretSession("aws", region, sessionName)
 
 	encodedToken := base64.StdEncoding.EncodeToString([]byte(token))
 	encodedClusterID := base64.StdEncoding.EncodeToString([]byte(clusterID))
@@ -48,8 +104,8 @@ func CreateAwsSecret(clusterName string, clusterID string, token string, region 
 }
 
 func GetAwsSecret(clusterName string, region string) (string, error) {
-
-	awsSecSvc := CreateAwsSecretSession("aws", region)
+	sessionName := "AWS Get sercet sesion, at " + time.Stamp
+	awsSecSvc := CreateAwsSecretSession("aws", region, sessionName)
 
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     aws.String(clusterName),
