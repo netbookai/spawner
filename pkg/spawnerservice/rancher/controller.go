@@ -11,36 +11,25 @@ import (
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/eks"
 	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 
-	rnchrTypes "github.com/rancher/norman/types"
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 type RancherController struct {
-	rancherClient *rnchrClient.Client
-	config        *util.Config
-	logger        *zap.SugaredLogger
+	spawnerServiceRancher RancherClient
+	config               *util.Config
+	logger               *zap.SugaredLogger
 }
 
-func NewRancherController(logger *zap.SugaredLogger, config util.Config) RancherController {
+func NewRancherController(spawnerServiceRancher RancherClient, config *util.Config, logger *zap.SugaredLogger) RancherController {
 
-	rancherClient, err := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
-	if err != nil {
-		logger.Errorw("error creating rancher client", "error", err)
-	}
-
-	return RancherController{rancherClient, &config, logger}
+	return RancherController{spawnerServiceRancher, config, logger}
 }
 
-func (svc RancherController) GetClusterInternal(clusterName string) (*rnchrClient.Cluster, error) {
-	clusterSpecList, err := svc.rancherClient.Cluster.ListAll(
-		&rnchrTypes.ListOpts{
-			Filters: map[string]interface{}{"name": clusterName},
-		},
-	)
+func (svc RancherController) GetCluster(clusterName string) (*rnchrClient.Cluster, error) {
+	clusterSpecList, err := svc.spawnerServiceRancher.GetClusterWithName(clusterName)
 
 	if err != nil || len(clusterSpecList.Data) <= 0 {
 		return &rnchrClient.Cluster{}, fmt.Errorf("no cluster found with clustername %s", clusterName)
@@ -52,11 +41,7 @@ func (svc RancherController) GetClusterInternal(clusterName string) (*rnchrClien
 }
 
 func (svc RancherController) GetClusterID(clusterName string) (string, error) {
-	clusterSpecList, err := svc.rancherClient.Cluster.ListAll(
-		&rnchrTypes.ListOpts{
-			Filters: map[string]interface{}{"name": clusterName},
-		},
-	)
+	clusterSpecList, err := svc.spawnerServiceRancher.GetClusterWithName(clusterName)
 
 	if err != nil || len(clusterSpecList.Data) <= 0 {
 		return ("no cluster found with clustername " + clusterName), err
@@ -83,12 +68,7 @@ func (svc RancherController) GetClusterNodes(clusterId string) ([]rnchrClient.No
 }
 
 func (svc RancherController) GetEksClustersInRegion(region string) ([]rnchrClient.Cluster, error) {
-	clusterSpecList, err := svc.rancherClient.Cluster.ListAll(
-		&rnchrTypes.ListOpts{
-			// Filters: map[string]interface{}{"provider": "eks"},
-		},
-	)
-
+	clusterSpecList, err := svc.spawnerServiceRancher.GetAllClusters()
 	if err != nil || len(clusterSpecList.Data) <= 0 {
 		svc.logger.Errorw("error getting eks clusters in region", "region", region, "error", err)
 		return []rnchrClient.Cluster{}, fmt.Errorf("error finding eks clusters")
@@ -122,8 +102,7 @@ func (svc RancherController) UpdateCluster(cluster *rnchrClient.Cluster, cluster
 		json.Unmarshal(tempJson, &finalJson)
 	}
 
-	respCluster, err := svc.rancherClient.Cluster.Update(cluster, finalJson)
-
+	respCluster, err := svc.spawnerServiceRancher.UpdateCluster(cluster, finalJson)
 	svc.logger.Infow("in UpdateCluster method", "respCluster", respCluster)
 
 	if err != nil {
@@ -135,11 +114,7 @@ func (svc RancherController) UpdateCluster(cluster *rnchrClient.Cluster, cluster
 }
 
 func (svc RancherController) GetCloudCreds(credName string) (rnchrClient.CloudCredential, error) {
-	list, _ := svc.rancherClient.CloudCredential.ListAll(
-		&rnchrTypes.ListOpts{
-			Filters: map[string]interface{}{"name": credName},
-		},
-	)
+	list, _ := svc.spawnerServiceRancher.GetCloudCredential(credName)
 
 	if len(list.Data) <= 0 {
 		svc.logger.Errorw("could not find credential with name", "name", credName)
@@ -202,7 +177,8 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 		map[string]string{"creator": "spawner-service", "provisioner": "rancher"},
 		subnets)
 
-	cluster, err := svc.rancherClient.Cluster.Create(newCluster)
+	cluster, err := svc.spawnerServiceRancher.CreateCluster(newCluster)
+
 	if err != nil {
 		svc.logger.Errorw("error creating new cluster", "error", err)
 		return &rnchrClient.Cluster{}, err
@@ -230,7 +206,7 @@ func (svc RancherController) GetKubeConfig(clusterName string) (string, error) {
 		return "", fmt.Errorf("error getting cluster with name %s", clusterName)
 	}
 
-	yaml, err := svc.rancherClient.Cluster.ActionGenerateKubeconfig(cluster)
+	yaml, err := svc.spawnerServiceRancher.GetKubeConfig(cluster)
 
 	if err != nil {
 		return "", fmt.Errorf("error getting kube config for cluster with name %s", clusterName)
@@ -240,27 +216,11 @@ func (svc RancherController) GetKubeConfig(clusterName string) (string, error) {
 }
 
 func (svc RancherController) CreateToken(clusterName string, region string) (string, error) {
-	clusterId, err := svc.GetClusterID(clusterName)
+	clusterID, err := svc.GetClusterID(clusterName)
+
 	if err != nil {
-		svc.logger.Errorw("error getting clusterid", "cluster", clusterName, "error", err)
+		svc.logger.Errorw("error getting cluster id ", "clustername", clusterName)
 		return "", err
-	}
-
-	existingTokens, listErr := svc.rancherClient.Token.ListAll(
-		&rnchrTypes.ListOpts{
-			// This filter does not seem to work
-			Filters: map[string]interface{}{"clusterId": clusterId},
-		},
-	)
-	if listErr != nil {
-		svc.logger.Warnw("error getting tokens for cluster", "cluster", "clusterId", clusterId, clusterName, "error", listErr)
-	}
-
-	for _, tok := range existingTokens.Data {
-		if tok.ClusterID == clusterId {
-			svc.logger.Warnw("token already exists for cluster", "cluster", clusterName, "clusterId", clusterId, "region", region)
-			return "token already exists for cluster", nil
-		}
 	}
 
 	newTokenVar := &rnchrClient.Token{
@@ -268,9 +228,11 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 		TTLMillis:   2592000000,
 		Description: "Automated Token for " + clusterName,
 	}
-	newToken, err := svc.rancherClient.Token.Create(newTokenVar)
+	newToken, err := svc.spawnerServiceRancher.CreateToken(newTokenVar)
+
 	if err != nil {
-		svc.logger.Errorw("error getting creating new token", "cluster", clusterName, "error", err)
+		svc.logger.Errorw("error creating token ", "clustername", clusterName)
+		return "", err
 	}
 
 	status, err := aws.CreateAwsSecret(clusterName, clusterId, newToken.Token, region)
@@ -384,7 +346,7 @@ func (svc RancherController) DeleteCluster(ctx context.Context, req *pb.ClusterD
 		}, err
 	}
 
-	err = svc.rancherClient.Cluster.Delete(cluster)
+	err = svc.spawnerServiceRancher.DeleteCluster(cluster)
 
 	if err != nil {
 		return &pb.ClusterDeleteResponse{

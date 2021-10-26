@@ -8,6 +8,7 @@ import (
 
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
 	"gitlab.com/netbook-devs/spawner-service/pkg/util"
@@ -34,11 +35,17 @@ type SpawnerService struct {
 	awsController     ClusterController
 }
 
-func New(logger *zap.SugaredLogger, config util.Config, ints metrics.Counter) ClusterController {
+func New(logger *zap.SugaredLogger, config *util.Config, ints metrics.Counter) ClusterController {
+
+	rancherClient, err := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
+	if err != nil {
+		logger.Errorw("error creating rancher client", "error", err)
+	}
+	spawnerServiceRancher := rancher.NewSpawnerServiceClient(rancherClient)
 	var svc ClusterController
 	{
 		svc = SpawnerService{
-			rancherController: rancher.NewRancherController(logger, config),
+			rancherController: rancher.NewRancherController(spawnerServiceRancher, config, logger),
 			awsController:     aws.NewAWSController(logger),
 		}
 		svc = LoggingMiddleware(logger)(svc)
