@@ -130,7 +130,7 @@ func main() {
 		Region:   "us-west-2",
 	}
 	createSnapshotAndDeleteReq := &pb.CreateSnapshotAndDeleteRequest{
-		Volumeid: "vol-033eb2271582ebf28",
+		Volumeid: "vol-0f220de036ebea748",
 		Provider: "aws",
 		Region:   "us-west-2",
 	}

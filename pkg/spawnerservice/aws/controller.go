@@ -3,17 +3,19 @@ package aws
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"go.uber.org/zap"
 )
 
 type AWSController struct {
 	logger *zap.SugaredLogger
+	client ec2iface.EC2API
 }
 
-func NewAWSController(logger *zap.SugaredLogger) AWSController {
+func NewAWSController(logger *zap.SugaredLogger, client ec2iface.EC2API) AWSController {
 
-	return AWSController{logger}
+	return AWSController{logger, client}
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {

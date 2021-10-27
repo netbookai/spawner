@@ -244,7 +244,7 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 		return "", err
 	}
 
-	status, err := aws.CreateAwsSecret(clusterName, clusterId, newToken.Token, region)
+	status, err := aws.CreateAwsSecret(clusterName, clusterId, newToken.Token, region, svc.logger)
 	if err != nil {
 		svc.logger.Errorw("error creating new aws secret", "cluster", clusterName, "clusterid", clusterId, "region", region, "error", err)
 	}
@@ -304,7 +304,7 @@ func (svc RancherController) AddToken(ctx context.Context, req *pb.AddTokenReque
 }
 
 func (svc RancherController) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
-	token, err := aws.GetAwsSecret(req.ClusterName, req.Region)
+	token, err := aws.GetAwsSecret(req.ClusterName, req.Region, svc.logger)
 
 	if err != nil {
 		svc.logger.Errorw("error getting AWS secret", "cluster", req.ClusterName, "region", req.Region, "error", err)

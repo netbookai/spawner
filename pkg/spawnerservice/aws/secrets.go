@@ -13,9 +13,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"go.uber.org/zap"
 )
 
-func GetCredsFromSTS(sessionName string) (string, string, string, error) {
+func GetCredsFromSTS() (string, string, string, error) {
 	svc := sts.New(session.New())
 	web_identity_token, err := os.ReadFile("/var/run/secrets/eks.amazonaws.com/serviceaccount/token")
 	if err != nil {
@@ -59,9 +60,9 @@ func GetCredsFromSTS(sessionName string) (string, string, string, error) {
 	return *result.Credentials.AccessKeyId, *result.Credentials.SecretAccessKey, *result.Credentials.SessionToken, nil
 }
 
-func CreateAwsSecretSession(provider string, region string, sessionName string) (awsSecSvc *secretsmanager.SecretsManager) {
-	//starts an AWS session
-	accessKey, secretID, sessiontoken, stserr := GetCredsFromSTS(sessionName)
+func CreateAwsSecretSession(provider string, region string, sessionName string, logger *zap.SugaredLogger) (awsSecSvc *secretsmanager.SecretsManager) {
+
+	accessKey, secretID, sessiontoken, stserr := GetCredsFromSTS()
 	if stserr != nil {
 		log.Fatalf("Error getting Credentials")
 	}
@@ -71,15 +72,16 @@ func CreateAwsSecretSession(provider string, region string, sessionName string) 
 		Credentials: credentials.NewStaticCredentials(accessKey, secretID, sessiontoken),
 	})
 	awsSecSvc = secretsmanager.New(sess)
+
 	if err != nil {
-		log.Fatalf("error starting aws session")
+		logger.Errorw("Can't start AWS session", "error", err)
 	}
 	return awsSecSvc
 }
 
-func CreateAwsSecret(clusterName string, clusterID string, token string, region string) (string, error) {
+func CreateAwsSecret(clusterName string, clusterID string, token string, region string, logger *zap.SugaredLogger) (string, error) {
 	sessionName := "AWS create sercet sesion, at " + time.Stamp
-	awsSecSvc := CreateAwsSecretSession("aws", region, sessionName)
+	awsSecSvc := CreateAwsSecretSession("aws", region, sessionName, logger)
 
 	encodedToken := base64.StdEncoding.EncodeToString([]byte(token))
 	encodedClusterID := base64.StdEncoding.EncodeToString([]byte(clusterID))
@@ -103,9 +105,9 @@ func CreateAwsSecret(clusterName string, clusterID string, token string, region 
 	return result.String(), err
 }
 
-func GetAwsSecret(clusterName string, region string) (string, error) {
+func GetAwsSecret(clusterName string, region string, logger *zap.SugaredLogger) (string, error) {
 	sessionName := "AWS Get sercet sesion, at " + time.Stamp
-	awsSecSvc := CreateAwsSecretSession("aws", region, sessionName)
+	awsSecSvc := CreateAwsSecretSession("aws", region, sessionName, logger)
 
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     aws.String(clusterName),
