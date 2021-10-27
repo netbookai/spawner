@@ -222,7 +222,7 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 	existingTokens, listErr := svc.spawnerServiceRancher.ListTokens(clusterId)
 
 	if listErr != nil {
-		svc.logger.Warnw("error getting tokens for cluster", "cluster", "clusterId", clusterId, clusterName, "error", listErr)
+		svc.logger.Warnw("error getting tokens for cluster", "cluster", clusterName, "clusterId", clusterId, "error", listErr)
 	}
 
 	for _, tok := range existingTokens.Data {
