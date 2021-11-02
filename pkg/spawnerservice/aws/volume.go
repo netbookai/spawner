@@ -36,6 +36,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 	volumeType := req.GetVolumetype()
 	size := req.GetSize()
 	snapshotId := req.GetSnapshotid()
+	region := req.Region
 
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
@@ -44,12 +45,19 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 		SnapshotId:       aws.String(snapshotId),
 	}
 
-	//calling aws sdk method to create volume
-	result, err := svc.client.CreateVolume(input)
-
-	LogError("CreateVolume", logger, err)
+	//creating session
+	awsSvc, err := svc.sessionClient(region, logger)
 
 	if err != nil {
+		logger.Errorw("Can't start AWS session", "error", err)
+		return nil, err
+	}
+
+	//calling aws sdk CreateVolume function
+	result, err := awsSvc.CreateVolume(input)
+
+	if err != nil {
+		LogError("CreateVolume", logger, err)
 		return &pb.CreateVolumeResponse{}, err
 	}
 
@@ -67,15 +75,23 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 	logger := svc.logger
 
 	volumeid := req.GetVolumeid()
+	region := req.Region
 
 	input := &ec2.DeleteVolumeInput{
 		VolumeId: aws.String(volumeid),
 	}
 
+	//creating session
+	awsSvc, err := svc.sessionClient(region, logger)
+
+	if err != nil {
+		logger.Errorw("Can't start AWS session", "error", err)
+		return nil, err
+	}
 	//calling aws sdk method to delete volume
 	//ec2.DeleteVolumeOutput doesn't contain anything
 	//hence not taking response
-	_, err := svc.client.DeleteVolume(input)
+	_, err = awsSvc.DeleteVolume(input)
 
 	if err != nil {
 		LogError("DeleteVolume", logger, err)
@@ -96,13 +112,22 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 	logger := svc.logger
 
 	volumeid := req.GetVolumeid()
+	region := req.Region
 
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
 	}
 
+	//creating session
+	awsSvc, err := svc.sessionClient(region, logger)
+
+	if err != nil {
+		logger.Errorw("Can't start AWS session", "error", err)
+		return nil, err
+	}
+
 	//calling aws sdk method to snapshot volume
-	result, err := svc.client.CreateSnapshot(input)
+	result, err := awsSvc.CreateSnapshot(input)
 
 	if err != nil {
 		LogError("CreateSnapshot", logger, err)
@@ -122,25 +147,37 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 	logger := svc.logger
 
 	volumeid := req.GetVolumeid()
+	region := req.Region
 
 	inputSnapshot := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
 	}
 
-	//calling aws sdk method to snapshot volume
-	resultSnapshot, err := svc.client.CreateSnapshot(inputSnapshot)
+	//creating session
+	awsSvc, err := svc.sessionClient(region, logger)
+
+	if err != nil {
+		logger.Errorw("Can't start AWS session", "error", err)
+		return nil, err
+	}
+
+	//calling aws sdk CreateSnapshot method
+	resultSnapshot, err := awsSvc.CreateSnapshot(inputSnapshot)
 
 	if err != nil {
 		LogError("CreateSnapshot", logger, err)
 		return &pb.CreateSnapshotAndDeleteResponse{}, err
 	}
 
+	//inputs for deleteing volume
 	inputDelete := &ec2.DeleteVolumeInput{
 		VolumeId: aws.String(volumeid),
 	}
 
 	//calling aws sdk method to delete volume
-	_, err = svc.client.DeleteVolume(inputDelete)
+	//ec2.DeleteVolumeOutput doesn't contain anything
+	//hence not taking response
+	_, err = awsSvc.DeleteVolume(inputDelete)
 
 	if err != nil {
 		LogError("DeleteVolume", logger, err)
@@ -151,6 +188,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 		}, err
 	}
 
+	//note: since now err is nil so assigning deleted = true
 	res := &pb.CreateSnapshotAndDeleteResponse{
 		Snapshotid: *resultSnapshot.SnapshotId,
 		Deleted:    true,

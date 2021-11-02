@@ -6,10 +6,6 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"go.uber.org/zap"
 
-	awssdk "github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	pb "gitlab.com/netbook-devs/spawner-service/pb"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
@@ -48,32 +44,10 @@ func New(logger *zap.SugaredLogger, config *util.Config, ints metrics.Counter) C
 	spawnerServiceRancher := rancher.NewSpawnerServiceClient(rancherClient)
 
 	var svc ClusterController
-
-	//TODO: shivani use region variable here instead of harcoding us-west-2
-	//starts an AWS session
-	accessKey, secretID, sessiontoken, stserr := aws.GetCredsFromSTS()
-	if stserr != nil {
-		logger.Errorw("Error getting Credentials")
-	}
-
-	sess, err := session.NewSession(&awssdk.Config{
-		Region:      awssdk.String("us-west-2"),
-		Credentials: credentials.NewStaticCredentials(accessKey, secretID, sessiontoken),
-	})
-
-	if err != nil {
-		logger.Errorw("Can't start AWS session", "error", err)
-	}
-	awsSvc := ec2.New(sess)
-
-	if err != nil {
-		logger.Errorw("Can't start AWS session", "error", err)
-	}
-
 	{
 		svc = SpawnerService{
 			rancherController: rancher.NewRancherController(spawnerServiceRancher, config, logger),
-			awsController:     aws.NewAWSController(logger, awsSvc),
+			awsController:     aws.NewAWSController(logger),
 		}
 		svc = LoggingMiddleware(logger)(svc)
 		svc = InstrumentingMiddleware(ints)(svc)

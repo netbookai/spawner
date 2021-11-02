@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"go.uber.org/zap"
 )
 
 type mockedCreateVolume struct {
@@ -93,17 +94,20 @@ func TestCreateVolume(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			client: mockedCreateVolume{
+			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+				m := mockedCreateVolume{
 
-				Resp: ec2.Volume{
-					VolumeId: &test.expectedOutput.Volumeid,
-				},
+					Resp: ec2.Volume{
+						VolumeId: &test.expectedOutput.Volumeid,
+					},
 
-				CreateVolumeMock: func(in *ec2.CreateVolumeInput) (*ec2.Volume, error) {
-					return &ec2.Volume{
-						VolumeId: aws.String(createVolumeResponse1.Volumeid),
-					}, nil
-				},
+					CreateVolumeMock: func(in *ec2.CreateVolumeInput) (*ec2.Volume, error) {
+						return &ec2.Volume{
+							VolumeId: aws.String(createVolumeResponse1.Volumeid),
+						}, nil
+					},
+				}
+				return m, nil
 			},
 		}
 
@@ -167,13 +171,16 @@ func TestDeleteVolume(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			client: mockedDeleteVolume{
+			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+				m := mockedDeleteVolume{
 
-				Resp: ec2.DeleteVolumeOutput{},
+					Resp: ec2.DeleteVolumeOutput{},
 
-				DeleteVolumeMock: func(in *ec2.DeleteVolumeInput) (*ec2.DeleteVolumeOutput, error) {
-					return &ec2.DeleteVolumeOutput{}, nil
-				},
+					DeleteVolumeMock: func(in *ec2.DeleteVolumeInput) (*ec2.DeleteVolumeOutput, error) {
+						return &ec2.DeleteVolumeOutput{}, nil
+					},
+				}
+				return m, nil
 			},
 		}
 
@@ -232,17 +239,20 @@ func TestCreateSnapshot(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			client: mockedCreateSnapshot{
+			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+				m := mockedCreateSnapshot{
 
-				Resp: ec2.Snapshot{
-					SnapshotId: &test.expectedOutput.Snapshotid,
-				},
+					Resp: ec2.Snapshot{
+						SnapshotId: &test.expectedOutput.Snapshotid,
+					},
 
-				CreateSnapshotMock: func(in *ec2.CreateSnapshotInput) (*ec2.Snapshot, error) {
-					return &ec2.Snapshot{
-						SnapshotId: aws.String(createSnapshotResponse1.Snapshotid),
-					}, nil
-				},
+					CreateSnapshotMock: func(in *ec2.CreateSnapshotInput) (*ec2.Snapshot, error) {
+						return &ec2.Snapshot{
+							SnapshotId: aws.String(createSnapshotResponse1.Snapshotid),
+						}, nil
+					},
+				}
+				return m, nil
 			},
 		}
 
@@ -303,23 +313,26 @@ func TestCreateSnapshotAndDelete(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			client: mockedCreateSnapshotAndDelete{
+			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+				m := mockedCreateSnapshotAndDelete{
 
-				ResponseSnapshot: ec2.Snapshot{
-					SnapshotId: &test.expectedOutput.Snapshotid,
-				},
+					ResponseSnapshot: ec2.Snapshot{
+						SnapshotId: &test.expectedOutput.Snapshotid,
+					},
 
-				ResponseDelete: ec2.DeleteVolumeOutput{},
+					ResponseDelete: ec2.DeleteVolumeOutput{},
 
-				CreateSnapshotMock: func(in *ec2.CreateSnapshotInput) (*ec2.Snapshot, error) {
-					return &ec2.Snapshot{
-						SnapshotId: aws.String(createSnapshotAndDeleteResponse1.Snapshotid),
-					}, nil
-				},
+					CreateSnapshotMock: func(in *ec2.CreateSnapshotInput) (*ec2.Snapshot, error) {
+						return &ec2.Snapshot{
+							SnapshotId: aws.String(createSnapshotAndDeleteResponse1.Snapshotid),
+						}, nil
+					},
 
-				DeleteVolumeMock: func(in *ec2.DeleteVolumeInput) (*ec2.DeleteVolumeOutput, error) {
-					return &ec2.DeleteVolumeOutput{}, nil
-				},
+					DeleteVolumeMock: func(in *ec2.DeleteVolumeInput) (*ec2.DeleteVolumeOutput, error) {
+						return &ec2.DeleteVolumeOutput{}, nil
+					},
+				}
+				return m, nil
 			},
 		}
 

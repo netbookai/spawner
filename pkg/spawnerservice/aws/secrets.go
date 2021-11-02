@@ -2,8 +2,6 @@ package aws
 
 import (
 	"encoding/base64"
-	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -16,11 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetCredsFromSTS() (string, string, string, error) {
+func GetCredsFromSTS(logger *zap.SugaredLogger) (string, string, string, error) {
 	svc := sts.New(session.New())
 	web_identity_token, err := os.ReadFile("/var/run/secrets/eks.amazonaws.com/serviceaccount/token")
 	if err != nil {
-		fmt.Errorf("Error reading token")
+		logger.Errorw("error reading token", "error", err)
 	}
 	input := &sts.AssumeRoleWithWebIdentityInput{
 		DurationSeconds:  aws.Int64(900),
@@ -30,52 +28,47 @@ func GetCredsFromSTS() (string, string, string, error) {
 	}
 
 	result, err := svc.AssumeRoleWithWebIdentity(input)
+
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
-			case sts.ErrCodeMalformedPolicyDocumentException:
-				fmt.Println(sts.ErrCodeMalformedPolicyDocumentException, aerr.Error())
-			case sts.ErrCodePackedPolicyTooLargeException:
-				fmt.Println(sts.ErrCodePackedPolicyTooLargeException, aerr.Error())
-			case sts.ErrCodeIDPRejectedClaimException:
-				fmt.Println(sts.ErrCodeIDPRejectedClaimException, aerr.Error())
-			case sts.ErrCodeIDPCommunicationErrorException:
-				fmt.Println(sts.ErrCodeIDPCommunicationErrorException, aerr.Error())
-			case sts.ErrCodeInvalidIdentityTokenException:
-				fmt.Println(sts.ErrCodeInvalidIdentityTokenException, aerr.Error())
 			case sts.ErrCodeExpiredTokenException:
-				fmt.Println(sts.ErrCodeExpiredTokenException, aerr.Error())
+				logger.Errorw("token expired", "error", aerr.Error())
 			case sts.ErrCodeRegionDisabledException:
-				fmt.Println(sts.ErrCodeRegionDisabledException, aerr.Error())
+				logger.Errorw("error creating token: region disabled", "error", aerr.Error())
 			default:
-				fmt.Println(aerr.Error())
+				logger.Errorw("error accessing aws", "error", aerr.Error())
 			}
 		} else {
 			// Print the error, cast err to awserr.Error to get the Code and
 			// Message from an error.
-			fmt.Println(err.Error())
+			logger.Errorw("error while getting credentials", "error", err.Error())
 		}
 
+		return "", "", "", nil
 	}
 	return *result.Credentials.AccessKeyId, *result.Credentials.SecretAccessKey, *result.Credentials.SessionToken, nil
 }
 
 func CreateAwsSecretSession(provider string, region string, sessionName string, logger *zap.SugaredLogger) (awsSecSvc *secretsmanager.SecretsManager) {
 
-	accessKey, secretID, sessiontoken, stserr := GetCredsFromSTS()
+	accessKey, secretID, sessiontoken, stserr := GetCredsFromSTS(logger)
+
 	if stserr != nil {
-		log.Fatalf("Error getting Credentials")
+		logger.Errorw("Error getting Credentials", "error", stserr)
 	}
 
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(region),
 		Credentials: credentials.NewStaticCredentials(accessKey, secretID, sessiontoken),
 	})
-	awsSecSvc = secretsmanager.New(sess)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
 	}
+
+	awsSecSvc = secretsmanager.New(sess)
+
 	return awsSecSvc
 }
 
