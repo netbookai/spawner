@@ -3,19 +3,46 @@ package aws
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"go.uber.org/zap"
 )
 
 type AWSController struct {
-	logger *zap.SugaredLogger
-	client ec2iface.EC2API
+	logger        *zap.SugaredLogger
+	sessionClient func(region string, logger *zap.SugaredLogger) (awssession ec2iface.EC2API, err error)
 }
 
-func NewAWSController(logger *zap.SugaredLogger, client ec2iface.EC2API) AWSController {
+func sessionClient(region string, logger *zap.SugaredLogger) (awsSession ec2iface.EC2API, err error) {
 
-	return AWSController{logger, client}
+	accessKey, secretID, sessiontoken, stserr := GetCredsFromSTS(logger)
+
+	if stserr != nil {
+		logger.Errorw("Error getting Credentials", "error", stserr)
+		return nil, stserr
+	}
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: credentials.NewStaticCredentials(accessKey, secretID, sessiontoken),
+	})
+
+	if err != nil {
+		logger.Errorw("Can't start AWS session", "error", err)
+		return nil, err
+	}
+	awsSvc := ec2.New(sess)
+
+	return awsSvc, err
+}
+
+func NewAWSController(logger *zap.SugaredLogger) AWSController {
+
+	return AWSController{logger, sessionClient}
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
