@@ -150,11 +150,12 @@ message NodeDeleteResponse {
 
 message CreateVolumeRequest{
     string availabilityzone = 1;
-    string volumetype =2;
-    int64 size=3;
-    string snapshotid=4; 
-    string provider=5;
-    string region=6;
+    string volumetype = 2;
+    int64 size = 3;
+    string snapshotid = 4; 
+    string provider = 5;
+    string region = 6;
+    map<string, string> labels = 7;
 }
 
 message CreateVolumeResponse{
@@ -174,9 +175,10 @@ message DeleteVolumeResponse{
 }
 
 message CreateSnapshotRequest{
-    string volumeid=1;
-    string provider=2;
-    string region=3;
+    string volumeid = 1;
+    string provider = 2;
+    string region = 3;
+    map<string, string> labels = 4;
 }
 
 message CreateSnapshotResponse{
@@ -185,13 +187,14 @@ message CreateSnapshotResponse{
 }
 
 message CreateSnapshotAndDeleteRequest{
-    string volumeid=1;
-    string provider=2;
-    string region=3;
+    string volumeid = 1;
+    string provider = 2;
+    string region = 3;
+    map<string, string> labels = 4;
 }
 
 message CreateSnapshotAndDeleteResponse{
-    string snapshotid=1;
-    bool deleted=2;
-    string error=3;
+    string snapshotid = 1;
+    bool deleted = 2;
+    string error = 3;
 }

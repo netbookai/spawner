@@ -7,6 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +29,19 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 	}
 }
 
+func addAWSTags(labels map[string]string) []*ec2.Tag {
+	
+	tagsMap := *util.SimpleReplaceMerge(map[string]string{"creator": constants.SPAWNER_SERVICE_LABEL, "provisioner": constants.AWS_LABEL}, labels)
+	tags := []*ec2.Tag{}
+	for key, value := range tagsMap {
+		tags = append(tags, &ec2.Tag{
+			Key: aws.String(key),
+			Value: aws.String(value),
+		})
+	}
+	return tags
+}
+
 func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
 	//Creates an EBS volume
 
@@ -37,12 +52,19 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 	size := req.GetSize()
 	snapshotId := req.GetSnapshotid()
 	region := req.Region
+	tags := addAWSTags(req.GetLabels())
 
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
 		VolumeType:       aws.String(volumeType),
 		Size:             aws.Int64(size),
 		SnapshotId:       aws.String(snapshotId),
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				ResourceType: aws.String(ec2.ResourceTypeVolume),
+				Tags: tags,
+			},
+		},
 	}
 
 	//creating session
@@ -113,9 +135,16 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 
 	volumeid := req.GetVolumeid()
 	region := req.Region
+	tags := addAWSTags(req.GetLabels())
 
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				ResourceType: aws.String(ec2.ResourceTypeSnapshot),
+				Tags: tags,
+			},
+		},
 	}
 
 	//creating session
@@ -148,9 +177,16 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 
 	volumeid := req.GetVolumeid()
 	region := req.Region
+	tags := addAWSTags(req.GetLabels())
 
 	inputSnapshot := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				ResourceType: aws.String(ec2.ResourceTypeSnapshot),
+				Tags: tags,
+			},
+		},
 	}
 
 	//creating session
