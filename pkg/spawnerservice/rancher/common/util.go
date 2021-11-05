@@ -20,6 +20,11 @@ func BoolPtr(b bool) *bool {
 	return &b
 }
 
+func MapPtr(b map[string]string) *map[string]string {
+	return &b
+}
+
+
 func CreateRancherClient(url string, accessKey string, secretKey string) (*rnchrClient.Client, error) {
 	rancherHttpClient := &http.Client{}
 
