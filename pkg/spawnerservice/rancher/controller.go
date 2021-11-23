@@ -167,6 +167,12 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 		awsRegionNetworkStack, err = aws.CreateRegionWkspNetworkStack(clusterReq.Region)
 		if err != nil {
 			svc.logger.Errorw("error creating network stack for region with no clusters", "region", clusterReq.Region, "error", err)
+			svc.logger.Warnw("rolling back network stack changes as creation failed", "region", clusterReq.Region)
+			delErr := aws.DeleteRegionWkspNetworkStack(clusterReq.Region, *awsRegionNetworkStack)
+			if delErr != nil {
+				svc.logger.Errorw("error deleting network stack for region", "region", clusterReq.Region, "error", delErr)
+			}
+
 			return nil, err
 		}
 		for _, subn := range awsRegionNetworkStack.Subnets {
