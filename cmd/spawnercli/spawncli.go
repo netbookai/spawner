@@ -56,13 +56,14 @@ func main() {
 	node := &pb.NodeSpec{
 		Name:     "ng-01",
 		Instance: "t3.medium",
-		DiskSize: 14,
+		DiskSize: 13,
 	}
 	createClusterReq := &pb.ClusterRequest{
-		Provider: "aws",
-		Region:   "us-west-2",
-		Node:     node,
-		Labels:   map[string]string{},
+		Provider:    "aws",
+		Region:      "us-east-2",
+		Node:        node,
+		Labels:      map[string]string{},
+		ClusterName: "test-us-east-2",
 	}
 
 	addTokenReq := &pb.AddTokenRequest{

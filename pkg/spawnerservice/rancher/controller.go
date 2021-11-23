@@ -11,6 +11,7 @@ import (
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/eks"
 	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 
@@ -149,29 +150,39 @@ func (svc RancherController) AddNodeInternal(nodeSpawnRequest *pb.NodeSpawnReque
 func (svc RancherController) CreateClusterInternal(clusterName string, clusterReq *pb.ClusterRequest) (*rnchrClient.Cluster, error) {
 	awsCred, _ := svc.GetCloudCreds(svc.config.AwsCredName)
 
-	eksClustersInRegion, err := svc.GetEksClustersInRegion(clusterReq.Region)
+	var subnets []string
 
+	awsRegionNetworkStack, err := aws.GetRegionWkspNetworkStack(clusterReq.Region)
 	if err != nil {
-		svc.logger.Errorw("error creating cluster failed at getting clusters in region", "cluster", clusterName, "clusterrequest", clusterReq, "error", err)
-		return &rnchrClient.Cluster{}, fmt.Errorf("creating cluster failed at getting clusters in region with err %s", err)
+		svc.logger.Errorw("error getting network stack for region", "region", clusterReq.Region, "error", err)
+		return nil, err
 	}
 
-	var subnets []string
-	if len(eksClustersInRegion) > 0 {
-		subnets = *eksClustersInRegion[0].EKSConfig.Subnets
-
-		if len(subnets) <= 0 {
-			subnets = eksClustersInRegion[0].EKSStatus.Subnets
+	if awsRegionNetworkStack.Vpc != nil && len(awsRegionNetworkStack.Subnets) > 0 {
+		for _, subn := range awsRegionNetworkStack.Subnets {
+			subnets = append(subnets, *subn.SubnetId)
 		}
+		svc.logger.Infow("got network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnets)
+	} else {
+		awsRegionNetworkStack, err = aws.CreateRegionWkspNetworkStack(clusterReq.Region)
+		if err != nil {
+			svc.logger.Errorw("error creating network stack for region with no clusters", "region", clusterReq.Region, "error", err)
+			return nil, err
+		}
+		for _, subn := range awsRegionNetworkStack.Subnets {
+			subnets = append(subnets, *subn.SubnetId)
+		}
+		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnets)
 	}
 
 	newCluster := eks.CreateCluster(
 		awsCred,
 		clusterReq,
 		clusterName,
-		map[string]string{"name": clusterName, "creator": "spawner-service", "provisioner": "rancher"},
-		map[string]string{"creator": "spawner-service", "provisioner": "rancher"},
+		map[string]string{constants.NAME_LABEL: clusterName, constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL},
+		map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL},
 		subnets)
+	svc.logger.Infow("new eks cluster spec", "ekscluster", *newCluster)
 
 	cluster, err := svc.spawnerServiceRancher.CreateCluster(newCluster)
 

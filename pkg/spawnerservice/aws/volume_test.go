@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"gitlab.com/netbook-devs/spawner-service/pb"
-	"go.uber.org/zap"
 )
 
 type mockedCreateVolume struct {
@@ -94,7 +93,7 @@ func TestCreateVolume(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+			ec2SessFactory: func(region string) (ec2iface.EC2API, error) {
 				m := mockedCreateVolume{
 
 					Resp: ec2.Volume{
@@ -171,7 +170,7 @@ func TestDeleteVolume(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+			ec2SessFactory: func(region string) (ec2iface.EC2API, error) {
 				m := mockedDeleteVolume{
 
 					Resp: ec2.DeleteVolumeOutput{},
@@ -239,7 +238,7 @@ func TestCreateSnapshot(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+			ec2SessFactory: func(region string) (ec2iface.EC2API, error) {
 				m := mockedCreateSnapshot{
 
 					Resp: ec2.Snapshot{
@@ -313,7 +312,7 @@ func TestCreateSnapshotAndDelete(t *testing.T) {
 	for _, test := range testTable {
 
 		v := AWSController{
-			sessionClient: func(region string, logger *zap.SugaredLogger) (ec2iface.EC2API, error) {
+			ec2SessFactory: func(region string) (ec2iface.EC2API, error) {
 				m := mockedCreateSnapshotAndDelete{
 
 					ResponseSnapshot: ec2.Snapshot{
