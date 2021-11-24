@@ -3,6 +3,7 @@ package aws
 import (
 	"fmt"
 	"sort"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -27,6 +28,11 @@ const (
 	subnet01Cidr      = "192.168.64.0/18"
 	subnet02Cidr      = "192.168.128.0/18"
 	subnet03Cidr      = "192.168.192.0/18"
+)
+
+var (
+	subnetUpto4Cidr = [4]string{"192.168.0.0/18", "192.168.64.0/18", "192.168.128.0/18", "192.168.192.0/18"}
+	subnetUpto8Cidr = [8]string{"192.168.0.0/19", "192.168.32.0/19", "192.168.64.0/19", "192.168.96.0/19", "192.168.128.0/19", "192.168.160.0/19", "192.168.192.0/19", "192.168.224.0/19"}
 )
 
 func CreateAwsEc2Session(region string) (*ec2.EC2, error) {
@@ -246,29 +252,22 @@ func CreateRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, er
 		return rv, errors.Wrapf(err, "error creating route for region %s route table %s gateway %s", region, *routeTable.RouteTableId, *gateway.InternetGatewayId)
 	}
 
-	subnet01, err := CreateSubnetStack(sess, vpc, vpcName, fmt.Sprintf(subnetNameFmt, region, "01"), subnet01Cidr, *azsInRegion.AvailabilityZones[0].ZoneName, routeTable)
-	if err != nil {
-		return rv, errors.Wrapf(err, "error creating subnet01 for region %s vpc %s az %s", region, *vpc.VpcId, *azsInRegion.AvailabilityZones[0].ZoneName)
-	}
-	rv.Subnets = []*ec2.Subnet{subnet01}
-
-	var subnet02 *ec2.Subnet
-	var subnet03 *ec2.Subnet
-
-	if len(azsInRegion.AvailabilityZones) > 1 {
-		subnet02, err = CreateSubnetStack(sess, vpc, vpcName, fmt.Sprintf(subnetNameFmt, region, "02"), subnet02Cidr, *azsInRegion.AvailabilityZones[1].ZoneName, routeTable)
-		if err != nil {
-			return rv, errors.Wrapf(err, "error creating subnet02 for region %s vpc %s az %s", region, *vpc.VpcId, *azsInRegion.AvailabilityZones[1].ZoneName)
-		}
-		rv.Subnets = append(rv.Subnets, subnet02)
+	var subnetCidrArr []string
+	if len(azsInRegion.AvailabilityZones) <= 4 {
+		subnetCidrArr = subnetUpto4Cidr[:]
+	} else {
+		subnetCidrArr = subnetUpto8Cidr[:]
 	}
 
-	if len(azsInRegion.AvailabilityZones) > 2 {
-		subnet03, err = CreateSubnetStack(sess, vpc, vpcName, fmt.Sprintf(subnetNameFmt, region, "03"), subnet03Cidr, *azsInRegion.AvailabilityZones[2].ZoneName, routeTable)
+	rv.Subnets = []*ec2.Subnet{}
+	for ind, avblZone := range azsInRegion.AvailabilityZones {
+		subnetName := fmt.Sprintf(subnetNameFmt, region, strconv.Itoa(ind))
+		subnetAz := avblZone.ZoneName
+		subnet, err := CreateSubnetStack(sess, vpc, vpcName, subnetName, subnetCidrArr[ind], *subnetAz, routeTable)
 		if err != nil {
-			return rv, errors.Wrapf(err, "error creating subnet03 for region %s vpc %s az %s", region, *vpc.VpcId, *azsInRegion.AvailabilityZones[2].ZoneName)
+			return rv, errors.Wrapf(err, "error creating subnet %s for region %s vpc %s az %s", subnetName, region, *vpc.VpcId, *subnetAz)
 		}
-		rv.Subnets = append(rv.Subnets, subnet03)
+		rv.Subnets = append(rv.Subnets, subnet)
 	}
 
 	return rv, nil
