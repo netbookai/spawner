@@ -30,12 +30,12 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 }
 
 func addAWSTags(labels map[string]string) []*ec2.Tag {
-	
+
 	tagsMap := util.SimpleReplaceMerge(map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.AWS_LABEL}, labels)
 	tags := []*ec2.Tag{}
 	for key, value := range tagsMap {
 		tags = append(tags, &ec2.Tag{
-			Key: aws.String(key),
+			Key:   aws.String(key),
 			Value: aws.String(value),
 		})
 	}
@@ -62,13 +62,13 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String(ec2.ResourceTypeVolume),
-				Tags: tags,
+				Tags:         tags,
 			},
 		},
 	}
 
 	//creating session
-	awsSvc, err := svc.sessionClient(region, logger)
+	awsSvc, err := svc.ec2SessFactory(region)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -104,7 +104,7 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 	}
 
 	//creating session
-	awsSvc, err := svc.sessionClient(region, logger)
+	awsSvc, err := svc.ec2SessFactory(region)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -142,13 +142,13 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String(ec2.ResourceTypeSnapshot),
-				Tags: tags,
+				Tags:         tags,
 			},
 		},
 	}
 
 	//creating session
-	awsSvc, err := svc.sessionClient(region, logger)
+	awsSvc, err := svc.ec2SessFactory(region)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -184,13 +184,13 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String(ec2.ResourceTypeSnapshot),
-				Tags: tags,
+				Tags:         tags,
 			},
 		},
 	}
 
 	//creating session
-	awsSvc, err := svc.sessionClient(region, logger)
+	awsSvc, err := svc.ec2SessFactory(region)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
