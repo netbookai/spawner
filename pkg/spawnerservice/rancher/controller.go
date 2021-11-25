@@ -185,7 +185,7 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 		awsCred,
 		clusterReq,
 		clusterName,
-		map[string]string{constants.NAME_LABEL: clusterName, constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL},
+		map[string]string{constants.CLUSTER_NAME_LABEL: clusterName, constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL},
 		map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL},
 		subnets)
 	svc.logger.Infow("new eks cluster spec", "ekscluster", *newCluster)

@@ -19,27 +19,27 @@ func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRe
 	}
 
 	newNodeGroup := rnchrClient.NodeGroup{
-		DiskSize:             common.Int64Ptr(int64(nodeSpawnRequest.NodeSpec.DiskSize)),
-		InstanceType:         common.StrPtr(nodeSpawnRequest.NodeSpec.Instance),
-		NodegroupName:        common.StrPtr(nodeSpawnRequest.NodeSpec.Name),
-		MinSize:              common.Int64Ptr(1),
-		DesiredSize:          common.Int64Ptr(1),
-		MaxSize:              common.Int64Ptr(1),
-		Gpu:                  common.BoolPtr(false),
-		Labels:               common.MapPtr(util.SimpleReplaceMerge(
-			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, "name": nodeSpawnRequest.NodeSpec.Name, "nodeLabelSelector": nodeSpawnRequest.NodeSpec.Name, "instance": nodeSpawnRequest.NodeSpec.Instance, "type": "nodegroup"},
+		DiskSize:      common.Int64Ptr(int64(nodeSpawnRequest.NodeSpec.DiskSize)),
+		InstanceType:  common.StrPtr(nodeSpawnRequest.NodeSpec.Instance),
+		NodegroupName: common.StrPtr(nodeSpawnRequest.NodeSpec.Name),
+		MinSize:       common.Int64Ptr(1),
+		DesiredSize:   common.Int64Ptr(1),
+		MaxSize:       common.Int64Ptr(1),
+		Gpu:           common.BoolPtr(false),
+		Labels: common.MapPtr(util.SimpleReplaceMerge(
+			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, constants.NODE_NAME_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.NODE_LABEL_SELECTOR_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.INSTANCE_LABEL: nodeSpawnRequest.NodeSpec.Instance, "type": "nodegroup"},
 			cluster.Labels,
 		)),
 		RequestSpotInstances: common.BoolPtr(false),
-		ResourceTags:         common.MapPtr(util.SimpleReplaceMerge(
-			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, "name": nodeSpawnRequest.NodeSpec.Name, "instance": nodeSpawnRequest.NodeSpec.Instance},
+		ResourceTags: common.MapPtr(util.SimpleReplaceMerge(
+			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, constants.NODE_NAME_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.INSTANCE_LABEL: nodeSpawnRequest.NodeSpec.Instance},
 			cluster.Labels,
 		)),
-		Version:              common.StrPtr("1.20"),
-		Tags:                 &tags,
-		UserData:             common.StrPtr(""),
-		Subnets:              (*cluster.EKSConfig.NodeGroups)[0].Subnets,
-		Ec2SshKey:            common.StrPtr(""),
+		Version:   common.StrPtr("1.20"),
+		Tags:      &tags,
+		UserData:  common.StrPtr(""),
+		Subnets:   (*cluster.EKSConfig.NodeGroups)[0].Subnets,
+		Ec2SshKey: common.StrPtr(""),
 	}
 
 	newNodesGroupsList := append((*cluster.EKSConfig.NodeGroups), newNodeGroup)
