@@ -29,11 +29,13 @@ func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRe
 		Labels: common.MapPtr(util.SimpleReplaceMerge(
 			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, constants.NODE_NAME_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.NODE_LABEL_SELECTOR_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.INSTANCE_LABEL: nodeSpawnRequest.NodeSpec.Instance, "type": "nodegroup"},
 			cluster.Labels,
+			nodeSpawnRequest.NodeSpec.Labels,
 		)),
 		RequestSpotInstances: common.BoolPtr(false),
 		ResourceTags: common.MapPtr(util.SimpleReplaceMerge(
 			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, constants.NODE_NAME_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.INSTANCE_LABEL: nodeSpawnRequest.NodeSpec.Instance},
 			cluster.Labels,
+			nodeSpawnRequest.NodeSpec.Labels,
 		)),
 		Version:   common.StrPtr("1.20"),
 		Tags:      &tags,

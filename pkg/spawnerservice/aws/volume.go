@@ -199,9 +199,16 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 
 	//calling aws sdk CreateSnapshot method
 	resultSnapshot, err := awsSvc.CreateSnapshot(inputSnapshot)
-
 	if err != nil {
 		LogError("CreateSnapshot", logger, err)
+		return &pb.CreateSnapshotAndDeleteResponse{}, err
+	}
+
+	err = awsSvc.WaitUntilSnapshotCompleted(&ec2.DescribeSnapshotsInput{
+		SnapshotIds: []*string{resultSnapshot.SnapshotId},
+	})
+	if err != nil {
+		LogError("WaitForSnapshowCompleted", logger, err)
 		return &pb.CreateSnapshotAndDeleteResponse{}, err
 	}
 
