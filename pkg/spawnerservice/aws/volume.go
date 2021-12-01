@@ -77,9 +77,16 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 
 	//calling aws sdk CreateVolume function
 	result, err := awsSvc.CreateVolume(input)
-
 	if err != nil {
 		LogError("CreateVolume", logger, err)
+		return &pb.CreateVolumeResponse{}, err
+	}
+
+	err = awsSvc.WaitUntilVolumeAvailable(&ec2.DescribeVolumesInput{
+		VolumeIds: []*string{result.VolumeId},
+	})
+	if err != nil {
+		LogError("WaitForVolumeAvailable", logger, err)
 		return &pb.CreateVolumeResponse{}, err
 	}
 
@@ -157,9 +164,16 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 
 	//calling aws sdk method to snapshot volume
 	result, err := awsSvc.CreateSnapshot(input)
-
 	if err != nil {
 		LogError("CreateSnapshot", logger, err)
+		return &pb.CreateSnapshotResponse{}, err
+	}
+
+	err = awsSvc.WaitUntilSnapshotCompleted(&ec2.DescribeSnapshotsInput{
+		SnapshotIds: []*string{result.SnapshotId},
+	})
+	if err != nil {
+		LogError("WaitForSnapshotCompleted", logger, err)
 		return &pb.CreateSnapshotResponse{}, err
 	}
 
@@ -208,7 +222,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 		SnapshotIds: []*string{resultSnapshot.SnapshotId},
 	})
 	if err != nil {
-		LogError("WaitForSnapshowCompleted", logger, err)
+		LogError("WaitForSnapshotCompleted", logger, err)
 		return &pb.CreateSnapshotAndDeleteResponse{}, err
 	}
 
