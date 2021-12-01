@@ -293,7 +293,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	// construct per-endpoint circuitbreaker middlewares to demonstrate how
 	// that's done, although they could easily be combined into a single breaker
 	// for the entire remote instance, too.
-	limiter := ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 100))
+	limiter := ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 100))
 
 	// global client middlewares
 	var options []grpctransport.ClientOption
