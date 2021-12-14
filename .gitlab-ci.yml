@@ -32,23 +32,44 @@ include:
 - template: Security/SAST.gitlab-ci.yml
 - template: Security/Secret-Detection.gitlab-ci.yml
 
+docker_build_test:
+  stage: test
+  script:
+    - docker login --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD  $CI_REGISTRY
+    - docker build --network host -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile . 
+  except:
+    - development
+    - main
+
 docker_creation:
   stage: build
   script:
     - docker login --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD  $CI_REGISTRY
-    - docker build -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile .
+    - docker build --network host -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile .
     - docker push registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA
   only:
     refs:
       - main
+      - development
 
-helm_deploy:
+helm_deploy_dev:
   stage: deploy
   script:
   - sh .gitlab/ci-scripts/helm.sh
-  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set image.tag=$CI_COMMIT_SHORT_SHA
+  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA
   environment:
     name: development
+  only:
+    refs:
+      - development
+
+helm_deploy_prod:
+  stage: deploy
+  script:
+  - sh .gitlab/ci-scripts/helm.sh
+  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA
+  environment:
+    name: production
   only:
     refs:
       - main

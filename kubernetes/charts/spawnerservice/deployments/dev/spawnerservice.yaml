@@ -1,7 +1,0 @@
-rancher:
-  address: https://dev-rancher-02.anatinuslabs.com/v3
-  username: token-phwwm
-  password: 8wmdvmfxgj7v2b5flnmqmldmp6vw2clx447qr9cvrx29cnnt8rnszt
-  aws_cred_name: AWS-rancher-dev
-
-docker: ewoJImF1dGhzIjogewoJCSJyZWdpc3RyeS5naXRsYWIuY29tIjogewoJCQkiYXV0aCI6ICJaMmwwYkdGaUsyUmxjR3h2ZVMxMGIydGxiaTAyTVRFME9ESTZZMnBTTFUwMU1VeHlWVVYwV1VadmMyOWFjMkU9IgoJCX0KCX0KfQ==
