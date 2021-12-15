@@ -43,7 +43,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		createClusterEndpoint = MakeCreateClusterEndpoint(svc)
 		// CreateCluster is limited to 1 request per second with burst of 1 request.
 		// Note, rate is defined as a time interval between requests.
-		createClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createClusterEndpoint)
+		createClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(createClusterEndpoint)
 		createClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createClusterEndpoint)
 		createClusterEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateCluster"))(createClusterEndpoint)
 		createClusterEndpoint = InstrumentingMiddleware(duration.With("method", "CreateCluster"))(createClusterEndpoint)
@@ -54,7 +54,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		getClustersEndpoint = MakeGetClustersEndpoint(svc)
 		// GetClusters is limited to 1 request per second with burst of 1 request.
 		// Note, rate is defined as a time interval between requests.
-		getClustersEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getClustersEndpoint)
+		getClustersEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(getClustersEndpoint)
 		getClustersEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getClustersEndpoint)
 		getClustersEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetClusters"))(getClustersEndpoint)
 		getClustersEndpoint = InstrumentingMiddleware(duration.With("method", "GetClusters"))(getClustersEndpoint)
@@ -63,7 +63,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var getClusterEndpoint endpoint.Endpoint
 	{
 		getClusterEndpoint = MakeGetClusterEndpoint(svc)
-		getClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getClusterEndpoint)
+		getClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(getClusterEndpoint)
 		getClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getClusterEndpoint)
 		getClusterEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetCluster"))(getClusterEndpoint)
 		getClusterEndpoint = InstrumentingMiddleware(duration.With("method", "GetCluster"))(getClusterEndpoint)
@@ -72,7 +72,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var addTokenEndpoint endpoint.Endpoint
 	{
 		addTokenEndpoint = MakeAddTokenEndpoint(svc)
-		addTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(addTokenEndpoint)
+		addTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(addTokenEndpoint)
 		addTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addTokenEndpoint)
 		addTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddToken"))(addTokenEndpoint)
 		addTokenEndpoint = InstrumentingMiddleware(duration.With("method", "AddToken"))(addTokenEndpoint)
@@ -81,7 +81,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var getTokenEndpoint endpoint.Endpoint
 	{
 		getTokenEndpoint = MakeGetTokenEndpoint(svc)
-		getTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(getTokenEndpoint)
+		getTokenEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(getTokenEndpoint)
 		getTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getTokenEndpoint)
 		getTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetToken"))(getTokenEndpoint)
 		getTokenEndpoint = InstrumentingMiddleware(duration.With("method", "GetToken"))(getTokenEndpoint)
@@ -90,7 +90,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var clusterStatusEndpoint endpoint.Endpoint
 	{
 		clusterStatusEndpoint = MakeCusterStatusEndpoint(svc)
-		clusterStatusEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(clusterStatusEndpoint)
+		clusterStatusEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(clusterStatusEndpoint)
 		clusterStatusEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(clusterStatusEndpoint)
 		clusterStatusEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "ClusterStatus"))(clusterStatusEndpoint)
 		clusterStatusEndpoint = InstrumentingMiddleware(duration.With("method", "ClusterStatus"))(clusterStatusEndpoint)
@@ -99,7 +99,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var addNodeEndpoint endpoint.Endpoint
 	{
 		addNodeEndpoint = MakeAddNodeEndpoint(svc)
-		addNodeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(addNodeEndpoint)
+		addNodeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(addNodeEndpoint)
 		addNodeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addNodeEndpoint)
 		addNodeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddNode"))(addNodeEndpoint)
 		addNodeEndpoint = InstrumentingMiddleware(duration.With("method", "AddNode"))(addNodeEndpoint)
@@ -108,7 +108,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var deleteClusterEndpoint endpoint.Endpoint
 	{
 		deleteClusterEndpoint = MakeClusterDeleteEndpoint(svc)
-		deleteClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(deleteClusterEndpoint)
+		deleteClusterEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(deleteClusterEndpoint)
 		deleteClusterEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteClusterEndpoint)
 		deleteClusterEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "DeleteCluster"))(deleteClusterEndpoint)
 		deleteClusterEndpoint = InstrumentingMiddleware(duration.With("method", "DeleteCluster"))(deleteClusterEndpoint)
@@ -117,7 +117,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var deleteNodeEndpoint endpoint.Endpoint
 	{
 		deleteNodeEndpoint = MakeNodeDeleteEndpoint(svc)
-		deleteNodeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(deleteNodeEndpoint)
+		deleteNodeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(deleteNodeEndpoint)
 		deleteNodeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteNodeEndpoint)
 		deleteNodeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "DeleteNode"))(deleteNodeEndpoint)
 		deleteNodeEndpoint = InstrumentingMiddleware(duration.With("method", "DeleteNode"))(deleteNodeEndpoint)
@@ -126,7 +126,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var createVolumeEndpoint endpoint.Endpoint
 	{
 		createVolumeEndpoint = MakeCreateVolumeEndpoint(svc)
-		createVolumeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createVolumeEndpoint)
+		createVolumeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(createVolumeEndpoint)
 		createVolumeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createVolumeEndpoint)
 		createVolumeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateVolume"))(createVolumeEndpoint)
 		createVolumeEndpoint = InstrumentingMiddleware(duration.With("method", "CreateVolume"))(createVolumeEndpoint)
@@ -135,7 +135,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var deleteVolumeEndpoint endpoint.Endpoint
 	{
 		deleteVolumeEndpoint = MakeDeleteVolumeEndpoint(svc)
-		deleteVolumeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(deleteVolumeEndpoint)
+		deleteVolumeEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(deleteVolumeEndpoint)
 		deleteVolumeEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(deleteVolumeEndpoint)
 		deleteVolumeEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "DeleteVolume"))(deleteVolumeEndpoint)
 		deleteVolumeEndpoint = InstrumentingMiddleware(duration.With("method", "DeleteVolume"))(deleteVolumeEndpoint)
@@ -144,7 +144,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var createSnapshotEndpoint endpoint.Endpoint
 	{
 		createSnapshotEndpoint = MakeCreateSnapshotEndpoint(svc)
-		createSnapshotEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createSnapshotEndpoint)
+		createSnapshotEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(createSnapshotEndpoint)
 		createSnapshotEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createSnapshotEndpoint)
 		createSnapshotEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateSnapshot"))(createSnapshotEndpoint)
 		createSnapshotEndpoint = InstrumentingMiddleware(duration.With("method", "CreateSnapshot"))(createSnapshotEndpoint)
@@ -153,7 +153,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 	var createSnapshotAndDeleteEndpoint endpoint.Endpoint
 	{
 		createSnapshotAndDeleteEndpoint = MakeCreateSnapshotAndDeleteEndpoint(svc)
-		createSnapshotAndDeleteEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 1))(createSnapshotAndDeleteEndpoint)
+		createSnapshotAndDeleteEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(createSnapshotAndDeleteEndpoint)
 		createSnapshotAndDeleteEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(createSnapshotAndDeleteEndpoint)
 		createSnapshotAndDeleteEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "CreateSnapshotAndDelete"))(createSnapshotAndDeleteEndpoint)
 		createSnapshotAndDeleteEndpoint = InstrumentingMiddleware(duration.With("method", "CreateSnapshotAndDelete"))(createSnapshotAndDeleteEndpoint)

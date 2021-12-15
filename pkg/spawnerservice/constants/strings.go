@@ -7,6 +7,7 @@ const (
 	RANCHER_LABEL              = "rancher"
 	SPAWNER_SERVICE_LABEL      = "spawner-service"
 	CLUSTER_NAME_LABEL         = "cluster-name"
+	WORKSPACE_LABEL            = "workspace"
 	NODE_NAME_LABEL            = "node-name"
 	INSTANCE_LABEL             = "instance"
 	NODE_LABEL_SELECTOR_LABEL  = "nodeLabelSelector"

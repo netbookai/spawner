@@ -392,8 +392,19 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 		}, err
 	}
 
-	newClusterSpec, err := eks.DeleteNodeGroup(cluster, req)
-	if err != nil {
+	var newClusterSpec rnchrClient.ClusterSpec
+	var nodeGroupToRemove rnchrClient.NodeGroup
+
+	if cluster.EKSConfig != nil {
+		nodeGroupToRemove, newClusterSpec, err = eks.DeleteNodeGroup(cluster, req)
+		if err != nil {
+			return &pb.NodeDeleteResponse{
+				Error: err.Error(),
+			}, err
+		}
+	} else {
+		err = fmt.Errorf("only aws eks clusters supported")
+		svc.logger.Errorw("got non eks cluster in deletenode", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName)
 		return &pb.NodeDeleteResponse{
 			Error: err.Error(),
 		}, err
@@ -406,6 +417,16 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 		return &pb.NodeDeleteResponse{
 			Error: err.Error(),
 		}, err
+	}
+
+	if cluster.EKSConfig != nil {
+		err = aws.WaitTillInstanceTerminated(cluster.EKSConfig.Region, *nodeGroupToRemove.Labels)
+		if err != nil {
+			svc.logger.Errorw("error while waiting for instance to terminate", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName, "error", err)
+			return &pb.NodeDeleteResponse{
+				Error: err.Error(),
+			}, err
+		}
 	}
 
 	return &pb.NodeDeleteResponse{}, nil
