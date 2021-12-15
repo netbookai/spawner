@@ -54,7 +54,7 @@ func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRe
 	return newClusterSpec, nil
 }
 
-func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *pb.NodeDeleteRequest) (rnchrClient.ClusterSpec, error) {
+func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *pb.NodeDeleteRequest) (rnchrClient.NodeGroup, rnchrClient.ClusterSpec, error) {
 
 	index := -1
 	for i, nodeGroup := range *cluster.EKSConfig.NodeGroups {
@@ -65,9 +65,10 @@ func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *pb.NodeDel
 	}
 
 	if index == -1 {
-		return rnchrClient.ClusterSpec{}, fmt.Errorf("no nodegroup with name %s in cluster %s", nodeDeleteRequest.NodeGroupName, nodeDeleteRequest.ClusterName)
+		return rnchrClient.NodeGroup{}, rnchrClient.ClusterSpec{}, fmt.Errorf("no nodegroup with name %s in cluster %s", nodeDeleteRequest.NodeGroupName, nodeDeleteRequest.ClusterName)
 	}
 
+	ngToRemove := (*cluster.EKSConfig.NodeGroups)[index]
 	leftNg := (*cluster.EKSConfig.NodeGroups)[:index]
 	rightNg := (*cluster.EKSConfig.NodeGroups)[index+1:]
 
@@ -78,7 +79,7 @@ func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *pb.NodeDel
 		NodeGroups: &newNodeGroup,
 	}
 
-	return newClusterSpec, nil
+	return ngToRemove, newClusterSpec, nil
 }
 
 func CreateCluster(awsCred rnchrClient.CloudCredential, clusterReq *pb.ClusterRequest, clusterName string, clusterTags map[string]string, nodeGroupTags map[string]string, subnets []string) *rnchrClient.Cluster {
