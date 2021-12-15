@@ -15,7 +15,7 @@ type AWSController struct {
 	ec2SessFactory func(region string) (awssession ec2iface.EC2API, err error)
 }
 
-func ec2SessionFactory(region string) (awsSession ec2iface.EC2API, err error) {
+func Ec2SessionFactory(region string) (awsSession ec2iface.EC2API, err error) {
 	sess, err := CreateBaseSession(region)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't start AWS session")
@@ -26,7 +26,7 @@ func ec2SessionFactory(region string) (awsSession ec2iface.EC2API, err error) {
 }
 
 func NewAWSController(logger *zap.SugaredLogger) AWSController {
-	return AWSController{logger, ec2SessionFactory}
+	return AWSController{logger, Ec2SessionFactory}
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
