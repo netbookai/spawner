@@ -144,6 +144,15 @@ func (svc RancherController) AddNodeInternal(nodeSpawnRequest *pb.NodeSpawnReque
 		return &rnchrClient.Cluster{}, fmt.Errorf("error updating cluster %v", err)
 	}
 
+	if cluster.EKSConfig != nil {
+		svc.logger.Infow("wating for instance to start", "cluster", nodeSpawnRequest.ClusterName, "node", nodeSpawnRequest.NodeSpec.Name, "nodeSpec", nodeSpawnRequest.NodeSpec)
+		err = aws.WaitTillInstanceRunning(cluster.EKSConfig.Region, nodeSpawnRequest.NodeSpec.Labels)
+		if err != nil {
+			return nil, err
+		}
+		svc.logger.Infow("instances started", "cluster", nodeSpawnRequest.ClusterName, "node", nodeSpawnRequest.NodeSpec.Name, "nodeSpec", nodeSpawnRequest.NodeSpec)
+	}
+
 	return cluster, err
 }
 
@@ -413,13 +422,16 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 	_, err = svc.UpdateCluster(cluster, newClusterSpec, map[string]interface{}{
 		"name": cluster.AppliedSpec.EKSConfig.DisplayName})
 
+	svc.logger.Infow("updating cluster in delete node", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName)
 	if err != nil {
+		svc.logger.Errorw("error in updating cluster in delete node", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName, "error", err)
 		return &pb.NodeDeleteResponse{
 			Error: err.Error(),
 		}, err
 	}
 
 	if cluster.EKSConfig != nil {
+		svc.logger.Infow("waitng for node to termninate", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName)
 		err = aws.WaitTillInstanceTerminated(cluster.EKSConfig.Region, *nodeGroupToRemove.Labels)
 		if err != nil {
 			svc.logger.Errorw("error while waiting for instance to terminate", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName, "error", err)
@@ -427,6 +439,7 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 				Error: err.Error(),
 			}, err
 		}
+		svc.logger.Infow("instance terminated", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName)
 	}
 
 	return &pb.NodeDeleteResponse{}, nil
