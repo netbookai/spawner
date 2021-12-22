@@ -11,6 +11,22 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 )
 
+func WaitTillInstanceRunning(region string, instanceLabelMap map[string]string) error {
+	sess, err := Ec2SessionFactory(region)
+	if err != nil {
+		return err
+	}
+
+	return sess.WaitUntilInstanceRunning(&ec2.DescribeInstancesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NODE_NAME_LABEL)),
+				Values: aws.StringSlice([]string{instanceLabelMap[constants.NODE_NAME_LABEL]}),
+			},
+		},
+	})
+}
+
 func WaitTillInstanceTerminated(region string, instanceLabelMap map[string]string) error {
 	sess, err := Ec2SessionFactory(region)
 	if err != nil {
