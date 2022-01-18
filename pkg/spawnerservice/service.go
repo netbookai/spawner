@@ -10,8 +10,8 @@ import (
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
-	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 )
 
 type ClusterController interface {
@@ -36,7 +36,7 @@ type SpawnerService struct {
 	awsController     ClusterController
 }
 
-func New(logger *zap.SugaredLogger, config *util.Config, ints metrics.Counter) ClusterController {
+func New(logger *zap.SugaredLogger, config *config.Config, ints metrics.Counter) ClusterController {
 
 	rancherClient, err := common.CreateRancherClient(config.RancherAddr, config.RancherUsername, config.RancherPassword)
 	if err != nil {

@@ -84,7 +84,7 @@ func main() {
 	}
 
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "infra-test",
+		ClusterName: "local",
 	}
 
 	getClustersReq := &pb.GetClustersRequest{

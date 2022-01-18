@@ -1,4 +1,4 @@
-package util
+package maps
 
 func SimpleReplaceMerge(ms ...map[string]string) map[string]string {
 	res := map[string]string{}
