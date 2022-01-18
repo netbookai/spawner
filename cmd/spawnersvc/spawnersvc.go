@@ -116,7 +116,7 @@ func main() {
 		os.Exit(1)
 	}
 	g.Add(func() error {
-		sugar.Infow("in main", "transport", "gRPC", "grpcAddr", conf.Port)
+		sugar.Infow("in main", "transport", "gRPC", "grpcAddr", grpcAddress)
 		// we add the Go Kit gRPC Interceptor to our gRPC service as it is used by
 		// the here demonstrated zipkin tracing middleware.
 		baseServer := grpc.NewServer(grpc.UnaryInterceptor(kitgrpc.Interceptor))
