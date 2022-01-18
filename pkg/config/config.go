@@ -9,6 +9,8 @@ import (
 type Config struct {
 	//enviroment is either development or production
 	Env             string `mapstructure:"Env"`
+	Port            int    `mapstructure:"PORT"`
+	DebugPort       int    `mapstructure:"DEBUG_PORT"`
 	RancherUsername string `mapstructure:"RANCHER_USERNAME"`
 	RancherPassword string `mapstructure:"RANCHER_PASSWORD"`
 	RancherAddr     string `mapstructure:"RANCHER_ADDRESS"`

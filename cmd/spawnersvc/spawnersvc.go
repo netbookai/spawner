@@ -1,13 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"text/tabwriter"
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
@@ -39,13 +38,6 @@ func main() {
 	}
 	sugar := logger.Sugar()
 	defer sugar.Sync()
-
-	//TODO: move to config file
-	fs := flag.NewFlagSet("spawnersvc", flag.ExitOnError)
-	debugAddr := fs.String("debug-addr", ":8080", "Debug and metrics listen address")
-	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC listen address")
-	fs.Usage = usageFor(fs, os.Args[0]+" [flags]")
-	fs.Parse(os.Args[1:])
 
 	//TODO: move to monitoring package
 	// Create the (sparse) metrics we'll use in the service. They, too, are
@@ -101,13 +93,14 @@ func main() {
 	// The debug listener mounts the http.DefaultServeMux, and serves up
 	// stuff like the Prometheus metrics route, the Go debug and profiling
 	// routes, and so on.
-	debugListener, err := net.Listen("tcp", *debugAddr)
+	debugAddress := fmt.Sprintf("%s:%d", "", conf.DebugPort)
+	debugListener, err := net.Listen("tcp", debugAddress)
 	if err != nil {
 		sugar.Errorw("error in debugListener", "transport", "debug/HTTP", "during", "Listen", "error", err)
 		os.Exit(1)
 	}
 	g.Add(func() error {
-		err = errors.New("fail") // http.Serve(debugListener, http.DefaultServeMux)
+		err = http.Serve(debugListener, http.DefaultServeMux)
 		return errors.Wrap(err, "error in debugListener")
 
 	}, func(error) {
@@ -115,13 +108,15 @@ func main() {
 	})
 
 	// The gRPC listener mounts the Go kit gRPC server we created.
-	grpcListener, err := net.Listen("tcp", *grpcAddr)
+
+	grpcAddress := fmt.Sprintf("%s:%d", "", conf.Port)
+	grpcListener, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
 		sugar.Errorw("error in grpcListener", "transport", "gRPC", "during", "Listen", "err", err)
 		os.Exit(1)
 	}
 	g.Add(func() error {
-		sugar.Infow("in main", "transport", "gRPC", "grpcAddr", *grpcAddr)
+		sugar.Infow("in main", "transport", "gRPC", "grpcAddr", conf.Port)
 		// we add the Go Kit gRPC Interceptor to our gRPC service as it is used by
 		// the here demonstrated zipkin tracing middleware.
 		baseServer := grpc.NewServer(grpc.UnaryInterceptor(kitgrpc.Interceptor))
@@ -146,19 +141,4 @@ func main() {
 		close(cancelInterrupt)
 	})
 	sugar.Infow("main", "exit", g.Run())
-}
-
-func usageFor(fs *flag.FlagSet, short string) func() {
-	return func() {
-		fmt.Fprintf(os.Stderr, "USAGE\n")
-		fmt.Fprintf(os.Stderr, "  %s\n", short)
-		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "FLAGS\n")
-		w := tabwriter.NewWriter(os.Stderr, 0, 2, 2, ' ', 0)
-		fs.VisitAll(func(f *flag.Flag) {
-			fmt.Fprintf(w, "\t-%s %s\t%s\n", f.Name, f.DefValue, f.Usage)
-		})
-		w.Flush()
-		fmt.Fprintf(os.Stderr, "\n")
-	}
 }
