@@ -28,6 +28,7 @@ func main() {
 	conf, err := config.Load("../../")
 	if err != nil {
 		fmt.Errorf("error loading config", "error", err.Error())
+		os.Exit(1)
 	}
 
 	var logger *zap.Logger
