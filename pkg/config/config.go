@@ -8,7 +8,7 @@ import (
 // The values are read by viper from a config file or environment variable.
 type Config struct {
 	//enviroment is either development or production
-	Env             string `mapstructure:"Env"`
+	Env             string `mapstructure:"ENV"`
 	Port            int    `mapstructure:"PORT"`
 	DebugPort       int    `mapstructure:"DEBUG_PORT"`
 	RancherUsername string `mapstructure:"RANCHER_USERNAME"`
