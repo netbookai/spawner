@@ -7,11 +7,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 	"go.uber.org/zap"
 )
 
 type AWSController struct {
 	logger         *zap.SugaredLogger
+	config         *util.Config
 	ec2SessFactory func(region string) (awssession ec2iface.EC2API, err error)
 }
 
@@ -25,8 +27,12 @@ func Ec2SessionFactory(region string) (awsSession ec2iface.EC2API, err error) {
 	return awsSvc, err
 }
 
-func NewAWSController(logger *zap.SugaredLogger) AWSController {
-	return AWSController{logger, Ec2SessionFactory}
+func NewAWSController(logger *zap.SugaredLogger, config *util.Config) AWSController {
+	return AWSController{
+		logger:         logger,
+		config:         config,
+		ec2SessFactory: Ec2SessionFactory,
+	}
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {

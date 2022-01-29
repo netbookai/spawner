@@ -7,10 +7,11 @@ import (
 // Config stores all configuration of the application.
 // The values are read by viper from a config file or environment variable.
 type Config struct {
-	RancherUsername string `mapstructure:"RANCHER_USERNAME"`
-	RancherPassword string `mapstructure:"RANCHER_PASSWORD"`
-	RancherAddr     string `mapstructure:"RANCHER_ADDRESS"`
-	AwsCredName     string `mapstructure:"RANCHER_AWS_CRED_NAME"`
+	RancherUsername        string `mapstructure:"RANCHER_USERNAME"`
+	RancherPassword        string `mapstructure:"RANCHER_PASSWORD"`
+	RancherAddr            string `mapstructure:"RANCHER_ADDRESS"`
+	AwsCredName            string `mapstructure:"RANCHER_AWS_CRED_NAME"`
+	AwsRoute53HostedZoneId string `mapstructure:"AWS_ROUTE53_HOSTEDZONEID"`
 }
 
 // LoadConfig reads configuration from file or environment variables.

@@ -444,6 +444,9 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 
 	return &pb.NodeDeleteResponse{}, nil
 }
+func (svc RancherController) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+	return &pb.AddRoute53RecordResponse{}, nil
+}
 
 func (svc RancherController) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
 	return &pb.CreateVolumeResponse{}, nil

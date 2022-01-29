@@ -25,6 +25,7 @@ type grpcServer struct {
 	createCluster           grpctransport.Handler
 	addToken                grpctransport.Handler
 	getToken                grpctransport.Handler
+	addRoute53Record        grpctransport.Handler
 	getClusters             grpctransport.Server
 	getCluster              grpctransport.Server
 	clusterStatus           grpctransport.Handler
@@ -65,6 +66,16 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) pb.Spa
 		),
 		getToken: grpctransport.NewServer(
 			endpoints.GetTokenEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
+		addRoute53Record: grpctransport.NewServer(
+			endpoints.AddRoute53RecordEndpoint,
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
 			},
@@ -201,6 +212,14 @@ func (s *grpcServer) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb
 		return nil, err
 	}
 	return rep.(*pb.GetTokenResponse), nil
+}
+
+func (s *grpcServer) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+	_, rep, err := s.addRoute53Record.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.AddRoute53RecordResponse), nil
 }
 
 func (s *grpcServer) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
@@ -412,6 +431,28 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 		}))(getTokenEndpoint)
 	}
 
+	var addRoute53RecordEndpoint endpoint.Endpoint
+	{
+		addRoute53RecordEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"AddRoute53Record",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.AddRoute53RecordResponse{},
+			append(options)...,
+		).Endpoint()
+		addRoute53RecordEndpoint = limiter(addRoute53RecordEndpoint)
+		addRoute53RecordEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "AddRoute53Record",
+			Timeout: 30 * time.Second,
+		}))(addRoute53RecordEndpoint)
+	}
+
 	var clusterStatusEndpoint endpoint.Endpoint
 	{
 		clusterStatusEndpoint = grpctransport.NewClient(
@@ -595,6 +636,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 		CreateClusterEndpoint:           createClusterEndpoint,
 		AddTokenEndpoint:                addTokenEndpoint,
 		GetTokenEndpoint:                getTokenEndpoint,
+		AddRoute53RecordEndpoint:        addRoute53RecordEndpoint,
 		GetClustersEndpoint:             getClustersEndpoint,
 		GetClusterEndpoint:              getClusterEndpoint,
 		CusterStatusEndpoint:            clusterStatusEndpoint,
