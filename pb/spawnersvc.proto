@@ -14,7 +14,10 @@ service SpawnerService {
 
     //Create get token to secret manager
     rpc GetToken (GetTokenRequest) returns (GetTokenResponse) {}   
-    
+
+    // Add Route53 record for Caddy
+    rpc AddRoute53Record (AddRoute53RecordRequest) returns (AddRoute53RecordResponse) {}
+
     // Get Cluster
     rpc GetCluster (GetClusterRequest) returns (ClusterSpec) {}
 
@@ -120,6 +123,17 @@ message GetTokenResponse{
     string rancherServer = 2;
     string status = 3;
     string error = 4;
+}
+
+message AddRoute53RecordRequest{
+    string dnsName = 1;
+    string recordName = 2;
+    string regionName = 3;
+}
+
+message AddRoute53RecordResponse{
+    string status = 1;
+    string error =2;
 }
 
 message NodeSpawnRequest {

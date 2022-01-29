@@ -20,6 +20,7 @@ type ClusterController interface {
 	GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error)
 	AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error)
 	GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error)
+	AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error)
 	ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error)
 	AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error)
 	DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error)
@@ -47,7 +48,7 @@ func New(logger *zap.SugaredLogger, config *util.Config, ints metrics.Counter) C
 	{
 		svc = SpawnerService{
 			rancherController: rancher.NewRancherController(spawnerServiceRancher, config, logger),
-			awsController:     aws.NewAWSController(logger),
+			awsController:     aws.NewAWSController(logger, config),
 		}
 		svc = LoggingMiddleware(logger)(svc)
 		svc = InstrumentingMiddleware(ints)(svc)
@@ -73,6 +74,10 @@ func (svc SpawnerService) AddToken(ctx context.Context, req *pb.AddTokenRequest)
 
 func (svc SpawnerService) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
 	return svc.rancherController.GetToken(ctx, req)
+}
+
+func (svc SpawnerService) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+	return svc.awsController.AddRoute53Record(ctx, req)
 }
 
 func (svc SpawnerService) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {

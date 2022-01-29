@@ -116,6 +116,13 @@ func (mw loggingMiddleware) GetToken(ctx context.Context, req *pb.GetTokenReques
 	return mw.next.GetToken(ctx, req)
 }
 
+func (mw loggingMiddleware) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (res *pb.AddRoute53RecordResponse, err error) {
+	defer func() {
+		mw.logger.Infow("spawnerservice", "method", "AddRoute53Record", "response", res, "error", err)
+	}()
+	return mw.next.AddRoute53Record(ctx, req)
+}
+
 // InstrumentingMiddleware returns a service middleware that instruments
 // the number of integers summed and characters concatenated over the lifetime of
 // the service.
@@ -204,6 +211,12 @@ func (mw instrumentingMiddleware) AddToken(ctx context.Context, req *pb.AddToken
 
 func (mw instrumentingMiddleware) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
 	v, err := mw.next.GetToken(ctx, req)
+	mw.ints.Add(float64(1))
+	return v, err
+}
+
+func (mw instrumentingMiddleware) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+	v, err := mw.next.AddRoute53Record(ctx, req)
 	mw.ints.Add(float64(1))
 	return v, err
 }
