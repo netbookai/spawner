@@ -84,7 +84,7 @@ func main() {
 	}
 
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "sandbox",
+		ClusterName: "sandbox-nsp",
 	}
 
 	getClustersReq := &pb.GetClustersRequest{
@@ -94,7 +94,7 @@ func main() {
 	}
 
 	getClusterReq := &pb.GetClusterRequest{
-		ClusterName: "infra-test",
+		ClusterName: "sandbox-nsp",
 	}
 
 	addNode := &pb.NodeSpec{

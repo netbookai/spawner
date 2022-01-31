@@ -10,6 +10,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type AWSController struct {
@@ -40,12 +41,155 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 	return &pb.ClusterResponse{}, nil
 }
 
+func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.DescribeClusterOutput, error) {
+	input := eks.DescribeClusterInput{
+		Name: &name,
+	}
+	resp, err := client.DescribeClusterWithContext(ctx, &input)
+	return resp, err
+}
+
 func (svc AWSController) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
-	return &pb.ClusterSpec{}, nil
+
+	response := &pb.ClusterSpec{}
+	region := "us-west-2"
+	clusterName := req.ClusterName
+	session, err := CreateBaseSession(region)
+
+	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	if err != nil {
+		return nil, err
+	}
+	client := eks.New(session)
+
+	resp, err := getClusterSpec(ctx, client, clusterName)
+
+	if err != nil {
+		svc.logger.Error("failed to fetch cluster status", err)
+		return nil, err
+	}
+
+	k8sClient, err := newClientset(session, resp.Cluster)
+	if err != nil {
+		svc.logger.Error(" Failed to create kube client ", err)
+		return nil, err
+	}
+	nodeList, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	response.Name = clusterName
+
+	if err != nil {
+		svc.logger.Error(" Failed to query node list ", err)
+		return nil, err
+	}
+
+	var nodeSpecList []*pb.NodeSpec
+	for _, node := range nodeList.Items {
+		addresses := node.Status.Addresses
+		ipAddr := ""
+		hostName := node.Name
+		for _, address := range addresses {
+			switch address.Type {
+
+			case "InternalIP":
+				ipAddr = address.Address
+			case "HostName":
+				hostName = address.Address
+			}
+		}
+
+		state := "inactive"
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == "Ready" {
+				state = "active"
+			}
+		}
+
+		ephemeralStorage := node.Status.Capacity.StorageEphemeral()
+
+		//we will use MB for the disk size, int32 is too small for bytes
+		diskSize := ephemeralStorage.Value() / 1024 / 1024
+		nodeSpecList = append(nodeSpecList, &pb.NodeSpec{
+			Name: node.Name,
+			//ClusterId:        node.ClusterID,
+			Instance:         node.Labels["node.kubernetes.io/instance-type"],
+			DiskSize:         int32(diskSize),
+			HostName:         hostName,
+			State:            state,
+			Uuid:             string(node.ObjectMeta.UID),
+			IpAddr:           ipAddr,
+			Labels:           node.Labels,
+			Availabilityzone: node.Labels["topology.kubernetes.io/zone"],
+		})
+	}
+
+	response.NodeSpec = nodeSpecList
+
+	return response, nil
 }
 
 func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
-	return &pb.GetClustersResponse{}, nil
+
+	//TODO: what does Scope mean here ?
+
+	//get all clusters in given region
+	region := req.Region
+	session, err := CreateBaseSession(region)
+	if err != nil {
+		return nil, err
+	}
+
+	client := eks.New(session)
+
+	//list cluster allows paginated query,
+	listClutsreInput := &eks.ListClustersInput{}
+	listClutsreOut, err := client.ListClustersWithContext(ctx, listClutsreInput)
+	if err != nil {
+		svc.logger.Error("failed to list clusters", err)
+		return &pb.GetClustersResponse{}, err
+	}
+
+	resp := pb.GetClustersResponse{
+		Clusters: [](*pb.ClusterSpec){},
+	}
+
+	for _, cluster := range listClutsreOut.Clusters {
+
+		//clusterDetails, _ := getClusterSpec(ctx, client, *cluster)
+		input := &eks.ListNodegroupsInput{ClusterName: cluster}
+		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
+		if err != nil {
+			svc.logger.Error("failed to fetch nodegroups")
+		}
+
+		nodes := []*pb.NodeSpec{}
+		for _, cNodeGroup := range nodeGroupList.Nodegroups {
+			input := &eks.DescribeNodegroupInput{
+				NodegroupName: cNodeGroup,
+				ClusterName:   cluster}
+			nodeGroupDetails, err := client.DescribeNodegroupWithContext(ctx, input)
+
+			if err != nil {
+				svc.logger.Error("failed to fetch nodegroups details ", *cNodeGroup)
+			}
+
+			node := &pb.NodeSpec{Name: *cNodeGroup}
+
+			if nodeGroupDetails.Nodegroup.InstanceTypes != nil {
+				node.Instance = *nodeGroupDetails.Nodegroup.InstanceTypes[0]
+			}
+			if nodeGroupDetails.Nodegroup.DiskSize != nil {
+				node.DiskSize = int32(*nodeGroupDetails.Nodegroup.DiskSize)
+			}
+			nodes = append(nodes, node)
+		}
+
+		resp.Clusters = append(resp.Clusters, &pb.ClusterSpec{
+			Name:     *cluster,
+			NodeSpec: nodes,
+		})
+	}
+
+	return &resp, nil
 }
 
 func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
@@ -60,10 +204,7 @@ func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatu
 	}
 	client := eks.New(session)
 
-	input := eks.DescribeClusterInput{
-		Name: &clusterName,
-	}
-	resp, err := client.DescribeClusterWithContext(ctx, &input)
+	resp, err := getClusterSpec(ctx, client, clusterName)
 
 	if err != nil {
 		svc.logger.Error("failed to fetch cluster status", err)

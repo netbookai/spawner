@@ -61,11 +61,11 @@ func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequ
 }
 
 func (svc SpawnerService) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
-	return svc.rancherController.GetCluster(ctx, req)
+	return svc.awsController.GetCluster(ctx, req)
 }
 
 func (svc SpawnerService) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
-	return svc.rancherController.GetClusters(ctx, req)
+	return svc.awsController.GetClusters(ctx, req)
 }
 
 func (svc SpawnerService) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
