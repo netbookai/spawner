@@ -49,14 +49,16 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 }
 
 func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
-	//todo
+	//todo: Should we get this from the request ARGS ?
+	region := "us-west-2"
 	clusterName := req.ClusterName
-	sess, err := CreateBaseSession("us-west-2")
+	session, err := CreateBaseSession(region)
 
+	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	if err != nil {
 		return nil, err
 	}
-	client := eks.New(sess)
+	client := eks.New(session)
 
 	input := eks.DescribeClusterInput{
 		Name: &clusterName,
