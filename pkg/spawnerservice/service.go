@@ -81,7 +81,7 @@ func (svc SpawnerService) AddRoute53Record(ctx context.Context, req *pb.AddRoute
 }
 
 func (svc SpawnerService) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
-	return svc.rancherController.ClusterStatus(ctx, req)
+	return svc.awsController.ClusterStatus(ctx, req)
 }
 
 func (svc SpawnerService) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {

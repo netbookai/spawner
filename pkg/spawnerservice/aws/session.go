@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -65,22 +66,25 @@ func GetCredsFromSTS() (AWSStsCreds, error) {
 }
 
 func CreateBaseSession(region string) (*session.Session, error) {
-	awsStsCreds, stserr := GetCredsFromSTS()
-
-	if stserr != nil {
-		return &session.Session{}, stserr
-	}
-
+	//	awsStsCreds, stserr := GetCredsFromSTS()
+	//
+	//	if stserr != nil {
+	//		return &session.Session{}, stserr
+	//	}
+	//
+	//	sess, err := session.NewSession(&aws.Config{
+	//		Region:      aws.String(region),
+	//		Credentials: credentials.NewStaticCredentials(*awsStsCreds.accessKey, *awsStsCreds.secretAccesskey, *awsStsCreds.sessionToken),
+	//	})
+	//
+	// For local testing
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(*awsStsCreds.accessKey, *awsStsCreds.secretAccesskey, *awsStsCreds.sessionToken),
+		Credentials: credentials.NewStaticCredentials("AKIA6BWSAGTXZYRLXWN4", "GLVticS/GNDNWDzHGiBwQsXXbzcZFW/Yxl+CybiF", ""),
 	})
-
-	// For local testing
-	// sess, err := session.NewSession(&aws.Config{
-	// 	Region:      aws.String(region),
-	// 	Credentials: credentials.NewStaticCredentials("", "", ""),
-	// })
+	if err != nil {
+		fmt.Println(" Failed to get session for local run", err)
+	}
 
 	return sess, err
 }

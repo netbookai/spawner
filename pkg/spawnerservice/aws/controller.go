@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -48,7 +49,30 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 }
 
 func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
-	return &pb.ClusterStatusResponse{}, nil
+	//todo
+	clusterName := req.ClusterName
+	sess, err := CreateBaseSession("us-west-2")
+
+	if err != nil {
+		return nil, err
+	}
+	client := eks.New(sess)
+
+	input := eks.DescribeClusterInput{
+		Name: &clusterName,
+	}
+	resp, err := client.DescribeClusterWithContext(ctx, &input)
+
+	if err != nil {
+		svc.logger.Error("failed to fetch cluster status", err)
+		return &pb.ClusterStatusResponse{
+			Error: err.Error(),
+		}, err
+	}
+
+	return &pb.ClusterStatusResponse{
+		Status: *resp.Cluster.Status,
+	}, err
 }
 
 func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {

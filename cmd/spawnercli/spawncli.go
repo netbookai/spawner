@@ -84,7 +84,7 @@ func main() {
 	}
 
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "local",
+		ClusterName: "sandbox",
 	}
 
 	getClustersReq := &pb.GetClustersRequest{
