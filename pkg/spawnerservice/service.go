@@ -85,7 +85,7 @@ func (svc SpawnerService) ClusterStatus(ctx context.Context, req *pb.ClusterStat
 }
 
 func (svc SpawnerService) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
-	return svc.rancherController.AddNode(ctx, req)
+	return svc.awsController.AddNode(ctx, req)
 }
 
 func (svc SpawnerService) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {

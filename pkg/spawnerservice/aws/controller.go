@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
@@ -9,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -198,12 +201,12 @@ func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatu
 	clusterName := req.ClusterName
 	session, err := CreateBaseSession(region)
 
-	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	if err != nil {
 		return nil, err
 	}
 	client := eks.New(session)
 
+	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	resp, err := getClusterSpec(ctx, client, clusterName)
 
 	if err != nil {
@@ -219,7 +222,84 @@ func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatu
 }
 
 func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
-	return &pb.NodeSpawnResponse{}, nil
+
+	//create a new node on the given cluster with the NodeSpec
+	clusterName := req.ClusterName
+	region := "us-west-2" //req.Region
+	nodeSpec := req.NodeSpec
+
+	session, err := CreateBaseSession(region)
+	if err != nil {
+		return nil, err
+	}
+	client := eks.New(session)
+
+	//resp, err := getClusterSpec(ctx, client, clusterName)
+
+	//if err != nil {
+	//	svc.logger.Error("failed to fetch cluster status", err)
+	//	return nil, err
+	//}
+
+	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
+	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
+	if err != nil {
+		svc.logger.Error("failed to fetch nodegroups", err)
+		return nil, err
+	}
+
+	for _, nodeGroup := range nodeGroupList.Nodegroups {
+		if *nodeGroup == nodeSpec.Name {
+			return nil, fmt.Errorf("nodegroup already exists with name %s", nodeSpec.Name)
+		}
+	}
+
+	nodeDetailsinput := &eks.DescribeNodegroupInput{
+		NodegroupName: nodeGroupList.Nodegroups[0],
+		ClusterName:   &clusterName}
+	nodeGroupDetails, err := client.DescribeNodegroupWithContext(ctx, nodeDetailsinput)
+
+	if err != nil {
+		return nil, err
+	}
+
+	diskSize := int64(nodeSpec.DiskSize)
+
+	labels := map[string]*string{
+		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+		constants.PROVISIONER_LABEL:         common.StrPtr(constants.RANCHER_LABEL),
+		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
+		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
+		constants.INSTANCE_LABEL:            &nodeSpec.Instance,
+		"type":                              common.StrPtr("nodegroup")}
+
+	for k, v := range nodeGroupDetails.Nodegroup.Labels {
+		labels[k] = v
+	}
+
+	for k, v := range nodeSpec.Labels {
+		labels[k] = &v
+	}
+
+	newNodeGroup := &eks.CreateNodegroupInput{
+		AmiType:        nodeGroupDetails.Nodegroup.AmiType,
+		CapacityType:   nodeGroupDetails.Nodegroup.CapacityType,
+		NodeRole:       nodeGroupDetails.Nodegroup.NodeRole,
+		InstanceTypes:  []*string{&nodeSpec.Instance},
+		ClusterName:    &clusterName,
+		DiskSize:       &diskSize,
+		NodegroupName:  &nodeSpec.Name,
+		ReleaseVersion: nodeGroupDetails.Nodegroup.ReleaseVersion,
+		Labels:         labels,
+		Subnets:        nodeGroupDetails.Nodegroup.Subnets,
+	}
+	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroup)
+	if err != nil {
+		svc.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
+		return nil, err
+	}
+	svc.logger.Debug("creating nodegroup ", out)
+	return &pb.NodeSpawnResponse{}, err
 }
 
 func (svc AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {

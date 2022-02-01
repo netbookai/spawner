@@ -105,7 +105,7 @@ func main() {
 	}
 
 	addNodeReq := &pb.NodeSpawnRequest{
-		ClusterName: "aws-us-west-2-eks-5",
+		ClusterName: "sandbox-nsp",
 		NodeSpec:    addNode,
 	}
 
