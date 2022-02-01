@@ -16,10 +16,10 @@ import (
 	"github.com/oklog/oklog/pkg/group"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
-	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -43,14 +43,9 @@ func main() {
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags]")
 	fs.Parse(os.Args[1:])
 
-	var config util.Config
-	var err error
-	{
-		config, err = util.LoadConfig("../../")
-		if err != nil {
-			sugar.Errorw("error loading config", "error", err.Error())
-		}
-
+	config, err := config.Load(".")
+	if err != nil {
+		sugar.Errorw("error loading config", "error", err.Error())
 	}
 
 	// Create the (sparse) metrics we'll use in the service. They, too, are

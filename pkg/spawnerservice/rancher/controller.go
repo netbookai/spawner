@@ -10,21 +10,21 @@ import (
 	"google.golang.org/grpc/status"
 
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/eks"
-	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )
 
 type RancherController struct {
 	spawnerServiceRancher RancherClient
-	config                *util.Config
+	config                *config.Config
 	logger                *zap.SugaredLogger
 }
 
-func NewRancherController(spawnerServiceRancher RancherClient, config *util.Config, logger *zap.SugaredLogger) RancherController {
+func NewRancherController(spawnerServiceRancher RancherClient, config *config.Config, logger *zap.SugaredLogger) RancherController {
 
 	return RancherController{spawnerServiceRancher, config, logger}
 }

@@ -28,7 +28,11 @@ autoscaling:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
+  #
 
+env: development
+port: 8083
+debug_port: 8080
 rancher:
   address: address
   username: username
