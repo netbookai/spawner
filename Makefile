@@ -7,3 +7,6 @@ test:
 
 clean:
 	go clean ./...
+
+proto:
+	./pb/compile.sh

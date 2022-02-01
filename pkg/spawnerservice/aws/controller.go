@@ -194,7 +194,7 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 
 func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
 	//todo: Should we get this from the request ARGS ?
-	region := "us-west-2"
+	region := req.Region
 	clusterName := req.ClusterName
 	session, err := CreateBaseSession(region)
 
