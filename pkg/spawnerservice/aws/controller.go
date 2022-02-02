@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -103,8 +104,8 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 	}
 
 	iamClient := iam.New(session)
-	roleName := "sandbox-eks-service-role-AWSServiceRoleForAmazonEK-17VR69U68HDPA"
-	//	roleName := AWS_ROLE_NAME
+	date := time.Now().Format("01-02-2006")
+	roleName := fmt.Sprintf("%s-%s", AWS_ROLE_NAME, date)
 	var eksRole *iam.Role
 
 	role, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
