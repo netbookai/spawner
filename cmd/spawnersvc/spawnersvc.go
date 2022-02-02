@@ -33,9 +33,9 @@ func main() {
 
 	var logger *zap.Logger
 
-	if config.Env == "production" {
+	//ENV value can be either prod or dev
+	if config.Env == "prod" {
 		logger, _ = zap.NewProduction()
-
 	} else {
 		logger, _ = zap.NewDevelopment()
 	}
