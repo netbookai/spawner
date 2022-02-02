@@ -54,7 +54,7 @@ func main() {
 	}
 
 	node := &pb.NodeSpec{
-		Name:     "ng-01",
+		Name:     "sandbox-nsp-ng-01",
 		Instance: "t3.medium",
 		DiskSize: 13,
 	}
@@ -63,7 +63,7 @@ func main() {
 		Region:      "us-east-2",
 		Node:        node,
 		Labels:      map[string]string{},
-		ClusterName: "test-us-east-2",
+		ClusterName: "sandbox-nsp-11",
 	}
 
 	addTokenReq := &pb.AddTokenRequest{

@@ -19,7 +19,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const AWS_ROLE_NAME = "netbook-AWS-ServiceRoleForEKS-BADBEEF"
+const (
+	AWS_CLUSTER_ROLE_NAME    = "netbook-AWS-ServiceRoleForEKS-BADBEEF2"
+	AWS_NODE_GROUP_ROLE_NAME = "netbook-AWS-NodeGroupInstanceRole-CAFE1"
+	//cluster role policy
+	EKS_CLUSTER_POLICY_ARN = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+	EKS_SERVICE_POLICY_ARN = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+
+	//node group role policy
+	EKS_WORKER_NODE_POLICY_ARN      = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+	EKS_EC2_CONTAINER_RO_POLICY_ARN = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+	EKS_CNI_POLICY_ARN              = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+
+	EKS_ASSUME_ROLE_DOC = `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":["eks.amazonaws.com"]},"Action":["sts:AssumeRole"]}]}`
+	EC2_ASSUME_ROLE_DOC = `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":["ec2.amazonaws.com"]},"Action":["sts:AssumeRole"]}]}`
+)
 
 type AWSController struct {
 	logger         *zap.SugaredLogger
@@ -45,6 +59,61 @@ func NewAWSController(logger *zap.SugaredLogger, config *config.Config) AWSContr
 	}
 }
 
+func (svc AWSController) createRole(ctx context.Context, iamClient *iam.IAM, roleName string, description string, assumeRoleDoc string) (*iam.Role, error) {
+
+	role, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
+		RoleName: &roleName,
+	})
+
+	if err == nil {
+		svc.logger.Debugf("role '%s' found, using the same", roleName)
+		return role.Role, nil
+	}
+	//role not found, create it
+	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == iam.ErrCodeNoSuchEntityException {
+		svc.logger.Warnf("failed to get role '%s', creating new role", roleName)
+		//role does not exist, create one
+
+		roleInput := &iam.CreateRoleInput{
+			RoleName:                 &roleName,
+			AssumeRolePolicyDocument: &assumeRoleDoc,
+			Description:              &description,
+			Tags: []*iam.Tag{{
+				Key:   common.StrPtr(constants.CREATOR_LABEL),
+				Value: common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+			},
+				{
+					Key:   common.StrPtr("Name"),
+					Value: &roleName,
+				},
+			},
+		}
+
+		roleOut, err := iamClient.CreateRoleWithContext(ctx, roleInput)
+		if err != nil {
+			svc.logger.Errorf("failed to query and create new role, %w", err)
+			return nil, err
+		}
+		fmt.Println("role created", roleOut)
+
+		return roleOut.Role, nil
+	} else {
+		return nil, err
+	}
+}
+
+func (svc AWSController) attachPolicy(ctx context.Context, iamClient *iam.IAM, roleName string, policyARN string) error {
+	//attach arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+	attachPolicyInput := &iam.AttachRolePolicyInput{
+		PolicyArn: &policyARN,
+		RoleName:  &roleName,
+	}
+
+	_, err := iamClient.AttachRolePolicyWithContext(ctx, attachPolicyInput)
+	return err
+}
+
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 
 	var clusterName string
@@ -58,7 +127,7 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 	if err != nil {
 		return nil, err
 	}
-	//client := eks.New(session)
+	client := eks.New(session)
 
 	//TODO: check if cluster already exists with the name?
 
@@ -105,51 +174,25 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 
 	iamClient := iam.New(session)
 	date := time.Now().Format("01-02-2006")
-	roleName := fmt.Sprintf("%s-%s", AWS_ROLE_NAME, date)
-	var eksRole *iam.Role
+	roleName := fmt.Sprintf("%s-%s", AWS_CLUSTER_ROLE_NAME, date)
 
-	role, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
-		RoleName: &roleName,
-	})
+	eksRole, err := svc.createRole(ctx, iamClient, roleName, "eks cluster and service access role", EKS_ASSUME_ROLE_DOC)
 
-	assumeRoleDoc := `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":["eks.amazonaws.com"]},"Action":["sts:AssumeRole"]}]}`
-
-	if err == nil {
-		svc.logger.Debugf("role '%s' found, using the same", roleName)
-		eksRole = role.Role
-	} else {
-		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == iam.ErrCodeNoSuchEntityException {
-			svc.logger.Warnf("failed to get role '%s', creating new role", roleName)
-			//role does not exist, create one
-
-			roleInput := &iam.CreateRoleInput{
-				RoleName:                 &roleName,
-				AssumeRolePolicyDocument: &assumeRoleDoc,
-				Tags: []*iam.Tag{{
-					Key:   common.StrPtr(constants.CREATOR_LABEL),
-					Value: common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
-				},
-					{
-						Key:   common.StrPtr("Name"),
-						Value: &roleName,
-					},
-				},
-			}
-
-			roleOut, err := iamClient.CreateRoleWithContext(ctx, roleInput)
-			if err != nil {
-				svc.logger.Errorf("failed to query and create new role, %w", err)
-				return nil, err
-			}
-			fmt.Println("role created", roleOut)
-
-			eksRole = roleOut.Role
-		} else {
-			svc.logger.Errorf("failed to query, %w", err)
-			return nil, err
-		}
+	if err != nil {
+		svc.logger.Errorf("failed to create role %w", err)
+		return nil, err
+	}
+	err = svc.attachPolicy(ctx, iamClient, roleName, EKS_CLUSTER_POLICY_ARN)
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CLUSTER_POLICY_ARN, roleName, err)
+		return nil, err
 	}
 
+	err = svc.attachPolicy(ctx, iamClient, roleName, EKS_SERVICE_POLICY_ARN)
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_SERVICE_POLICY_ARN, roleName, err)
+		return nil, err
+	}
 	clusterInput := &eks.CreateClusterInput{
 		Name: &clusterName,
 		ResourcesVpcConfig: &eks.VpcConfigRequest{
@@ -162,8 +205,101 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 		RoleArn: eksRole.Arn,
 	}
 
-	//	out, err := client.CreateClusterWithContext(ctx, clusterInput)
-	fmt.Println(clusterInput)
+	createClusterOutput, err := client.CreateClusterWithContext(ctx, clusterInput)
+	if err != nil {
+		svc.logger.Error("failed to create cluster", err)
+	}
+	fmt.Println(createClusterOutput)
+
+	//create node group policy
+	nodeRole, err := svc.createRole(ctx, iamClient, AWS_NODE_GROUP_ROLE_NAME, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
+
+	if err != nil {
+		svc.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
+
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
+
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
+
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	//add node
+
+	nodeSpec := req.Node
+	diskSize := int64(nodeSpec.DiskSize)
+
+	labels := make(map[string]*string)
+	for k, v := range nodeSpec.Labels {
+		labels[k] = &v
+	}
+
+	releaseVersion := ""
+
+	newNodeGroup := &eks.CreateNodegroupInput{
+		//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
+		AmiType:        common.StrPtr("AL2_x86_64"),
+		CapacityType:   common.StrPtr("ON_DEMAND"),
+		NodeRole:       nodeRole.Arn,
+		InstanceTypes:  []*string{&nodeSpec.Instance},
+		ClusterName:    &clusterName,
+		DiskSize:       &diskSize,
+		NodegroupName:  &nodeSpec.Name,
+		ReleaseVersion: &releaseVersion,
+		Labels:         labels,
+		Subnets:        subnets,
+	}
+
+	// wait till cluster becomes active
+
+	eksClient := eks.New(session)
+	errCount := 0
+	for {
+
+		fmt.Println("polling for cluster status...")
+		svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+		resp, err := getClusterSpec(ctx, eksClient, clusterName)
+
+		if err != nil {
+			fmt.Printf("error fetching status %w", err)
+			errCount += 1
+		} else {
+
+			fmt.Printf(" Status %s", *resp.Cluster.Status)
+			if *resp.Cluster.Status == "ACTIVE" {
+				break
+			}
+		}
+
+		if errCount == 20 {
+			//failed all the attempts, break it
+			return nil, fmt.Errorf("timeout waiting for AWS to create a cluster")
+		}
+		time.Sleep(time.Minute)
+	}
+
+	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroup)
+	if err != nil {
+		svc.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
+		return nil, err
+	}
+	svc.logger.Debug("creating nodegroup ", out)
 	return &pb.ClusterResponse{}, err
 }
 
