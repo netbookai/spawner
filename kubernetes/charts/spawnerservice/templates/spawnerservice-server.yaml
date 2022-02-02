@@ -22,9 +22,9 @@ spec:
         - name: ENV
           value: {{ .Values.env }}
         - name: PORT
-          value: {{ .Values.port }}
+          value: '{{ .Values.port }}'
         - name: DEBUG_PORT
-          value: {{ .Values.debug_port }}
+          value: '{{ .Values.debug_port }}'
         - name: RANCHER_ADDRESS
           value: {{ .Values.rancher.address }}
         - name: RANCHER_USERNAME
