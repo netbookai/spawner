@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -15,6 +17,8 @@ import (
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const AWS_ROLE_NAME = "netbook-AWS-ServiceRoleForEKS-BADBEEF"
 
 type AWSController struct {
 	logger         *zap.SugaredLogger
@@ -41,7 +45,125 @@ func NewAWSController(logger *zap.SugaredLogger, config *config.Config) AWSContr
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
-	return &pb.ClusterResponse{}, nil
+
+	var clusterName string
+	if clusterName = req.ClusterName; len(clusterName) == 0 {
+		clusterName = fmt.Sprintf("%s-%s", req.Provider, req.Region)
+	}
+
+	region := req.Region
+	session, err := CreateBaseSession(region)
+
+	if err != nil {
+		return nil, err
+	}
+	//client := eks.New(session)
+
+	//TODO: check if cluster already exists with the name?
+
+	//setup network
+
+	var subnets []*string
+
+	awsRegionNetworkStack, err := GetRegionWkspNetworkStack(region)
+	if err != nil {
+		svc.logger.Errorw("error getting network stack for region", "region", region, "error", err)
+		return nil, err
+	}
+
+	if awsRegionNetworkStack.Vpc != nil && len(awsRegionNetworkStack.Subnets) > 0 {
+		for _, subn := range awsRegionNetworkStack.Subnets {
+			subnets = append(subnets, subn.SubnetId)
+		}
+		svc.logger.Infow("got network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnets)
+	} else {
+		awsRegionNetworkStack, err = CreateRegionWkspNetworkStack(region)
+		if err != nil {
+			svc.logger.Errorw("error creating network stack for region with no clusters", "region", region, "error", err)
+			svc.logger.Warnw("rolling back network stack changes as creation failed", "region", region)
+			delErr := DeleteRegionWkspNetworkStack(region, *awsRegionNetworkStack)
+			if delErr != nil {
+				svc.logger.Errorw("error deleting network stack for region", "region", region, "error", delErr)
+			}
+
+			return nil, err
+		}
+		for _, subn := range awsRegionNetworkStack.Subnets {
+			subnets = append(subnets, subn.SubnetId)
+		}
+		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnets)
+	}
+	tags := map[string]*string{
+		constants.CLUSTER_NAME_LABEL: &clusterName,
+		constants.CREATOR_LABEL:      common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+		constants.PROVISIONER_LABEL:  common.StrPtr(constants.RANCHER_LABEL)}
+
+	for k, v := range req.Labels {
+		tags[k] = &v
+	}
+
+	iamClient := iam.New(session)
+	roleName := "sandbox-eks-service-role-AWSServiceRoleForAmazonEK-17VR69U68HDPA"
+	//	roleName := AWS_ROLE_NAME
+	var eksRole *iam.Role
+
+	role, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
+		RoleName: &roleName,
+	})
+
+	assumeRoleDoc := `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":["eks.amazonaws.com"]},"Action":["sts:AssumeRole"]}]}`
+
+	if err == nil {
+		svc.logger.Debugf("role '%s' found, using the same", roleName)
+		eksRole = role.Role
+	} else {
+		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == iam.ErrCodeNoSuchEntityException {
+			svc.logger.Warnf("failed to get role '%s', creating new role", roleName)
+			//role does not exist, create one
+
+			roleInput := &iam.CreateRoleInput{
+				RoleName:                 &roleName,
+				AssumeRolePolicyDocument: &assumeRoleDoc,
+				Tags: []*iam.Tag{{
+					Key:   common.StrPtr(constants.CREATOR_LABEL),
+					Value: common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+				},
+					{
+						Key:   common.StrPtr("Name"),
+						Value: &roleName,
+					},
+				},
+			}
+
+			roleOut, err := iamClient.CreateRoleWithContext(ctx, roleInput)
+			if err != nil {
+				svc.logger.Errorf("failed to query and create new role, %w", err)
+				return nil, err
+			}
+			fmt.Println("role created", roleOut)
+
+			eksRole = roleOut.Role
+		} else {
+			svc.logger.Errorf("failed to query, %w", err)
+			return nil, err
+		}
+	}
+
+	clusterInput := &eks.CreateClusterInput{
+		Name: &clusterName,
+		ResourcesVpcConfig: &eks.VpcConfigRequest{
+			SubnetIds:             subnets,
+			EndpointPublicAccess:  common.BoolPtr(true),
+			EndpointPrivateAccess: common.BoolPtr(false),
+		},
+		Tags:    tags,
+		Version: common.StrPtr("1.20"),
+		RoleArn: eksRole.Arn,
+	}
+
+	//	out, err := client.CreateClusterWithContext(ctx, clusterInput)
+	fmt.Println(clusterInput)
+	return &pb.ClusterResponse{}, err
 }
 
 func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.DescribeClusterOutput, error) {

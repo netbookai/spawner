@@ -57,7 +57,7 @@ func New(logger *zap.SugaredLogger, config *config.Config, ints metrics.Counter)
 }
 
 func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
-	return svc.rancherController.CreateCluster(ctx, req)
+	return svc.awsController.CreateCluster(ctx, req)
 }
 
 func (svc SpawnerService) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
