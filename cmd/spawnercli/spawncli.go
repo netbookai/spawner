@@ -63,7 +63,7 @@ func main() {
 		Region:      "us-west-2",
 		Node:        node,
 		Labels:      map[string]string{},
-		ClusterName: "sandbox-test-nsp-2",
+		ClusterName: "sandbox-test-nsp-3",
 	}
 
 	addTokenReq := &pb.AddTokenRequest{
@@ -99,13 +99,13 @@ func main() {
 	}
 
 	addNode := &pb.NodeSpec{
-		Name:     "ng-04",
+		Name:     "sandbox-node-ng-06",
 		Instance: "t2.medium",
 		DiskSize: 12,
 	}
 
 	addNodeReq := &pb.NodeSpawnRequest{
-		ClusterName: "sandbox-test-nsp-1",
+		ClusterName: "sandbox-test-nsp-2",
 		Region:      "us-west-2",
 		NodeSpec:    addNode,
 	}

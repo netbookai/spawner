@@ -36,6 +36,11 @@ const (
 	EC2_ASSUME_ROLE_DOC = `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":["ec2.amazonaws.com"]},"Action":["sts:AssumeRole"]}]}`
 )
 
+var (
+	ERR_NODEGROUP_EXIST = errors.New("nodegroup already exist")
+	ERR_NO_NODEGROUP    = errors.New("no nodegroup exist in cluster")
+)
+
 type AWSController struct {
 	logger         *zap.SugaredLogger
 	config         *config.Config
@@ -192,109 +197,11 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *ses
 	client := eks.New(session)
 	createClusterOutput, err := client.CreateClusterWithContext(ctx, clusterInput)
 	if err != nil {
-		svc.logger.Error("failed to create cluster", err)
+		svc.logger.Errorf("failed to create cluster %s", err.Error())
 	}
 
-	fmt.Println(createClusterOutput)
 	return createClusterOutput.Cluster, nil
 
-}
-
-func (svc AWSController) createNewNode(ctx context.Context, session *session.Session, cluster *eks.Cluster, nodeSpec *pb.NodeSpec) (*eks.Nodegroup, error) {
-
-	iamClient := iam.New(session)
-	eksClient := eks.New(session)
-	clusterName := *cluster.Name
-
-	//create node group policy
-
-	date := time.Now().Format("01-02-2006")
-	roleName := fmt.Sprintf("%s-%s", AWS_NODE_GROUP_ROLE_NAME, date)
-	nodeRole, err := svc.createRole(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
-
-	if err != nil {
-		svc.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
-		return nil, err
-	}
-
-	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
-
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
-		return nil, err
-	}
-
-	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
-
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
-		return nil, err
-	}
-
-	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
-
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
-		return nil, err
-	}
-
-	diskSize := int64(nodeSpec.DiskSize)
-
-	labels := make(map[string]*string)
-	for k, v := range nodeSpec.Labels {
-		labels[k] = &v
-	}
-
-	//TODO: what does release version mean here ?
-
-	releaseVersion := ""
-
-	newNodeGroup := &eks.CreateNodegroupInput{
-		//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
-		AmiType:        common.StrPtr("AL2_x86_64"),
-		CapacityType:   common.StrPtr("ON_DEMAND"),
-		NodeRole:       nodeRole.Arn,
-		InstanceTypes:  []*string{&nodeSpec.Instance},
-		ClusterName:    &clusterName,
-		DiskSize:       &diskSize,
-		NodegroupName:  &nodeSpec.Name,
-		ReleaseVersion: &releaseVersion,
-		Labels:         labels,
-		Subnets:        cluster.ResourcesVpcConfig.SubnetIds,
-	}
-
-	// wait till cluster becomes active
-
-	errCount := 0
-	for {
-		svc.logger.Debugf("polling cluster status for '%s', region '%s'", clusterName, *session.Config.Region)
-		resp, err := getClusterSpec(ctx, eksClient, clusterName)
-
-		if err != nil {
-			fmt.Printf("error fetching status %s\n", err.Error())
-			errCount += 1
-		} else {
-
-			fmt.Printf("Status : %s\n", *resp.Cluster.Status)
-			if *resp.Cluster.Status == "ACTIVE" {
-				break
-			}
-		}
-
-		if errCount == 10 {
-			//failed all the attempts, break it
-			return nil, fmt.Errorf("timeout waiting for AWS to create a cluster")
-		}
-		//poll every 30 seconds
-		time.Sleep(time.Second * 30)
-	}
-
-	out, err := eksClient.CreateNodegroupWithContext(ctx, newNodeGroup)
-	if err != nil {
-		svc.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
-		return nil, err
-	}
-	return out.Nodegroup, nil
 }
 
 func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
@@ -325,44 +232,15 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 				svc.logger.Error("failed to create clsuter '%s' %s", clusterName, err.Error())
 				return nil, err
 			}
+			svc.logger.Info("cluster '%s' is creating state, it might take some time, please check AWS console for status", clusterName)
 		}
 	} else {
 		svc.logger.Infof("cluster '%s', already exist", clusterName)
 		cluster = resp.Cluster
 	}
 
-	//check if there is node or if not it might be retry
-	nodeSpec := req.Node
-
-	input := &eks.DescribeNodegroupInput{
-		NodegroupName: &nodeSpec.Name,
-		ClusterName:   cluster.Name}
-	nodeGroupDetails, err := eksClient.DescribeNodegroupWithContext(ctx, input)
-
-	var node *eks.Nodegroup
-
-	if err != nil {
-		if err.(awserr.Error).Code() == eks.ErrCodeResourceNotFoundException {
-			node, err = svc.createNewNode(ctx, session, cluster, nodeSpec)
-
-			if err != nil {
-				svc.logger.Errorf("failed to create a new node '%s' on cluster '%s': %s", nodeSpec.Name, clusterName, err.Error())
-				return nil, err
-			}
-		}
-	} else {
-		node = nodeGroupDetails.Nodegroup
-		svc.logger.Infof("node '%s' already exist on cluster '%s', Status: '%s'", *node.NodegroupName, clusterName, *node.Status)
-		return &pb.ClusterResponse{
-			ClusterName:   clusterName,
-			NodeGroupName: *node.NodegroupName,
-		}, nil
-	}
-
-	svc.logger.Debugf("Requested node group creation. Status: %s, it might take some time, please check AWS console", *node.Status)
 	return &pb.ClusterResponse{
-		ClusterName:   clusterName,
-		NodeGroupName: *node.NodegroupName,
+		ClusterName: *cluster.Name,
 	}, nil
 }
 
@@ -544,6 +422,153 @@ func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatu
 	}, err
 }
 
+//getDefaultNode Get any existing node from the cluster as default node
+//if node with `newNode` exist return error
+func (svc AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, clusterName, nodeName string) (*eks.Nodegroup, error) {
+
+	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
+	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
+	if err != nil {
+		svc.logger.Errorf("failed to fetch nodegroups: %s", err.Error())
+		return nil, err
+	}
+
+	if len(nodeGroupList.Nodegroups) == 0 {
+		return nil, ERR_NO_NODEGROUP
+	}
+
+	for _, nodeGroup := range nodeGroupList.Nodegroups {
+		if *nodeGroup == nodeName {
+			return nil, ERR_NODEGROUP_EXIST
+		}
+	}
+
+	nodeDetailsinput := &eks.DescribeNodegroupInput{
+		NodegroupName: nodeGroupList.Nodegroups[0],
+		ClusterName:   &clusterName}
+	nodeGroupDetails, err := client.DescribeNodegroupWithContext(ctx, nodeDetailsinput)
+
+	return nodeGroupDetails.Nodegroup, err
+
+}
+
+func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *session.Session, clusterName string, nodeSpec *pb.NodeSpec) (*eks.CreateNodegroupInput, error) {
+
+	iamClient := iam.New(session)
+	eksClient := eks.New(session)
+
+	clusterSpec, err := getClusterSpec(ctx, eksClient, clusterName)
+
+	if err != nil {
+		return nil, err
+	}
+	cluster := clusterSpec.Cluster
+	//create node group policy
+
+	date := time.Now().Format("01-02-2006")
+	roleName := fmt.Sprintf("%s-%s", AWS_NODE_GROUP_ROLE_NAME, date)
+	nodeRole, err := svc.createRole(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
+
+	if err != nil {
+		svc.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
+
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
+
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
+
+	if err != nil {
+		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+		return nil, err
+	}
+
+	diskSize := int64(nodeSpec.DiskSize)
+
+	labels := make(map[string]*string)
+	for k, v := range nodeSpec.Labels {
+		labels[k] = &v
+	}
+
+	//TODO: what does release version mean here ?
+
+	var amiType string
+
+	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
+	if nodeSpec.GpuEnabled {
+		amiType = "AL2_x86_64_GPU"
+	} else {
+		amiType = "AL2_x86_64"
+	}
+	return &eks.CreateNodegroupInput{
+		AmiType:       &amiType,
+		CapacityType:  common.StrPtr("ON_DEMAND"),
+		NodeRole:      nodeRole.Arn,
+		InstanceTypes: []*string{&nodeSpec.Instance},
+		ClusterName:   &clusterName,
+		DiskSize:      &diskSize,
+		NodegroupName: &nodeSpec.Name,
+		Labels:        labels,
+		Subnets:       cluster.ResourcesVpcConfig.SubnetIds,
+		ScalingConfig: &eks.NodegroupScalingConfig{
+			DesiredSize: common.Int64Ptr(1),
+			MinSize:     common.Int64Ptr(1),
+			MaxSize:     common.Int64Ptr(1),
+		},
+	}, nil
+
+}
+
+func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *pb.NodeSpec) *eks.CreateNodegroupInput {
+	diskSize := int64(nodeSpec.DiskSize)
+
+	labels := map[string]*string{
+		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+		constants.PROVISIONER_LABEL:         common.StrPtr(constants.RANCHER_LABEL),
+		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
+		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
+		constants.INSTANCE_LABEL:            &nodeSpec.Instance,
+		"type":                              common.StrPtr("nodegroup")}
+
+	for k, v := range defaultNode.Labels {
+		labels[k] = v
+	}
+
+	for k, v := range nodeSpec.Labels {
+		labels[k] = &v
+	}
+
+	return &eks.CreateNodegroupInput{
+		AmiType:        defaultNode.AmiType,
+		CapacityType:   defaultNode.CapacityType,
+		NodeRole:       defaultNode.NodeRole,
+		InstanceTypes:  []*string{&nodeSpec.Instance},
+		ClusterName:    &clusterName,
+		DiskSize:       &diskSize,
+		NodegroupName:  &nodeSpec.Name,
+		ReleaseVersion: defaultNode.ReleaseVersion,
+		Labels:         labels,
+		Subnets:        defaultNode.Subnets,
+		ScalingConfig: &eks.NodegroupScalingConfig{
+			DesiredSize: common.Int64Ptr(1),
+			MinSize:     common.Int64Ptr(1),
+			MaxSize:     common.Int64Ptr(1),
+		},
+	}
+}
+
 //AddNode adds new node group to the existing cluster, cluster atleast have 1 node group already present
 func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
 
@@ -558,65 +583,39 @@ func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) 
 	}
 	client := eks.New(session)
 
+	if err != nil {
+		return nil, err
+	}
 	svc.logger.Infof("querying default nodes on cluster '%s' in region '%s'", clusterName, region)
-	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
-	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
-	if err != nil {
-		svc.logger.Errorf("failed to fetch nodegroups: %s", err.Error())
-		return nil, err
-	}
+	defaultNode, err := svc.getDefaultNode(ctx, client, clusterName, nodeSpec.Name)
 
-	for _, nodeGroup := range nodeGroupList.Nodegroups {
-		if *nodeGroup == nodeSpec.Name {
-			return nil, fmt.Errorf("nodegroup '%s' already exists on cluster '%s'", nodeSpec.Name, clusterName)
+	var newNodeGroupInput *eks.CreateNodegroupInput
+
+	if err != nil {
+		if errors.Is(err, ERR_NODEGROUP_EXIST) {
+			svc.logger.Errorf("nodegroup '%s' already exist in cluster '%s'", nodeSpec.Name, clusterName)
+			return nil, err
 		}
+
+		if errors.Is(err, ERR_NO_NODEGROUP) {
+			//no node group present,
+			svc.logger.Infof("default nodegroup not found in cluster '%s', creating NodegroupRequest from cluster config ", clusterName)
+			newNodeGroupInput, err = svc.getNewNodeGroupSpecFromCluster(ctx, session, clusterName, nodeSpec)
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		svc.logger.Infof("found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
+		newNodeGroupInput = svc.getNodeSpecFromDefault(defaultNode, clusterName, nodeSpec)
 	}
 
-	nodeDetailsinput := &eks.DescribeNodegroupInput{
-		NodegroupName: nodeGroupList.Nodegroups[0],
-		ClusterName:   &clusterName}
-	nodeGroupDetails, err := client.DescribeNodegroupWithContext(ctx, nodeDetailsinput)
-
-	if err != nil {
-		return nil, err
-	}
-
-	diskSize := int64(nodeSpec.DiskSize)
-
-	labels := map[string]*string{
-		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
-		constants.PROVISIONER_LABEL:         common.StrPtr(constants.RANCHER_LABEL),
-		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
-		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
-		constants.INSTANCE_LABEL:            &nodeSpec.Instance,
-		"type":                              common.StrPtr("nodegroup")}
-
-	for k, v := range nodeGroupDetails.Nodegroup.Labels {
-		labels[k] = v
-	}
-
-	for k, v := range nodeSpec.Labels {
-		labels[k] = &v
-	}
-
-	newNodeGroup := &eks.CreateNodegroupInput{
-		AmiType:        nodeGroupDetails.Nodegroup.AmiType,
-		CapacityType:   nodeGroupDetails.Nodegroup.CapacityType,
-		NodeRole:       nodeGroupDetails.Nodegroup.NodeRole,
-		InstanceTypes:  []*string{&nodeSpec.Instance},
-		ClusterName:    &clusterName,
-		DiskSize:       &diskSize,
-		NodegroupName:  &nodeSpec.Name,
-		ReleaseVersion: nodeGroupDetails.Nodegroup.ReleaseVersion,
-		Labels:         labels,
-		Subnets:        nodeGroupDetails.Nodegroup.Subnets,
-	}
-	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroup)
+	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroupInput)
 	if err != nil {
 		svc.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
 		return nil, err
 	}
-	svc.logger.Infof("creating nodegroup '%s' on cluster '%s', Status : %s", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
+	svc.logger.Infof("creating nodegroup '%s' on cluster '%s', Status : %s, it might take some time. Please check AWS console.", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
 	return &pb.NodeSpawnResponse{}, err
 }
 
@@ -690,7 +689,7 @@ func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) 
 
 	kubeConfig, err := newKubeConfig(session, resp.Cluster)
 	if err != nil {
-		fmt.Println("failed to get k8s ", err)
+		svc.logger.Errorf("failed to get k8s %s", err.Error())
 		return nil, err
 	}
 	return &pb.GetTokenResponse{

@@ -58,6 +58,7 @@ message NodeSpec {
     string availabilityzone = 8;
     string clusterId = 9;
     map<string, string> labels = 10;
+    bool gpu_enabled = 11;
 }
 
 message ClusterRequest {
