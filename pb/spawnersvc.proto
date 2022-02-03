@@ -122,9 +122,10 @@ message GetTokenRequest{
 
 message GetTokenResponse{
     string token = 1;
-    string rancherServer = 2;
+    string endpoint = 2;
     string status = 3;
     string error = 4;
+    string ca_data = 5;
 }
 
 message AddRoute53RecordRequest{

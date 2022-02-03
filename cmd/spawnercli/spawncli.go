@@ -63,7 +63,7 @@ func main() {
 		Region:      "us-west-2",
 		Node:        node,
 		Labels:      map[string]string{},
-		ClusterName: "sandbox-test-nsp-1",
+		ClusterName: "sandbox-test-nsp-2",
 	}
 
 	addTokenReq := &pb.AddTokenRequest{
@@ -72,7 +72,7 @@ func main() {
 	}
 
 	getTokenReq := &pb.GetTokenRequest{
-		ClusterName: "infra-test",
+		ClusterName: "sandbox-test-nsp-2",
 		Region:      "us-west-2",
 	}
 

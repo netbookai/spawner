@@ -73,7 +73,7 @@ func (svc SpawnerService) AddToken(ctx context.Context, req *pb.AddTokenRequest)
 }
 
 func (svc SpawnerService) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
-	return svc.rancherController.GetToken(ctx, req)
+	return svc.awsController.GetToken(ctx, req)
 }
 
 func (svc SpawnerService) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {

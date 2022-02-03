@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
-func newClientset(session *session.Session, cluster *eks.Cluster) (*kubernetes.Clientset, error) {
+func newKubeConfig(session *session.Session, cluster *eks.Cluster) (*rest.Config, error) {
 	gen, err := token.NewGenerator(true, false)
 	if err != nil {
 		return nil, err
@@ -28,15 +28,18 @@ func newClientset(session *session.Session, cluster *eks.Cluster) (*kubernetes.C
 	if err != nil {
 		return nil, err
 	}
-	clientset, err := kubernetes.NewForConfig(
-		&rest.Config{
-			Host:        aws.StringValue(cluster.Endpoint),
-			BearerToken: tok.Token,
-			TLSClientConfig: rest.TLSClientConfig{
-				CAData: ca,
-			},
+	return &rest.Config{
+		Host:        aws.StringValue(cluster.Endpoint),
+		BearerToken: tok.Token,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData: ca,
 		},
-	)
+	}, nil
+}
+
+func newClientset(session *session.Session, cluster *eks.Cluster) (*kubernetes.Clientset, error) {
+	config, err := newKubeConfig(session, cluster)
+	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}

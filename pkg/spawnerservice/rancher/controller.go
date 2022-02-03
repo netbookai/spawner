@@ -341,8 +341,8 @@ func (svc RancherController) GetToken(ctx context.Context, req *pb.GetTokenReque
 	}
 
 	return &pb.GetTokenResponse{
-		Token:         token,
-		RancherServer: svc.config.RancherAddr,
+		Token: token,
+		//RancherServer: svc.config.RancherAddr,
 	}, err
 }
 

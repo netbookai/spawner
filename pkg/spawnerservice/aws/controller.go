@@ -649,8 +649,8 @@ func (svc AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDelet
 
 func (svc AWSController) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
 	clusterName := req.ClusterName
-	region := req.Region
 	nodeName := req.NodeGroupName
+	region := req.Region
 
 	session, err := CreateBaseSession(region)
 	if err != nil {
@@ -676,5 +676,26 @@ func (svc AWSController) AddToken(ctx context.Context, req *pb.AddTokenRequest) 
 }
 
 func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
-	return &pb.GetTokenResponse{}, nil
+
+	region := req.Region
+	clusterName := req.ClusterName
+
+	session, err := CreateBaseSession(region)
+	if err != nil {
+		return nil, err
+	}
+	client := eks.New(session)
+	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	resp, err := getClusterSpec(ctx, client, clusterName)
+
+	kubeConfig, err := newKubeConfig(session, resp.Cluster)
+	if err != nil {
+		fmt.Println("failed to get k8s ", err)
+		return nil, err
+	}
+	return &pb.GetTokenResponse{
+		Token:    kubeConfig.BearerToken,
+		CaData:   string(kubeConfig.CAData),
+		Endpoint: kubeConfig.Host,
+	}, nil
 }
