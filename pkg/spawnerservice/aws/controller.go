@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -114,26 +115,9 @@ func (svc AWSController) attachPolicy(ctx context.Context, iamClient *iam.IAM, r
 	return err
 }
 
-func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
+func (svc AWSController) createClusterInternal(ctx context.Context, session *session.Session, clusterName, region string, req *pb.ClusterRequest) (*eks.Cluster, error) {
 
-	var clusterName string
-	if clusterName = req.ClusterName; len(clusterName) == 0 {
-		clusterName = fmt.Sprintf("%s-%s", req.Provider, req.Region)
-	}
-
-	region := req.Region
-	session, err := CreateBaseSession(region)
-
-	if err != nil {
-		return nil, err
-	}
-	client := eks.New(session)
-
-	//TODO: check if cluster already exists with the name?
-
-	//setup network
-
-	var subnets []*string
+	var subnetIds []*string
 
 	awsRegionNetworkStack, err := GetRegionWkspNetworkStack(region)
 	if err != nil {
@@ -143,9 +127,9 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 
 	if awsRegionNetworkStack.Vpc != nil && len(awsRegionNetworkStack.Subnets) > 0 {
 		for _, subn := range awsRegionNetworkStack.Subnets {
-			subnets = append(subnets, subn.SubnetId)
+			subnetIds = append(subnetIds, subn.SubnetId)
 		}
-		svc.logger.Infow("got network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnets)
+		svc.logger.Infow("got network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnetIds)
 	} else {
 		awsRegionNetworkStack, err = CreateRegionWkspNetworkStack(region)
 		if err != nil {
@@ -159,9 +143,9 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 			return nil, err
 		}
 		for _, subn := range awsRegionNetworkStack.Subnets {
-			subnets = append(subnets, subn.SubnetId)
+			subnetIds = append(subnetIds, subn.SubnetId)
 		}
-		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnets)
+		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnetIds)
 	}
 	tags := map[string]*string{
 		constants.CLUSTER_NAME_LABEL: &clusterName,
@@ -196,7 +180,7 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 	clusterInput := &eks.CreateClusterInput{
 		Name: &clusterName,
 		ResourcesVpcConfig: &eks.VpcConfigRequest{
-			SubnetIds:             subnets,
+			SubnetIds:             subnetIds,
 			EndpointPublicAccess:  common.BoolPtr(true),
 			EndpointPrivateAccess: common.BoolPtr(false),
 		},
@@ -205,11 +189,22 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 		RoleArn: eksRole.Arn,
 	}
 
+	client := eks.New(session)
 	createClusterOutput, err := client.CreateClusterWithContext(ctx, clusterInput)
 	if err != nil {
 		svc.logger.Error("failed to create cluster", err)
 	}
+
 	fmt.Println(createClusterOutput)
+	return createClusterOutput.Cluster, nil
+
+}
+
+func (svc AWSController) createNewNode(ctx context.Context, session *session.Session, cluster *eks.Cluster, nodeSpec *pb.NodeSpec) (*eks.Nodegroup, error) {
+
+	iamClient := iam.New(session)
+	eksClient := eks.New(session)
+	clusterName := *cluster.Name
 
 	//create node group policy
 	nodeRole, err := svc.createRole(ctx, iamClient, AWS_NODE_GROUP_ROLE_NAME, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
@@ -240,15 +235,14 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 		return nil, err
 	}
 
-	//add node
-
-	nodeSpec := req.Node
 	diskSize := int64(nodeSpec.DiskSize)
 
 	labels := make(map[string]*string)
 	for k, v := range nodeSpec.Labels {
 		labels[k] = &v
 	}
+
+	//TODO: what does release version mean here ?
 
 	releaseVersion := ""
 
@@ -263,44 +257,110 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 		NodegroupName:  &nodeSpec.Name,
 		ReleaseVersion: &releaseVersion,
 		Labels:         labels,
-		Subnets:        subnets,
+		Subnets:        cluster.ResourcesVpcConfig.SubnetIds,
 	}
 
 	// wait till cluster becomes active
 
-	eksClient := eks.New(session)
 	errCount := 0
 	for {
-
-		fmt.Println("polling for cluster status...")
-		svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+		svc.logger.Debugf("polling cluster status for '%s', region '%s'", clusterName, *session.Config.Region)
 		resp, err := getClusterSpec(ctx, eksClient, clusterName)
 
 		if err != nil {
-			fmt.Printf("error fetching status %w", err)
+			fmt.Printf("error fetching status %s\n", err.Error())
 			errCount += 1
 		} else {
 
-			fmt.Printf(" Status %s", *resp.Cluster.Status)
+			fmt.Printf("Status : %s\n", *resp.Cluster.Status)
 			if *resp.Cluster.Status == "ACTIVE" {
 				break
 			}
 		}
 
-		if errCount == 20 {
+		if errCount == 10 {
 			//failed all the attempts, break it
 			return nil, fmt.Errorf("timeout waiting for AWS to create a cluster")
 		}
-		time.Sleep(time.Minute)
+		//poll every 30 seconds
+		time.Sleep(time.Second * 30)
 	}
 
-	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroup)
+	out, err := eksClient.CreateNodegroupWithContext(ctx, newNodeGroup)
 	if err != nil {
 		svc.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
 		return nil, err
 	}
-	svc.logger.Debug("creating nodegroup ", out)
-	return &pb.ClusterResponse{}, err
+	return out.Nodegroup, nil
+}
+
+func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
+
+	var clusterName string
+	if clusterName = req.ClusterName; len(clusterName) == 0 {
+		clusterName = fmt.Sprintf("%s-%s", req.Provider, req.Region)
+	}
+
+	region := req.Region
+	session, err := CreateBaseSession(region)
+
+	if err != nil {
+		return nil, err
+	}
+	eksClient := eks.New(session)
+	//TODO: check if cluster already exists with the name?
+	svc.logger.Debugf("checking cluster status for '%s', region '%s'", clusterName, region)
+
+	var cluster *eks.Cluster
+	resp, err := getClusterSpec(ctx, eksClient, clusterName)
+
+	if err != nil {
+		if err.(awserr.Error).Code() == eks.ErrCodeResourceNotFoundException {
+			svc.logger.Debugf("cluster '%s' does not exist, creating ...", clusterName)
+			cluster, err = svc.createClusterInternal(ctx, session, clusterName, region, req)
+			if err != nil {
+				svc.logger.Error("failed to create clsuter '%s' %s", clusterName, err.Error())
+				return nil, err
+			}
+		}
+	} else {
+		svc.logger.Infof("cluster '%s', already exist", clusterName)
+		cluster = resp.Cluster
+	}
+
+	//check if there is node or if not it might be retry
+	nodeSpec := req.Node
+
+	input := &eks.DescribeNodegroupInput{
+		NodegroupName: &nodeSpec.Name,
+		ClusterName:   cluster.Name}
+	nodeGroupDetails, err := eksClient.DescribeNodegroupWithContext(ctx, input)
+
+	var node *eks.Nodegroup
+
+	if err != nil {
+		if err.(awserr.Error).Code() == eks.ErrCodeResourceNotFoundException {
+			node, err = svc.createNewNode(ctx, session, cluster, nodeSpec)
+
+			if err != nil {
+				svc.logger.Errorf("failed to create a new node '%s' on cluster '%s': %s", nodeSpec.Name, clusterName, err.Error())
+				return nil, err
+			}
+		}
+	} else {
+		node = nodeGroupDetails.Nodegroup
+		svc.logger.Infof("node '%s' already exist on cluster '%s', Status: '%s'", *node.NodegroupName, clusterName, *node.Status)
+		return &pb.ClusterResponse{
+			ClusterName:   clusterName,
+			NodeGroupName: *node.NodegroupName,
+		}, nil
+	}
+
+	svc.logger.Debugf("Requested node group creation. Status: %s, it might take some time, please check AWS console", *node.Status)
+	return &pb.ClusterResponse{
+		ClusterName:   clusterName,
+		NodeGroupName: *node.NodegroupName,
+	}, nil
 }
 
 func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.DescribeClusterOutput, error) {
@@ -311,10 +371,11 @@ func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.Des
 	return resp, err
 }
 
+//GetCluster Describe cluster with the given name and region
 func (svc AWSController) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
 
 	response := &pb.ClusterSpec{}
-	region := "us-west-2"
+	region := req.Region
 	clusterName := req.ClusterName
 	session, err := CreateBaseSession(region)
 
@@ -480,11 +541,12 @@ func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatu
 	}, err
 }
 
+//AddNode adds new node group to the existing cluster, cluster atleast have 1 node group already present
 func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
 
 	//create a new node on the given cluster with the NodeSpec
 	clusterName := req.ClusterName
-	region := "us-west-2" //req.Region
+	region := req.Region
 	nodeSpec := req.NodeSpec
 
 	session, err := CreateBaseSession(region)
@@ -493,23 +555,17 @@ func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) 
 	}
 	client := eks.New(session)
 
-	//resp, err := getClusterSpec(ctx, client, clusterName)
-
-	//if err != nil {
-	//	svc.logger.Error("failed to fetch cluster status", err)
-	//	return nil, err
-	//}
-
+	svc.logger.Infof("querying default nodes on cluster '%s' in region '%s'", clusterName, region)
 	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
 	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 	if err != nil {
-		svc.logger.Error("failed to fetch nodegroups", err)
+		svc.logger.Errorf("failed to fetch nodegroups: %s", err.Error())
 		return nil, err
 	}
 
 	for _, nodeGroup := range nodeGroupList.Nodegroups {
 		if *nodeGroup == nodeSpec.Name {
-			return nil, fmt.Errorf("nodegroup already exists with name %s", nodeSpec.Name)
+			return nil, fmt.Errorf("nodegroup '%s' already exists on cluster '%s'", nodeSpec.Name, clusterName)
 		}
 	}
 
@@ -557,15 +613,58 @@ func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) 
 		svc.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
 		return nil, err
 	}
-	svc.logger.Debug("creating nodegroup ", out)
+	svc.logger.Infof("creating nodegroup '%s' on cluster '%s', Status : %s", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
 	return &pb.NodeSpawnResponse{}, err
 }
 
+//DeleteCluster delete empty cluster, cluster should not have any nodegroup attached.
 func (svc AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
+
+	clusterName := req.ClusterName
+	region := req.Region
+
+	session, err := CreateBaseSession(region)
+	if err != nil {
+		return nil, err
+	}
+	client := eks.New(session)
+
+	deleteOut, err := client.DeleteClusterWithContext(ctx, &eks.DeleteClusterInput{
+		Name: &clusterName,
+	})
+
+	if err != nil {
+		svc.logger.Errorf("failed to delete cluster '%s': %s", clusterName, err.Error())
+		return &pb.ClusterDeleteResponse{
+			Error: err.Error(),
+		}, err
+	}
+	svc.logger.Infof("requested cluster '%s' to be deleted, Status :%s. It might take some time, check AWS console for more.", clusterName, *deleteOut.Cluster.Status)
+
 	return &pb.ClusterDeleteResponse{}, nil
 }
 
 func (svc AWSController) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
+	clusterName := req.ClusterName
+	region := req.Region
+	nodeName := req.NodeGroupName
+
+	session, err := CreateBaseSession(region)
+	if err != nil {
+		return nil, err
+	}
+	client := eks.New(session)
+
+	nodeDeleteOut, err := client.DeleteNodegroupWithContext(ctx, &eks.DeleteNodegroupInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeName,
+	})
+
+	if err != nil {
+		svc.logger.Errorf("failed to delete nodegroup '%s': %s", nodeName, err.Error())
+		return &pb.NodeDeleteResponse{Error: err.Error()}, err
+	}
+	svc.logger.Infof("requested nodegroup '%s' to be deleted, Status %s. It might take some time, check AWS console for more.", nodeName, *nodeDeleteOut.Nodegroup.Status)
 	return &pb.NodeDeleteResponse{}, nil
 }
 

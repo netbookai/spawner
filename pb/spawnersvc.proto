@@ -70,6 +70,7 @@ message ClusterRequest {
 
 message GetClusterRequest {
     string clusterName = 1;
+    string region = 2;
 }
 
 message GetClustersRequest {
@@ -140,6 +141,7 @@ message AddRoute53RecordResponse{
 message NodeSpawnRequest {
     string clusterName = 1;
     NodeSpec nodeSpec = 2;
+    string region =3;
 }
 
 message NodeSpawnResponse {
@@ -148,6 +150,7 @@ message NodeSpawnResponse {
 
 message ClusterDeleteRequest {
     string clusterName = 1;
+    string region = 2;
 }
 
 message ClusterDeleteResponse {
@@ -157,6 +160,7 @@ message ClusterDeleteResponse {
 message NodeDeleteRequest {
     string clusterName = 1;
     string nodeGroupName = 2;
+    string region = 3;
 }
 
 message NodeDeleteResponse {

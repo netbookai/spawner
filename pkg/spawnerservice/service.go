@@ -89,11 +89,11 @@ func (svc SpawnerService) AddNode(ctx context.Context, req *pb.NodeSpawnRequest)
 }
 
 func (svc SpawnerService) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
-	return svc.rancherController.DeleteCluster(ctx, req)
+	return svc.awsController.DeleteCluster(ctx, req)
 }
 
 func (svc SpawnerService) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
-	return svc.rancherController.DeleteNode(ctx, req)
+	return svc.awsController.DeleteNode(ctx, req)
 }
 
 func (svc SpawnerService) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {

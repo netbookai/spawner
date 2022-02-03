@@ -54,16 +54,16 @@ func main() {
 	}
 
 	node := &pb.NodeSpec{
-		Name:     "sandbox-nsp-ng-01",
+		Name:     "sandbox-test-nsp-ng-01",
 		Instance: "t3.medium",
 		DiskSize: 13,
 	}
 	createClusterReq := &pb.ClusterRequest{
 		Provider:    "aws",
-		Region:      "us-east-2",
+		Region:      "us-west-2",
 		Node:        node,
 		Labels:      map[string]string{},
-		ClusterName: "sandbox-nsp-11",
+		ClusterName: "sandbox-test-nsp-1",
 	}
 
 	addTokenReq := &pb.AddTokenRequest{
@@ -105,17 +105,20 @@ func main() {
 	}
 
 	addNodeReq := &pb.NodeSpawnRequest{
-		ClusterName: "sandbox-nsp",
+		ClusterName: "sandbox-test-nsp-1",
+		Region:      "us-west-2",
 		NodeSpec:    addNode,
 	}
 
 	deleteClusterReq := &pb.ClusterDeleteRequest{
-		ClusterName: "aws-us-west-2-eks-7",
+		ClusterName: "sandbox-test-nsp-1",
+		Region:      "us-west-2",
 	}
 
 	deleteNodeReq := &pb.NodeDeleteRequest{
-		ClusterName:   "aws-us-west-2-eks-5",
-		NodeGroupName: "ng-sid-01",
+		ClusterName:   "sandbox-test-nsp-1",
+		NodeGroupName: "ng-04",
+		Region:        "us-west-2",
 	}
 
 	createVolumeReq := &pb.CreateVolumeRequest{
