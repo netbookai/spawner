@@ -95,7 +95,7 @@ func (svc AWSController) createRole(ctx context.Context, iamClient *iam.IAM, rol
 			svc.logger.Errorf("failed to query and create new role, %w", err)
 			return nil, err
 		}
-		fmt.Println("role created", roleOut)
+		svc.logger.Infof("role '%s' created", *roleOut.Role.RoleName)
 
 		return roleOut.Role, nil
 	} else {
@@ -207,7 +207,10 @@ func (svc AWSController) createNewNode(ctx context.Context, session *session.Ses
 	clusterName := *cluster.Name
 
 	//create node group policy
-	nodeRole, err := svc.createRole(ctx, iamClient, AWS_NODE_GROUP_ROLE_NAME, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
+
+	date := time.Now().Format("01-02-2006")
+	roleName := fmt.Sprintf("%s-%s", AWS_NODE_GROUP_ROLE_NAME, date)
+	nodeRole, err := svc.createRole(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
 
 	if err != nil {
 		svc.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
