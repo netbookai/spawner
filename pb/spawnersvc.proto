@@ -67,17 +67,20 @@ message ClusterRequest {
     string region = 3;
     NodeSpec node = 4;
     map<string, string> labels = 5;
+    string team_id = 6;
 }
 
 message GetClusterRequest {
     string clusterName = 1;
     string region = 2;
+    string team_id = 3;
 }
 
 message GetClustersRequest {
     string provider = 1;
     string region = 2;
     string scope = 3;
+    string team_id = 4;
 }
 
 message ClusterSpec {
@@ -99,6 +102,7 @@ message ClusterResponse {
 message ClusterStatusRequest {
     string clusterName = 1;
     string region = 2;
+    string team_id = 3;
 }
 
 message ClusterStatusResponse {
@@ -119,6 +123,7 @@ message AddTokenResponse{
 message GetTokenRequest{
     string clusterName = 1;
     string region = 2;
+    string team_id = 3;
 }
 
 message GetTokenResponse{
@@ -133,6 +138,7 @@ message AddRoute53RecordRequest{
     string dnsName = 1;
     string recordName = 2;
     string regionName = 3;
+    string team_id = 4;
 }
 
 message AddRoute53RecordResponse{
@@ -144,6 +150,7 @@ message NodeSpawnRequest {
     string clusterName = 1;
     NodeSpec nodeSpec = 2;
     string region =3;
+    string team_id = 4;
 }
 
 message NodeSpawnResponse {
@@ -153,6 +160,7 @@ message NodeSpawnResponse {
 message ClusterDeleteRequest {
     string clusterName = 1;
     string region = 2;
+    string team_id = 3;
 }
 
 message ClusterDeleteResponse {
@@ -163,6 +171,7 @@ message NodeDeleteRequest {
     string clusterName = 1;
     string nodeGroupName = 2;
     string region = 3;
+    string team_id = 4;
 }
 
 message NodeDeleteResponse {
@@ -177,6 +186,7 @@ message CreateVolumeRequest{
     string provider = 5;
     string region = 6;
     map<string, string> labels = 7;
+    string team_id = 8;
 }
 
 message CreateVolumeResponse{
@@ -188,6 +198,7 @@ message DeleteVolumeRequest{
     string volumeid=1;
     string provider=2;
     string region=3;
+    string team_id = 4;
 }
 
 message DeleteVolumeResponse{
@@ -200,6 +211,7 @@ message CreateSnapshotRequest{
     string provider = 2;
     string region = 3;
     map<string, string> labels = 4;
+    string team_id = 5;
 }
 
 message CreateSnapshotResponse{
@@ -212,6 +224,7 @@ message CreateSnapshotAndDeleteRequest{
     string provider = 2;
     string region = 3;
     map<string, string> labels = 4;
+    string team_id = 5;
 }
 
 message CreateSnapshotAndDeleteResponse{
