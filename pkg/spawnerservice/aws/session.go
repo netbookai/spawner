@@ -1,89 +1,108 @@
 package aws
 
 import (
-	"os"
+	"encoding/base64"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/pkg/errors"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/route53"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/system"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
-type AWSStsCreds struct {
-	accessKey       *string
-	secretAccesskey *string
-	sessionToken    *string
+type Session struct {
+	AwsSession *session.Session
+	Region     string
+	TeamId     string
 }
 
-func GetCredsFromSTS() (AWSStsCreds, error) {
-	ses, err := session.NewSession()
-	if err != nil {
-		return AWSStsCreds{}, err
-	}
+func NewSession(region string, accountName string) (*Session, error) {
 
-	svc := sts.New(ses)
-	web_identity_token, err := os.ReadFile("/var/run/secrets/eks.amazonaws.com/serviceaccount/token")
-	if err != nil {
-		return AWSStsCreds{}, errors.Wrap(err, "error reading web identity token")
-	}
-
-	input := &sts.AssumeRoleWithWebIdentityInput{
-		DurationSeconds:  aws.Int64(900),
-		RoleArn:          aws.String(os.Getenv("AWS_ROLE_ARN")),
-		RoleSessionName:  aws.String("SecretsConnection"),
-		WebIdentityToken: aws.String(string(web_identity_token)),
-	}
-
-	result, err := svc.AssumeRoleWithWebIdentity(input)
+	credentials, err := system.GetAwsCredentials(region, accountName)
 
 	if err != nil {
-		var intErr error
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case sts.ErrCodeExpiredTokenException:
-				intErr = errors.Wrap(aerr, "token expired")
-			case sts.ErrCodeRegionDisabledException:
-				intErr = errors.Wrap(aerr, "error creating token: region disabled")
-			default:
-				intErr = errors.Wrap(aerr, "error accessing aws")
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			intErr = errors.Wrap(err, "error while getting credentials")
-		}
-
-		return AWSStsCreds{}, intErr
+		return nil, err
 	}
-	return AWSStsCreds{
-		accessKey:       result.Credentials.AccessKeyId,
-		secretAccesskey: result.Credentials.SecretAccessKey,
-		sessionToken:    result.Credentials.SessionToken,
+
+	//get credentials for the user of given team id
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: credentials,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &Session{
+		TeamId:     accountName,
+		Region:     region,
+		AwsSession: sess,
 	}, nil
 }
 
-func CreateBaseSession(region string) (*session.Session, error) {
-	awsStsCreds, stserr := GetCredsFromSTS()
-
-	if stserr != nil {
-		return &session.Session{}, stserr
+func newKubeConfig(session *session.Session, cluster *eks.Cluster) (*rest.Config, error) {
+	gen, err := token.NewGenerator(true, false)
+	if err != nil {
+		return nil, err
 	}
+	opts := &token.GetTokenOptions{
+		ClusterID: aws.StringValue(cluster.Name),
+		Session:   session,
+	}
+	tok, err := gen.GetWithOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+	ca, err := base64.StdEncoding.DecodeString(aws.StringValue(cluster.CertificateAuthority.Data))
+	if err != nil {
+		return nil, err
+	}
+	return &rest.Config{
+		Host:        aws.StringValue(cluster.Endpoint),
+		BearerToken: tok.Token,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData: ca,
+		},
+	}, nil
+}
 
-	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(*awsStsCreds.accessKey, *awsStsCreds.secretAccesskey, *awsStsCreds.sessionToken),
-	})
+func newClientset(session *session.Session, cluster *eks.Cluster) (*kubernetes.Clientset, error) {
+	config, err := newKubeConfig(session, cluster)
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return clientset, nil
+}
 
-	// For local testing
-	//sess, err := session.NewSession(&aws.Config{
-	//	Region:      aws.String(region),
-	//	Credentials: credentials.NewStaticCredentials("", "", ""),
-	//})
-	//if err != nil {
-	//	fmt.Println(" Failed to get session for local run", err)
-	//}
+//---
 
-	return sess, err
+func (ses *Session) getEksClient() *eks.EKS {
+	return eks.New(ses.AwsSession)
+}
+
+func (ses *Session) getEC2Client() *ec2.EC2 {
+	return ec2.New(ses.AwsSession)
+}
+
+func (ses *Session) getK8sClient(cluster *eks.Cluster) (*kubernetes.Clientset, error) {
+	return newClientset(ses.AwsSession, cluster)
+}
+
+func (ses *Session) getIAMClient() *iam.IAM {
+	return iam.New(ses.AwsSession)
+}
+
+func (ses *Session) getKubeConfig(cluster *eks.Cluster) (*rest.Config, error) {
+	return newKubeConfig(ses.AwsSession, cluster)
+}
+
+func (ses *Session) getRoute53Client() *route53.Route53 {
+	return route53.New(ses.AwsSession)
 }

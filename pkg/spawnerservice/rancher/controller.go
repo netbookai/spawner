@@ -161,7 +161,7 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 
 	var subnets []string
 
-	awsRegionNetworkStack, err := aws.GetRegionWkspNetworkStack(clusterReq.Region)
+	awsRegionNetworkStack, err := aws.GetRegionWkspNetworkStack(&aws.Session{})
 	if err != nil {
 		svc.logger.Errorw("error getting network stack for region", "region", clusterReq.Region, "error", err)
 		return nil, err
@@ -173,11 +173,11 @@ func (svc RancherController) CreateClusterInternal(clusterName string, clusterRe
 		}
 		svc.logger.Infow("got network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnets)
 	} else {
-		awsRegionNetworkStack, err = aws.CreateRegionWkspNetworkStack(clusterReq.Region)
+		awsRegionNetworkStack, err = aws.CreateRegionWkspNetworkStack(&aws.Session{})
 		if err != nil {
 			svc.logger.Errorw("error creating network stack for region with no clusters", "region", clusterReq.Region, "error", err)
 			svc.logger.Warnw("rolling back network stack changes as creation failed", "region", clusterReq.Region)
-			delErr := aws.DeleteRegionWkspNetworkStack(clusterReq.Region, *awsRegionNetworkStack)
+			delErr := aws.DeleteRegionWkspNetworkStack(&aws.Session{}, *awsRegionNetworkStack)
 			if delErr != nil {
 				svc.logger.Errorw("error deleting network stack for region", "region", clusterReq.Region, "error", delErr)
 			}
@@ -263,19 +263,19 @@ func (svc RancherController) CreateToken(clusterName string, region string) (str
 		TTLMillis:   2592000000,
 		Description: "Automated Token for " + clusterName,
 	}
-	newToken, err := svc.spawnerServiceRancher.CreateToken(newTokenVar)
+	_, err = svc.spawnerServiceRancher.CreateToken(newTokenVar)
 
 	if err != nil {
 		svc.logger.Errorw("error creating token ", "clustername", clusterName)
 		return "", err
 	}
 
-	status, err := aws.CreateAwsSecret(clusterName, clusterId, newToken.Token, region, svc.logger)
+	//	status, err := aws.CreateAwsSecret(clusterName, clusterId, newToken.Token, region, svc.logger)
 	if err != nil {
 		svc.logger.Errorw("error creating new aws secret", "cluster", clusterName, "clusterid", clusterId, "region", region, "error", err)
 	}
 
-	return status, err
+	return "", err
 }
 
 func (svc RancherController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
@@ -330,7 +330,8 @@ func (svc RancherController) AddToken(ctx context.Context, req *pb.AddTokenReque
 }
 
 func (svc RancherController) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
-	token, err := aws.GetAwsSecret(req.ClusterName, req.Region, svc.logger)
+	token := ""
+	var err error
 
 	if err != nil {
 		svc.logger.Errorw("error getting AWS secret", "cluster", req.ClusterName, "region", req.Region, "error", err)
