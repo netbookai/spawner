@@ -3,7 +3,6 @@ package aws
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -19,8 +18,8 @@ import (
 )
 
 const (
-	AWS_CLUSTER_ROLE_NAME    = "netbook-AWS-ServiceRoleForEKS-BADBEEF2"
-	AWS_NODE_GROUP_ROLE_NAME = "netbook-AWS-NodeGroupInstanceRole-CAFE1"
+	AWS_CLUSTER_ROLE_NAME    = "netbook-AWS-ServiceRoleForEKS-BADBEEF"
+	AWS_NODE_GROUP_ROLE_NAME = "netbook-AWS-NodeGroupInstanceRole-CAFE"
 	//cluster role policy
 	EKS_CLUSTER_POLICY_ARN = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 	EKS_SERVICE_POLICY_ARN = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
@@ -329,8 +328,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 	}
 	//create node group policy
 
-	date := time.Now().Format("01-02-2006")
-	roleName := fmt.Sprintf("%s-%s", AWS_NODE_GROUP_ROLE_NAME, date)
+	roleName := AWS_NODE_GROUP_ROLE_NAME
 	nodeRole, newRole, err := svc.createRoleOrGetExisting(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
 
 	if err != nil {

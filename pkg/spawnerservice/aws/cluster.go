@@ -2,8 +2,6 @@ package aws
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go/service/eks"
 	"gitlab.com/netbook-devs/spawner-service/pb"
@@ -54,8 +52,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 	}
 
 	iamClient := session.getIAMClient()
-	date := time.Now().Format("01-02-2006")
-	roleName := fmt.Sprintf("%s-%s", AWS_CLUSTER_ROLE_NAME, date)
+	roleName := AWS_CLUSTER_ROLE_NAME
 
 	eksRole, newRole, err := svc.createRoleOrGetExisting(ctx, iamClient, roleName, "eks cluster and service access role", EKS_ASSUME_ROLE_DOC)
 
