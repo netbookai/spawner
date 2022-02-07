@@ -210,8 +210,8 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 	client := session.getEksClient()
 
 	//list cluster allows paginated query,
-	listClutsreInput := &eks.ListClustersInput{}
-	listClutsreOut, err := client.ListClustersWithContext(ctx, listClutsreInput)
+	listClusterInput := &eks.ListClustersInput{}
+	listClusterOut, err := client.ListClustersWithContext(ctx, listClusterInput)
 	if err != nil {
 		svc.logger.Error("failed to list clusters", err)
 		return &pb.GetClustersResponse{}, err
@@ -221,13 +221,13 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 		Clusters: [](*pb.ClusterSpec){},
 	}
 
-	for _, cluster := range listClutsreOut.Clusters {
+	for _, cluster := range listClusterOut.Clusters {
 
 		//clusterDetails, _ := getClusterSpec(ctx, client, *cluster)
 		input := &eks.ListNodegroupsInput{ClusterName: cluster}
 		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 		if err != nil {
-			svc.logger.Error("failed to fetch nodegroups")
+			svc.logger.Errorf("failed to fetch nodegroups %s", err.Error())
 		}
 
 		nodes := []*pb.NodeSpec{}
@@ -361,7 +361,12 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 
 	diskSize := int64(nodeSpec.DiskSize)
 
-	labels := make(map[string]*string)
+	labels := map[string]*string{
+		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
+		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
+		constants.INSTANCE_LABEL:            &nodeSpec.Instance,
+		"type":                              common.StrPtr("nodegroup")}
 	for k, v := range nodeSpec.Labels {
 		labels[k] = &v
 	}
@@ -400,7 +405,6 @@ func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clus
 
 	labels := map[string]*string{
 		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
-		constants.PROVISIONER_LABEL:         common.StrPtr(constants.RANCHER_LABEL),
 		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
 		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
 		constants.INSTANCE_LABEL:            &nodeSpec.Instance,

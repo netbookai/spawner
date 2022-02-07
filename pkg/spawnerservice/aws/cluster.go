@@ -47,7 +47,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 	tags := map[string]*string{
 		constants.CLUSTER_NAME_LABEL: &clusterName,
 		constants.CREATOR_LABEL:      common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
-		constants.PROVISIONER_LABEL:  common.StrPtr(constants.RANCHER_LABEL)}
+	}
 
 	for k, v := range req.Labels {
 		tags[k] = &v

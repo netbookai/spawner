@@ -17,7 +17,7 @@ func (svc AWSController) createRole(ctx context.Context, iamClient *iam.IAM, rol
 	})
 
 	if err == nil {
-		svc.logger.Debugf("role '%s' found, using the same", roleName)
+		svc.logger.Infof("role '%s' found, using the same", roleName)
 		return role.Role, nil
 	}
 	//role not found, create it
@@ -34,7 +34,7 @@ func (svc AWSController) createRole(ctx context.Context, iamClient *iam.IAM, rol
 				Value: common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
 			},
 				{
-					Key:   common.StrPtr("Name"),
+					Key:   common.StrPtr(constants.NAME_LABEL),
 					Value: &roleName,
 				},
 			},
