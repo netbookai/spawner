@@ -9,8 +9,8 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 )
 
-//createRole creates a role if it does not exist
-func (svc AWSController) createRole(ctx context.Context, iamClient *iam.IAM, roleName string, description string, assumeRoleDoc string) (*iam.Role, error) {
+//createRoleOrGetExisting creates a role if it does not exist
+func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient *iam.IAM, roleName string, description string, assumeRoleDoc string) (*iam.Role, bool, error) {
 
 	role, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
 		RoleName: &roleName,
@@ -18,7 +18,8 @@ func (svc AWSController) createRole(ctx context.Context, iamClient *iam.IAM, rol
 
 	if err == nil {
 		svc.logger.Infof("role '%s' found, using the same", roleName)
-		return role.Role, nil
+		return role.Role, false, nil
+
 	}
 	//role not found, create it
 	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == iam.ErrCodeNoSuchEntityException {
@@ -43,13 +44,13 @@ func (svc AWSController) createRole(ctx context.Context, iamClient *iam.IAM, rol
 		roleOut, err := iamClient.CreateRoleWithContext(ctx, roleInput)
 		if err != nil {
 			svc.logger.Errorf("failed to query and create new role, %w", err)
-			return nil, err
+			return nil, false, err
 		}
 		svc.logger.Infof("role '%s' created", *roleOut.Role.RoleName)
 
-		return roleOut.Role, nil
+		return roleOut.Role, true, nil
 	} else {
-		return nil, err
+		return nil, false, err
 	}
 }
 

@@ -331,32 +331,35 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 
 	date := time.Now().Format("01-02-2006")
 	roleName := fmt.Sprintf("%s-%s", AWS_NODE_GROUP_ROLE_NAME, date)
-	nodeRole, err := svc.createRole(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
+	nodeRole, newRole, err := svc.createRoleOrGetExisting(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
 
 	if err != nil {
 		svc.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
 		return nil, err
 	}
 
-	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
+	if newRole {
 
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
-		return nil, err
-	}
+		err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
 
-	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
+		if err != nil {
+			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			return nil, err
+		}
 
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
-		return nil, err
-	}
+		err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
 
-	err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
+		if err != nil {
+			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			return nil, err
+		}
 
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
-		return nil, err
+		err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
+
+		if err != nil {
+			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			return nil, err
+		}
 	}
 
 	diskSize := int64(nodeSpec.DiskSize)
@@ -371,8 +374,6 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 		labels[k] = &v
 	}
 
-	//TODO: what does release version mean here ?
-
 	var amiType string
 
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
@@ -381,6 +382,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 	} else {
 		amiType = "AL2_x86_64"
 	}
+
 	return &eks.CreateNodegroupInput{
 		AmiType:       &amiType,
 		CapacityType:  common.StrPtr("ON_DEMAND"),

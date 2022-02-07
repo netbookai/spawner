@@ -57,23 +57,27 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 	date := time.Now().Format("01-02-2006")
 	roleName := fmt.Sprintf("%s-%s", AWS_CLUSTER_ROLE_NAME, date)
 
-	eksRole, err := svc.createRole(ctx, iamClient, roleName, "eks cluster and service access role", EKS_ASSUME_ROLE_DOC)
+	eksRole, newRole, err := svc.createRoleOrGetExisting(ctx, iamClient, roleName, "eks cluster and service access role", EKS_ASSUME_ROLE_DOC)
 
 	if err != nil {
 		svc.logger.Errorf("failed to create role %w", err)
 		return nil, err
 	}
-	err = svc.attachPolicy(ctx, iamClient, roleName, EKS_CLUSTER_POLICY_ARN)
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CLUSTER_POLICY_ARN, roleName, err)
-		return nil, err
+
+	if newRole {
+		err = svc.attachPolicy(ctx, iamClient, roleName, EKS_CLUSTER_POLICY_ARN)
+		if err != nil {
+			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CLUSTER_POLICY_ARN, roleName, err)
+			return nil, err
+		}
+
+		err = svc.attachPolicy(ctx, iamClient, roleName, EKS_SERVICE_POLICY_ARN)
+		if err != nil {
+			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_SERVICE_POLICY_ARN, roleName, err)
+			return nil, err
+		}
 	}
 
-	err = svc.attachPolicy(ctx, iamClient, roleName, EKS_SERVICE_POLICY_ARN)
-	if err != nil {
-		svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_SERVICE_POLICY_ARN, roleName, err)
-		return nil, err
-	}
 	clusterInput := &eks.CreateClusterInput{
 		Name: &clusterName,
 		ResourcesVpcConfig: &eks.VpcConfigRequest{
