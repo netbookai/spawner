@@ -84,7 +84,7 @@ func main() {
 	}
 
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "sandbox-nsp",
+		ClusterName: "sandbox-test-nsp-3",
 		Region:      "us-west-2",
 	}
 

@@ -2,6 +2,7 @@ package aws
 
 import (
 	"encoding/base64"
+	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -31,6 +32,7 @@ func NewSession(conf *config.Config, region string, accountName string) (*Sessio
 	)
 
 	if conf.Env == "dev" {
+		log.Println("running in dev mode, using ", conf.AWSAccessID)
 		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
 	} else {
 		awsCreds, err = system.GetAwsCredentials(region, accountName)

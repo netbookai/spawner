@@ -68,21 +68,22 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *pb.CreateVolumeR
 	}
 
 	//creating session
-	awsSvc, err := svc.ec2SessFactory(region)
+	session, err := NewSession(svc.config, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
 		return nil, err
 	}
 
+	ec2Client := session.getEC2Client()
 	//calling aws sdk CreateVolume function
-	result, err := awsSvc.CreateVolume(input)
+	result, err := ec2Client.CreateVolume(input)
 	if err != nil {
 		LogError("CreateVolume", logger, err)
 		return &pb.CreateVolumeResponse{}, err
 	}
 
-	err = awsSvc.WaitUntilVolumeAvailable(&ec2.DescribeVolumesInput{
+	err = ec2Client.WaitUntilVolumeAvailable(&ec2.DescribeVolumesInput{
 		VolumeIds: []*string{result.VolumeId},
 	})
 	if err != nil {
@@ -111,7 +112,14 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 	}
 
 	//creating session
-	awsSvc, err := svc.ec2SessFactory(region)
+	session, err := NewSession(svc.config, region, req.AccountName)
+
+	if err != nil {
+		logger.Errorw("Can't start AWS session", "error", err)
+		return nil, err
+	}
+
+	ec2Client := session.getEC2Client()
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -120,7 +128,7 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeR
 	//calling aws sdk method to delete volume
 	//ec2.DeleteVolumeOutput doesn't contain anything
 	//hence not taking response
-	_, err = awsSvc.DeleteVolume(input)
+	_, err = ec2Client.DeleteVolume(input)
 
 	if err != nil {
 		LogError("DeleteVolume", logger, err)
@@ -155,21 +163,23 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *pb.CreateSnaps
 	}
 
 	//creating session
-	awsSvc, err := svc.ec2SessFactory(region)
+	session, err := NewSession(svc.config, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
 		return nil, err
 	}
 
+	ec2Client := session.getEC2Client()
+
 	//calling aws sdk method to snapshot volume
-	result, err := awsSvc.CreateSnapshot(input)
+	result, err := ec2Client.CreateSnapshot(input)
 	if err != nil {
 		LogError("CreateSnapshot", logger, err)
 		return &pb.CreateSnapshotResponse{}, err
 	}
 
-	err = awsSvc.WaitUntilSnapshotCompleted(&ec2.DescribeSnapshotsInput{
+	err = ec2Client.WaitUntilSnapshotCompleted(&ec2.DescribeSnapshotsInput{
 		SnapshotIds: []*string{result.SnapshotId},
 	})
 	if err != nil {
@@ -204,21 +214,22 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 	}
 
 	//creating session
-	awsSvc, err := svc.ec2SessFactory(region)
+	session, err := NewSession(svc.config, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
 		return nil, err
 	}
 
+	ec2Client := session.getEC2Client()
 	//calling aws sdk CreateSnapshot method
-	resultSnapshot, err := awsSvc.CreateSnapshot(inputSnapshot)
+	resultSnapshot, err := ec2Client.CreateSnapshot(inputSnapshot)
 	if err != nil {
 		LogError("CreateSnapshot", logger, err)
 		return &pb.CreateSnapshotAndDeleteResponse{}, err
 	}
 
-	err = awsSvc.WaitUntilSnapshotCompleted(&ec2.DescribeSnapshotsInput{
+	err = ec2Client.WaitUntilSnapshotCompleted(&ec2.DescribeSnapshotsInput{
 		SnapshotIds: []*string{resultSnapshot.SnapshotId},
 	})
 	if err != nil {
@@ -234,7 +245,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *pb.Cr
 	//calling aws sdk method to delete volume
 	//ec2.DeleteVolumeOutput doesn't contain anything
 	//hence not taking response
-	_, err = awsSvc.DeleteVolume(inputDelete)
+	_, err = ec2Client.DeleteVolume(inputDelete)
 
 	if err != nil {
 		LogError("DeleteVolume", logger, err)

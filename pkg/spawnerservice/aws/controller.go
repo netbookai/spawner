@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pb"
@@ -39,27 +37,15 @@ var (
 )
 
 type AWSController struct {
-	logger         *zap.SugaredLogger
-	config         *config.Config
-	ec2SessFactory func(region string) (awssession ec2iface.EC2API, err error)
-}
-
-func Ec2SessionFactory(region string) (awsSession ec2iface.EC2API, err error) {
-	sess, err := NewSession(&config.Config{}, region, "accountName")
-	if err != nil {
-		return nil, errors.Wrap(err, "Can't start AWS session")
-	}
-
-	awsSvc := ec2.New(sess.AwsSession)
-	return awsSvc, err
+	logger *zap.SugaredLogger
+	config *config.Config
 }
 
 //NewAWSController
 func NewAWSController(logger *zap.SugaredLogger, config *config.Config) AWSController {
 	return AWSController{
-		logger:         logger,
-		config:         config,
-		ec2SessFactory: Ec2SessionFactory,
+		logger: logger,
+		config: config,
 	}
 }
 

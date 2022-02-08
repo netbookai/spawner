@@ -146,7 +146,7 @@ func (svc RancherController) AddNodeInternal(nodeSpawnRequest *pb.NodeSpawnReque
 
 	if cluster.EKSConfig != nil {
 		svc.logger.Infow("wating for instance to start", "cluster", nodeSpawnRequest.ClusterName, "node", nodeSpawnRequest.NodeSpec.Name, "nodeSpec", nodeSpawnRequest.NodeSpec)
-		err = aws.WaitTillInstanceRunning(cluster.EKSConfig.Region, nodeSpawnRequest.NodeSpec.Labels)
+		err = aws.WaitTillInstanceRunning(&aws.Session{}, cluster.EKSConfig.Region, nodeSpawnRequest.NodeSpec.Labels)
 		if err != nil {
 			return nil, err
 		}
@@ -433,7 +433,7 @@ func (svc RancherController) DeleteNode(ctx context.Context, req *pb.NodeDeleteR
 
 	if cluster.EKSConfig != nil {
 		svc.logger.Infow("waitng for node to termninate", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName)
-		err = aws.WaitTillInstanceTerminated(cluster.EKSConfig.Region, *nodeGroupToRemove.Labels)
+		err = aws.WaitTillInstanceTerminated(&aws.Session{}, cluster.EKSConfig.Region, *nodeGroupToRemove.Labels)
 		if err != nil {
 			svc.logger.Errorw("error while waiting for instance to terminate", "cluster", req.ClusterName, "nodegroup", req.NodeGroupName, "error", err)
 			return &pb.NodeDeleteResponse{

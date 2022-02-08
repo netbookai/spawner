@@ -38,11 +38,6 @@ var (
 	subnetUpto8Cidr = [8]string{"192.168.0.0/18", "192.168.64.0/18", "192.168.128.0/18"}
 )
 
-func CreateAwsEc2Session(region string) (*ec2.EC2, error) {
-
-	return nil, nil
-}
-
 func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, error) {
 	sess := session.getEC2Client()
 	region := session.Region
