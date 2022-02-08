@@ -302,17 +302,9 @@ func (svc AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, cl
 
 }
 
-func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *Session, clusterName string, nodeSpec *pb.NodeSpec) (*eks.CreateNodegroupInput, error) {
+func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *Session, cluster *eks.Cluster, nodeSpec *pb.NodeSpec) (*eks.CreateNodegroupInput, error) {
 
 	iamClient := session.getIAMClient()
-	eksClient := session.getEksClient()
-
-	cluster, err := getClusterSpec(ctx, eksClient, clusterName)
-
-	if err != nil {
-		return nil, err
-	}
-	//create node group policy
 
 	roleName := AWS_NODE_GROUP_ROLE_NAME
 	nodeRole, newRole, err := svc.createRoleOrGetExisting(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
@@ -372,7 +364,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 		CapacityType:  common.StrPtr("ON_DEMAND"),
 		NodeRole:      nodeRole.Arn,
 		InstanceTypes: []*string{&nodeSpec.Instance},
-		ClusterName:   &clusterName,
+		ClusterName:   cluster.Name,
 		DiskSize:      &diskSize,
 		NodegroupName: &nodeSpec.Name,
 		Labels:        labels,
@@ -437,6 +429,14 @@ func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) 
 	}
 	client := session.getEksClient()
 
+	cluster, err := getClusterSpec(ctx, client, clusterName)
+
+	if err != nil {
+
+		svc.logger.Errorf("unable to get cluster '%s': %s", clusterName, err.Error())
+		return nil, err
+	}
+
 	svc.logger.Infof("querying default nodes on cluster '%s' in region '%s'", clusterName, region)
 	defaultNode, err := svc.getDefaultNode(ctx, client, clusterName, nodeSpec.Name)
 
@@ -451,7 +451,7 @@ func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) 
 		if errors.Is(err, ERR_NO_NODEGROUP) {
 			//no node group present,
 			svc.logger.Infof("default nodegroup not found in cluster '%s', creating NodegroupRequest from cluster config ", clusterName)
-			newNodeGroupInput, err = svc.getNewNodeGroupSpecFromCluster(ctx, session, clusterName, nodeSpec)
+			newNodeGroupInput, err = svc.getNewNodeGroupSpecFromCluster(ctx, session, cluster, nodeSpec)
 			if err != nil {
 				return nil, err
 			}

@@ -72,7 +72,7 @@ func main() {
 	}
 
 	getTokenReq := &pb.GetTokenRequest{
-		ClusterName: "sandbox-test-nsp-2",
+		ClusterName: "sandbox-test-nsp-3",
 		Region:      "us-west-2",
 	}
 
@@ -105,7 +105,7 @@ func main() {
 	}
 
 	addNodeReq := &pb.NodeSpawnRequest{
-		ClusterName: "sandbox-test-nsp-2",
+		ClusterName: "sandbox-test-nsp-3",
 		Region:      "us-west-2",
 		NodeSpec:    addNode,
 	}
