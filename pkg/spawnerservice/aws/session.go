@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/system"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -21,18 +23,26 @@ type Session struct {
 	TeamId     string
 }
 
-func NewSession(region string, accountName string) (*Session, error) {
+func NewSession(conf *config.Config, region string, accountName string) (*Session, error) {
 
-	credentials, err := system.GetAwsCredentials(region, accountName)
+	var (
+		awsCreds *credentials.Credentials
+		err      error
+	)
 
-	if err != nil {
-		return nil, err
+	if conf.Env == "dev" {
+		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+	} else {
+		awsCreds, err = system.GetAwsCredentials(region, accountName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//get credentials for the user of given team id
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(region),
-		Credentials: credentials,
+		Credentials: awsCreds,
 	})
 
 	if err != nil {

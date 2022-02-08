@@ -45,7 +45,7 @@ type AWSController struct {
 }
 
 func Ec2SessionFactory(region string) (awsSession ec2iface.EC2API, err error) {
-	sess, err := NewSession(region, "accountName")
+	sess, err := NewSession(&config.Config{}, region, "accountName")
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't start AWS session")
 	}
@@ -82,7 +82,7 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 
 	region := req.Region
 	accountName := req.AccountName
-	session, err := NewSession(region, accountName)
+	session, err := NewSession(svc.config, region, accountName)
 
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (svc AWSController) GetCluster(ctx context.Context, req *pb.GetClusterReque
 	region := req.Region
 	clusterName := req.ClusterName
 	accountName := req.AccountName
-	session, err := NewSession(region, accountName)
+	session, err := NewSession(svc.config, region, accountName)
 
 	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	if err != nil {
@@ -201,7 +201,7 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 	//get all clusters in given region
 	region := req.Region
 	accountName := req.AccountName
-	session, err := NewSession(region, accountName)
+	session, err := NewSession(svc.config, region, accountName)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatu
 	//todo: Should we get this from the request ARGS ?
 	region := req.Region
 	clusterName := req.ClusterName
-	session, err := NewSession(region, req.AccountName)
+	session, err := NewSession(svc.config, region, req.AccountName)
 
 	if err != nil {
 		return nil, err
@@ -445,7 +445,7 @@ func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) 
 	region := req.Region
 	nodeSpec := req.NodeSpec
 
-	session, err := NewSession(region, req.AccountName)
+	session, err := NewSession(svc.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -490,7 +490,7 @@ func (svc AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDelet
 	clusterName := req.ClusterName
 	region := req.Region
 
-	session, err := NewSession(region, req.AccountName)
+	session, err := NewSession(svc.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +517,7 @@ func (svc AWSController) DeleteNode(ctx context.Context, req *pb.NodeDeleteReque
 	nodeName := req.NodeGroupName
 	region := req.Region
 
-	session, err := NewSession(region, req.AccountName)
+	session, err := NewSession(svc.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -545,7 +545,7 @@ func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) 
 	region := req.Region
 	clusterName := req.ClusterName
 
-	session, err := NewSession(region, req.AccountName)
+	session, err := NewSession(svc.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}

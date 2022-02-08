@@ -12,7 +12,7 @@ import (
 
 func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
 	logger := svc.logger
-	session, err := NewSession(req.RegionName, req.AccountName)
+	session, err := NewSession(svc.config, req.RegionName, req.AccountName)
 
 	if err != nil {
 		return nil, err
