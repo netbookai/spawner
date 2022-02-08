@@ -99,9 +99,10 @@ func main() {
 	}
 
 	addNode := &pb.NodeSpec{
-		Name:     "sandbox-node-ng-06",
-		Instance: "t2.medium",
-		DiskSize: 12,
+		Name:       "sandbox-node-ng-gpu-01",
+		Instance:   "t2.medium",
+		DiskSize:   20,
+		GpuEnabled: true,
 	}
 
 	addNodeReq := &pb.NodeSpawnRequest{

@@ -353,6 +353,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if nodeSpec.GpuEnabled {
+		svc.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
 		amiType = "AL2_x86_64_GPU"
 	} else {
 		amiType = "AL2_x86_64"
@@ -395,8 +396,17 @@ func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clus
 		labels[k] = &v
 	}
 
+	amiType := ""
+	if nodeSpec.GpuEnabled {
+		svc.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
+
+		amiType = "AL2_x86_64_GPU"
+	} else {
+		amiType = "AL2_x86_64"
+	}
+
 	return &eks.CreateNodegroupInput{
-		AmiType:        defaultNode.AmiType,
+		AmiType:        &amiType,
 		CapacityType:   defaultNode.CapacityType,
 		NodeRole:       defaultNode.NodeRole,
 		InstanceTypes:  []*string{&nodeSpec.Instance},
