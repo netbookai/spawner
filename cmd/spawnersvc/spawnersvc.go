@@ -1,17 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
+	"strings"
 	"syscall"
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
 	kitgrpc "github.com/go-kit/kit/transport/grpc"
+	"github.com/gogo/status"
 	"github.com/oklog/oklog/pkg/group"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"gitlab.com/netbook-devs/spawner-service/pb"
@@ -21,7 +25,35 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
+
+func getMeth(info *grpc.UnaryServerInfo) string {
+	splits := strings.Split(info.FullMethod, "/")
+	return splits[len(splits)-1]
+
+}
+
+func getUnaryRecoveryInterceptors() grpc.UnaryServerInterceptor {
+
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
+		panicked := true
+
+		defer func() {
+			if r := recover(); r != nil || panicked {
+				//log error details and stack trace
+				fmt.Printf("%s panicked with %s", info.FullMethod, r.(error))
+				fmt.Printf("StackTrace: %s", string(debug.Stack()))
+				methodName := getMeth(info)
+				err = status.Errorf(codes.Internal, "%v in call to method '%s'", r, methodName)
+			}
+		}()
+
+		resp, err := handler(ctx, req)
+		panicked = false
+		return resp, err
+	}
+}
 
 func main() {
 
@@ -121,7 +153,7 @@ func main() {
 		sugar.Infow("in main", "transport", "gRPC", "grpcAddr", grpcAddr)
 		// we add the Go Kit gRPC Interceptor to our gRPC service as it is used by
 		// the here demonstrated zipkin tracing middleware.
-		baseServer := grpc.NewServer(grpc.UnaryInterceptor(kitgrpc.Interceptor))
+		baseServer := grpc.NewServer(grpc.ChainUnaryInterceptor(kitgrpc.Interceptor, getUnaryRecoveryInterceptors()))
 		pb.RegisterSpawnerServiceServer(baseServer, grpcServer)
 		return baseServer.Serve(grpcListener)
 	}, func(error) {

@@ -15,6 +15,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v0.4.0 // indirect
+	github.com/gogo/googleapis v0.0.0-20180223154316-0cd9801be74a // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
@@ -52,6 +53,7 @@ require (
 require (
 	github.com/aws/aws-sdk-go v1.41.14
 	github.com/go-kit/kit v0.11.0
+	github.com/gogo/status v1.1.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.2
 	github.com/oklog/oklog v0.3.2
