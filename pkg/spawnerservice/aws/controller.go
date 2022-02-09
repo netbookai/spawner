@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -339,15 +338,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 
 	diskSize := int64(nodeSpec.DiskSize)
 
-	labels := map[string]*string{
-		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
-		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
-		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
-		constants.INSTANCE_LABEL:            &nodeSpec.Instance,
-		"type":                              common.StrPtr("nodegroup")}
-	for k, v := range nodeSpec.Labels {
-		labels[k] = &v
-	}
+	labels := getNodeLabel(nodeSpec)
 
 	var amiType string
 
@@ -381,23 +372,14 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *pb.NodeSpec) *eks.CreateNodegroupInput {
 	diskSize := int64(nodeSpec.DiskSize)
 
-	nodeLabels := map[string]*string{
-		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
-		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
-		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
-		constants.INSTANCE_LABEL:            &nodeSpec.Instance,
-		"type":                              common.StrPtr("nodegroup")}
-
 	labels := make(map[string]*string)
+	//copy labels from the existing node
 	for k, v := range defaultNode.Labels {
 		labels[k] = v
 	}
 
-	for k, v := range nodeSpec.Labels {
-		labels[k] = &v
-	}
-
-	for k, v := range nodeLabels {
+	//add labels from the given spec
+	for k, v := range getNodeLabel(nodeSpec) {
 		labels[k] = v
 	}
 
