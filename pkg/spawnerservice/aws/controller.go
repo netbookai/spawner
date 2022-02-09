@@ -381,13 +381,14 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *pb.NodeSpec) *eks.CreateNodegroupInput {
 	diskSize := int64(nodeSpec.DiskSize)
 
-	labels := map[string]*string{
+	nodeLabels := map[string]*string{
 		constants.CREATOR_LABEL:             common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
 		constants.NODE_NAME_LABEL:           &nodeSpec.Name,
 		constants.NODE_LABEL_SELECTOR_LABEL: &nodeSpec.Name,
 		constants.INSTANCE_LABEL:            &nodeSpec.Instance,
 		"type":                              common.StrPtr("nodegroup")}
 
+	labels := make(map[string]*string)
 	for k, v := range defaultNode.Labels {
 		labels[k] = v
 	}
@@ -396,7 +397,12 @@ func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clus
 		labels[k] = &v
 	}
 
+	for k, v := range nodeLabels {
+		labels[k] = v
+	}
+
 	amiType := ""
+
 	if nodeSpec.GpuEnabled {
 		svc.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
 
