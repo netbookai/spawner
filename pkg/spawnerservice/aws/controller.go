@@ -11,6 +11,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/kubectl"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -563,19 +564,31 @@ func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.Ranche
 	//		EnableClusterMonitoring: false,
 	//	}
 	//
-	//	cluster, err := client.Cluster.Create(&regCluster)
+	//	registerCluster, err := client.Cluster.Create(&regCluster)
 	//
 	//	if err != nil {
 	//		return nil, err
 	//	}
-	//	fmt.Printf("%+v", cluster)
+	//	fmt.Printf("cluster id %s \n\n", registerCluster.ID)
+
 	registration, err := client.ClusterRegistrationToken.Create(&rnchrClient.ClusterRegistrationToken{
-		ClusterID: "c-wnnb9",
+		ClusterID: "c-dslqf",
 	})
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(registration.Command)
+
+	manifestData, err := kubectl.GetManifestFromURL(registration.ManifestURL)
+	if err != nil {
+		svc.logger.Errorf("failed to get the manifest content from rancher : %s", err.Error())
+		return nil, err
+	}
+
+	obj, err := kubectl.GetObjects(manifestData)
+	if err != nil {
+		svc.logger.Errorf("failed to parse manifest: %s", err.Error())
+		return nil, err
+	}
 
 	session, err := NewSession(svc.config, region, accountName)
 	if err != nil {
@@ -591,7 +604,15 @@ func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.Ranche
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("rest client ", k8sClient.RESTClient().APIVersion())
+	dynamicClient, err := session.getK8sDynamicClient(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	err = kubectl.Apply(ctx, k8sClient, dynamicClient, obj)
+	if err != nil {
+		return nil, err
+	}
 
 	//get rancher client
 	return &pb.RancherRegistrationResponse{}, nil

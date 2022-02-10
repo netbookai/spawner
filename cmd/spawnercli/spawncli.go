@@ -15,6 +15,11 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	ClusterName = "test-nsp-cluster-01"
+	Region      = "us-west-2"
+)
+
 func main() {
 
 	var logger, _ = zap.NewDevelopment()
@@ -60,42 +65,42 @@ func main() {
 	}
 	createClusterReq := &pb.ClusterRequest{
 		Provider:    "aws",
-		Region:      "us-west-2",
+		Region:      Region,
 		Node:        node,
 		Labels:      map[string]string{},
-		ClusterName: "sandbox-test-nsp-3",
+		ClusterName: ClusterName,
 	}
 
 	addTokenReq := &pb.AddTokenRequest{
-		ClusterName: "aws-us-west-2-eks-4",
-		Region:      "us-west-2",
+		ClusterName: ClusterName,
+		Region:      Region,
 	}
 
 	getTokenReq := &pb.GetTokenRequest{
-		ClusterName: "sandbox-test-nsp-3",
-		Region:      "us-west-2",
+		ClusterName: ClusterName,
+		Region:      Region,
 	}
 
 	addRoute53RecordReq := &pb.AddRoute53RecordRequest{
 		DnsName:    "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
 		RecordName: "*.mani.app.netbook.ai",
-		RegionName: "us-west-1",
+		RegionName: Region,
 		// RegionIdentifier: "Oregon region",
 	}
 
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "sandbox-test-nsp-3",
-		Region:      "us-west-2",
+		ClusterName: ClusterName,
+		Region:      Region,
 	}
 
 	getClustersReq := &pb.GetClustersRequest{
 		Provider: "aws",
-		Region:   "us-west-2",
+		Region:   Region,
 		Scope:    "public",
 	}
 
 	getClusterReq := &pb.GetClusterRequest{
-		ClusterName: "sandbox-nsp",
+		ClusterName: ClusterName,
 	}
 
 	addNode := &pb.NodeSpec{
@@ -106,20 +111,20 @@ func main() {
 	}
 
 	addNodeReq := &pb.NodeSpawnRequest{
-		ClusterName: "sandbox-test-nsp-3",
-		Region:      "us-west-2",
+		ClusterName: ClusterName,
+		Region:      Region,
 		NodeSpec:    addNode,
 	}
 
 	deleteClusterReq := &pb.ClusterDeleteRequest{
-		ClusterName: "sandbox-test-nsp-1",
-		Region:      "us-west-2",
+		ClusterName: ClusterName,
+		Region:      Region,
 	}
 
 	deleteNodeReq := &pb.NodeDeleteRequest{
-		ClusterName:   "sandbox-test-nsp-1",
+		ClusterName:   ClusterName,
 		NodeGroupName: "ng-04",
-		Region:        "us-west-2",
+		Region:        Region,
 	}
 
 	createVolumeReq := &pb.CreateVolumeRequest{
@@ -128,24 +133,24 @@ func main() {
 		Size:             1,
 		Snapshotid:       "",
 		Provider:         "aws",
-		Region:           "us-west-2",
+		Region:           Region,
 	}
 
 	deleteVolumeReq := &pb.DeleteVolumeRequest{
 		Volumeid: "vol-05d7e98ae385b2e29",
 		Provider: "aws",
-		Region:   "us-west-2",
+		Region:   Region,
 	}
 
 	createSnapshotReq := &pb.CreateSnapshotRequest{
 		Volumeid: "vol-07ccb258225e0e213",
 		Provider: "aws",
-		Region:   "us-west-2",
+		Region:   Region,
 	}
 	createSnapshotAndDeleteReq := &pb.CreateSnapshotAndDeleteRequest{
 		Volumeid: "vol-0f220de036ebea748",
 		Provider: "aws",
-		Region:   "us-west-2",
+		Region:   Region,
 	}
 
 	switch *method {
@@ -254,8 +259,8 @@ func main() {
 
 	case "RegisterWithRancher":
 		v, err := svc.RegisterWithRancher(context.Background(), &pb.RancherRegistrationRequest{
-			ClusterName: "testing-register",
-			Region:      "us-west-2",
+			ClusterName: ClusterName,
+			Region:      Region,
 			AccountName: "netbook",
 		})
 		if err != nil && err.Error() != "" {

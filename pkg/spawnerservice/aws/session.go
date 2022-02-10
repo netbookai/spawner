@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/system"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
@@ -86,6 +87,9 @@ func newKubeConfig(session *session.Session, cluster *eks.Cluster) (*rest.Config
 
 func newClientset(session *session.Session, cluster *eks.Cluster) (*kubernetes.Clientset, error) {
 	config, err := newKubeConfig(session, cluster)
+	if err != nil {
+		return nil, err
+	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
@@ -117,4 +121,17 @@ func (ses *Session) getKubeConfig(cluster *eks.Cluster) (*rest.Config, error) {
 
 func (ses *Session) getRoute53Client() *route53.Route53 {
 	return route53.New(ses.AwsSession)
+}
+
+func (ses *Session) getK8sDynamicClient(cluster *eks.Cluster) (dynamic.Interface, error) {
+	config, err := newKubeConfig(ses.AwsSession, cluster)
+
+	if err != nil {
+		return nil, err
+	}
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return dynamicClient, nil
 }
