@@ -5,8 +5,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 )
 
 //createRoleOrGetExisting creates a role if it does not exist

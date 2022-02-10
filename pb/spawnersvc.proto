@@ -237,6 +237,8 @@ message CreateSnapshotAndDeleteResponse{
 
 message RancherRegistrationRequest {
     string clusterName = 1;
+    string region =2;
+    string accountName = 3;
 }
 
 message RancherRegistrationResponse {

@@ -254,7 +254,9 @@ func main() {
 
 	case "RegisterWithRancher":
 		v, err := svc.RegisterWithRancher(context.Background(), &pb.RancherRegistrationRequest{
-			ClusterName: "",
+			ClusterName: "testing-register",
+			Region:      "us-west-2",
+			AccountName: "netbook",
 		})
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error registering cluster with rancher", "error", err)

@@ -2,8 +2,8 @@ package aws
 
 import (
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 )
 
 func getNodeLabel(nodeSpec *pb.NodeSpec) map[string]*string {

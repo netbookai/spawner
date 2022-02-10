@@ -7,9 +7,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
+	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -539,6 +541,58 @@ func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) 
 }
 
 func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+
+	clusterName := req.ClusterName
+	region := req.Region
+	accountName := req.AccountName
 	svc.logger.Info("registering cluster with rancher ", req.ClusterName)
+
+	client, err := rancher.CreateRancherClient(svc.config.RancherAddr, svc.config.RancherUsername, svc.config.RancherPassword)
+
+	if err != nil {
+		svc.logger.Error("failed to get rancher client ", client)
+
+		return nil, err
+	}
+
+	//	regCluster := rnchrClient.Cluster{
+	//		DockerRootDir:           "/var/lib/docker",
+	//		Name:                    req.ClusterName,
+	//		WindowsPreferedCluster:  false,
+	//		EnableClusterAlerting:   false,
+	//		EnableClusterMonitoring: false,
+	//	}
+	//
+	//	cluster, err := client.Cluster.Create(&regCluster)
+	//
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	fmt.Printf("%+v", cluster)
+	registration, err := client.ClusterRegistrationToken.Create(&rnchrClient.ClusterRegistrationToken{
+		ClusterID: "c-wnnb9",
+	})
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(registration.Command)
+
+	session, err := NewSession(svc.config, region, accountName)
+	if err != nil {
+		return nil, err
+	}
+	cluster, err := getClusterSpec(ctx, session.getEksClient(), clusterName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	k8sClient, err := session.getK8sClient(cluster)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("rest client ", k8sClient.RESTClient().APIVersion())
+
+	//get rancher client
 	return &pb.RancherRegistrationResponse{}, nil
 }

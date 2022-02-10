@@ -1,4 +1,4 @@
-package rancher
+package rancher_old
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/eks"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher_old/eks"
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 )

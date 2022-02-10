@@ -5,8 +5,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/eks"
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
 )
 
 func (svc AWSController) createClusterInternal(ctx context.Context, session *Session, clusterName string, req *pb.ClusterRequest) (*eks.Cluster, error) {

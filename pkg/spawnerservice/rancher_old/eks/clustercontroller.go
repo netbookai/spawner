@@ -7,7 +7,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/maps"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher_old/common"
 )
 
 func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRequest, tags map[string]string) (rnchrClient.ClusterSpec, error) {
