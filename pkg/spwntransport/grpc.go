@@ -36,6 +36,7 @@ type grpcServer struct {
 	deleteVolume            grpctransport.Handler
 	createSnapshot          grpctransport.Handler
 	createSnapshotAndDelete grpctransport.Handler
+	registerWithRancher     grpctransport.Handler
 
 	pb.UnimplementedSpawnerServiceServer
 }
@@ -187,6 +188,16 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) pb.Spa
 			},
 			append(options)...,
 		),
+		registerWithRancher: grpctransport.NewServer(
+			endpoints.RegisterWithRancherEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
 	}
 }
 
@@ -300,6 +311,14 @@ func (s *grpcServer) CreateSnapshotAndDelete(ctx context.Context, req *pb.Create
 		return nil, err
 	}
 	return rep.(*pb.CreateSnapshotAndDeleteResponse), nil
+}
+
+func (s *grpcServer) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+	_, rep, err := s.registerWithRancher.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*pb.RancherRegistrationResponse), nil
 }
 
 // NewGRPCClient returns an AddService backed by a gRPC server at the other end
@@ -629,6 +648,28 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 		}))(createSnapshotAndDeleteEndpoint)
 	}
 
+	var registerWithRancherEndpoint endpoint.Endpoint
+	{
+		registerWithRancherEndpoint = grpctransport.NewClient(
+			conn,
+			"pb.SpawnerService",
+			"RegisterWithRancher",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			pb.RancherRegistrationResponse{},
+			append(options)...,
+		).Endpoint()
+		registerWithRancherEndpoint = limiter(registerWithRancherEndpoint)
+		registerWithRancherEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "RegisterWithRancher",
+			Timeout: 30 * time.Second,
+		}))(registerWithRancherEndpoint)
+	}
+
 	// Returning the endpoint.Set as a service.Service relies on the
 	// endpoint.Set implementing the Service methods. That's just a simple bit
 	// of glue code.
@@ -647,6 +688,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 		DeleteVolumeEndpoint:            deleteVolumeEndpoint,
 		CreateSnapshotEndpoint:          createSnapshotEndpoint,
 		CreateSnapshotAndDeleteEndpoint: createSnapshotAndDeleteEndpoint,
+		RegisterWithRancherEndpoint:     registerWithRancherEndpoint,
 	}
 }
 

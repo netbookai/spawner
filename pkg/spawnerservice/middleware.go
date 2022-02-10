@@ -123,6 +123,13 @@ func (mw loggingMiddleware) AddRoute53Record(ctx context.Context, req *pb.AddRou
 	return mw.next.AddRoute53Record(ctx, req)
 }
 
+func (mw loggingMiddleware) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (res *pb.RancherRegistrationResponse, err error) {
+	defer func() {
+		mw.logger.Infow("spawnerservice", "method", "RegisterWithRancher", "response", res, "error", err)
+	}()
+	return mw.next.RegisterWithRancher(ctx, req)
+}
+
 // InstrumentingMiddleware returns a service middleware that instruments
 // the number of integers summed and characters concatenated over the lifetime of
 // the service.
@@ -217,6 +224,12 @@ func (mw instrumentingMiddleware) GetToken(ctx context.Context, req *pb.GetToken
 
 func (mw instrumentingMiddleware) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
 	v, err := mw.next.AddRoute53Record(ctx, req)
+	mw.ints.Add(float64(1))
+	return v, err
+}
+
+func (mw instrumentingMiddleware) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+	v, err := mw.next.RegisterWithRancher(ctx, req)
 	mw.ints.Add(float64(1))
 	return v, err
 }

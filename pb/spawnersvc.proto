@@ -45,6 +45,8 @@ service SpawnerService {
     rpc CreateSnapshot( CreateSnapshotRequest) returns (CreateSnapshotResponse) {}
 
     rpc CreateSnapshotAndDelete(CreateSnapshotAndDeleteRequest) returns (CreateSnapshotAndDeleteResponse) {}
+
+    rpc RegisterWithRancher(RancherRegistrationRequest) returns (RancherRegistrationResponse) {}
 }
 
 message NodeSpec {
@@ -231,4 +233,12 @@ message CreateSnapshotAndDeleteResponse{
     string snapshotid = 1;
     bool deleted = 2;
     string error = 3;
+}
+
+message RancherRegistrationRequest {
+    string clusterName = 1;
+}
+
+message RancherRegistrationResponse {
+    string error =1;
 }

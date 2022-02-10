@@ -48,6 +48,7 @@ type SpawnerServiceClient interface {
 	DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, in *CreateSnapshotAndDeleteRequest, opts ...grpc.CallOption) (*CreateSnapshotAndDeleteResponse, error)
+	RegisterWithRancher(ctx context.Context, in *RancherRegistrationRequest, opts ...grpc.CallOption) (*RancherRegistrationResponse, error)
 }
 
 type spawnerServiceClient struct {
@@ -184,6 +185,15 @@ func (c *spawnerServiceClient) CreateSnapshotAndDelete(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *spawnerServiceClient) RegisterWithRancher(ctx context.Context, in *RancherRegistrationRequest, opts ...grpc.CallOption) (*RancherRegistrationResponse, error) {
+	out := new(RancherRegistrationResponse)
+	err := c.cc.Invoke(ctx, "/pb.SpawnerService/RegisterWithRancher", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SpawnerServiceServer is the server API for SpawnerService service.
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
@@ -214,6 +224,7 @@ type SpawnerServiceServer interface {
 	DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error)
 	CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(context.Context, *CreateSnapshotAndDeleteRequest) (*CreateSnapshotAndDeleteResponse, error)
+	RegisterWithRancher(context.Context, *RancherRegistrationRequest) (*RancherRegistrationResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -262,6 +273,9 @@ func (UnimplementedSpawnerServiceServer) CreateSnapshot(context.Context, *Create
 }
 func (UnimplementedSpawnerServiceServer) CreateSnapshotAndDelete(context.Context, *CreateSnapshotAndDeleteRequest) (*CreateSnapshotAndDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshotAndDelete not implemented")
+}
+func (UnimplementedSpawnerServiceServer) RegisterWithRancher(context.Context, *RancherRegistrationRequest) (*RancherRegistrationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterWithRancher not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
@@ -528,6 +542,24 @@ func _SpawnerService_CreateSnapshotAndDelete_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SpawnerService_RegisterWithRancher_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RancherRegistrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).RegisterWithRancher(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SpawnerService/RegisterWithRancher",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).RegisterWithRancher(ctx, req.(*RancherRegistrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SpawnerService_ServiceDesc is the grpc.ServiceDesc for SpawnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -590,6 +622,10 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateSnapshotAndDelete",
 			Handler:    _SpawnerService_CreateSnapshotAndDelete_Handler,
+		},
+		{
+			MethodName: "RegisterWithRancher",
+			Handler:    _SpawnerService_RegisterWithRancher_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

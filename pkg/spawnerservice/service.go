@@ -27,6 +27,7 @@ type ClusterController interface {
 	DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error)
+	RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error)
 }
 
 type SpawnerService struct {
@@ -100,4 +101,8 @@ func (svc SpawnerService) CreateSnapshot(ctx context.Context, req *pb.CreateSnap
 
 func (svc SpawnerService) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	return svc.awsController.CreateSnapshotAndDelete(ctx, req)
+}
+
+func (svc SpawnerService) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+	return svc.awsController.RegisterWithRancher(ctx, req)
 }

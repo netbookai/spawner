@@ -252,6 +252,15 @@ func main() {
 		}
 		sugar.Infow("CreateSnapshotAndDelete method", "response", v)
 
+	case "RegisterWithRancher":
+		v, err := svc.RegisterWithRancher(context.Background(), &pb.RancherRegistrationRequest{
+			ClusterName: "",
+		})
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("error registering cluster with rancher", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("RegisterWithRancher method", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)

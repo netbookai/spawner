@@ -537,3 +537,8 @@ func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) 
 		Endpoint: kubeConfig.Host,
 	}, nil
 }
+
+func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+	svc.logger.Info("registering cluster with rancher ", req.ClusterName)
+	return &pb.RancherRegistrationResponse{}, nil
+}
