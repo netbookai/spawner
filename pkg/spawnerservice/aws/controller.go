@@ -340,8 +340,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 
 	labels := getNodeLabel(nodeSpec)
 
-	var amiType string
-
+	amiType := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if nodeSpec.GpuEnabled {
 		svc.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
@@ -372,22 +371,13 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *pb.NodeSpec) *eks.CreateNodegroupInput {
 	diskSize := int64(nodeSpec.DiskSize)
 
-	labels := make(map[string]*string)
-	//copy labels from the existing node
-	for k, v := range defaultNode.Labels {
-		labels[k] = v
-	}
-
 	//add labels from the given spec
-	for k, v := range getNodeLabel(nodeSpec) {
-		labels[k] = v
-	}
+	labels := getNodeLabel(nodeSpec)
 
 	amiType := ""
-
+	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if nodeSpec.GpuEnabled {
 		svc.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
-
 		amiType = "AL2_x86_64_GPU"
 	} else {
 		amiType = "AL2_x86_64"
