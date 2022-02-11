@@ -581,7 +581,6 @@ func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.Ranche
 	}
 	svc.logger.Infof("cluster created on the rancher, apply the manifest file on the target cluster '%s'", registrationToken.ManifestURL)
 
-	//get rancher client
 	return &pb.RancherRegistrationResponse{
 		ClusterName: registeredCluster.Name,
 		ClusterID:   registrationToken.ClusterID,
