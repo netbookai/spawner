@@ -11,7 +11,6 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/kubectl"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -544,8 +543,6 @@ func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) 
 func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
 
 	clusterName := req.ClusterName
-	region := req.Region
-	accountName := req.AccountName
 	svc.logger.Info("registering cluster with rancher ", req.ClusterName)
 
 	client, err := rancher.CreateRancherClient(svc.config.RancherAddr, svc.config.RancherUsername, svc.config.RancherPassword)
@@ -556,64 +553,38 @@ func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.Ranche
 		return nil, err
 	}
 
-	//	regCluster := rnchrClient.Cluster{
-	//		DockerRootDir:           "/var/lib/docker",
-	//		Name:                    req.ClusterName,
-	//		WindowsPreferedCluster:  false,
-	//		EnableClusterAlerting:   false,
-	//		EnableClusterMonitoring: false,
-	//	}
-	//
-	//	registerCluster, err := client.Cluster.Create(&regCluster)
-	//
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	fmt.Printf("cluster id %s \n\n", registerCluster.ID)
+	regCluster := rnchrClient.Cluster{
+		DockerRootDir:           "/var/lib/docker",
+		Name:                    req.ClusterName,
+		WindowsPreferedCluster:  false,
+		EnableClusterAlerting:   false,
+		EnableClusterMonitoring: false,
+	}
 
-	registration, err := client.ClusterRegistrationToken.Create(&rnchrClient.ClusterRegistrationToken{
-		ClusterID: "c-dslqf",
+	registeredCluster, err := client.Cluster.Create(&regCluster)
+
+	if err != nil {
+		svc.logger.Errorf("failed to create a rancher cluster '%s' %s", clusterName, err.Error())
+		return nil, err
+	}
+
+	registrationToken, err := client.ClusterRegistrationToken.Create(&rnchrClient.ClusterRegistrationToken{
+		ClusterID: registeredCluster.ID,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	manifestData, err := kubectl.GetManifestFromURL(registration.ManifestURL)
-	if err != nil {
-		svc.logger.Errorf("failed to get the manifest content from rancher : %s", err.Error())
-		return nil, err
-	}
-
-	obj, err := kubectl.GetObjects(manifestData)
-	if err != nil {
-		svc.logger.Errorf("failed to parse manifest: %s", err.Error())
-		return nil, err
-	}
-
-	session, err := NewSession(svc.config, region, accountName)
-	if err != nil {
-		return nil, err
-	}
-	cluster, err := getClusterSpec(ctx, session.getEksClient(), clusterName)
 
 	if err != nil {
-		return nil, err
-	}
+		//TODO: we may want to revert the creation process,
+		//but we will keep it now, so we can manually deal with the registration in case of failure.
 
-	k8sClient, err := session.getK8sClient(cluster)
-	if err != nil {
+		svc.logger.Errorf("failed to fetch registration token for '%s' %s", clusterName, err.Error())
 		return nil, err
 	}
-	dynamicClient, err := session.getK8sDynamicClient(cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	err = kubectl.Apply(ctx, k8sClient, dynamicClient, obj)
-	if err != nil {
-		return nil, err
-	}
+	svc.logger.Infof("cluster created on the rancher, apply the manifest file on the target cluster '%s'", registrationToken.ManifestURL)
 
 	//get rancher client
-	return &pb.RancherRegistrationResponse{}, nil
+	return &pb.RancherRegistrationResponse{
+		ClusterName: registeredCluster.Name,
+		ClusterID:   registrationToken.ClusterID,
+		ManifestURL: registrationToken.ManifestURL,
+	}, nil
 }

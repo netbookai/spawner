@@ -237,10 +237,11 @@ message CreateSnapshotAndDeleteResponse{
 
 message RancherRegistrationRequest {
     string clusterName = 1;
-    string region =2;
-    string accountName = 3;
 }
 
 message RancherRegistrationResponse {
-    string error =1;
+    string error = 1;
+    string clusterName = 2;
+    string clusterID = 3;
+    string manifestURL = 4;
 }
