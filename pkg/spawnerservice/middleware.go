@@ -48,7 +48,7 @@ func (mw loggingMiddleware) GetCluster(ctx context.Context, req *pb.GetClusterRe
 
 func (mw loggingMiddleware) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (res *pb.GetClustersResponse, err error) {
 	defer func() {
-		mw.logger.Infow("spawnerservice", "method", "GetClusters", "provider", req.Provider, "region", req.Region, "scope", req.Scope, "response", res, "error", err)
+		mw.logger.Infow("spawnerservice", "method", "GetClusters", "provider", req.Provider, "region", "response", res, "error", err)
 	}()
 	return mw.next.GetClusters(ctx, req)
 }

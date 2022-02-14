@@ -64,25 +64,25 @@ message NodeSpec {
 }
 
 message ClusterRequest {
-    string clusterName = 1;
-    string provider = 2;
-    string region = 3;
-    NodeSpec node = 4;
-    map<string, string> labels = 5;
-    string accountName = 6;
+    string provider = 1;
+    string region = 2;
+    string accountName = 3;
+    string clusterName = 4;
+    NodeSpec node = 5;
+    map<string, string> labels = 6;
 }
 
 message GetClusterRequest {
-    string clusterName = 1;
+    string provider = 1;
     string region = 2;
     string accountName = 3;
+    string clusterName = 4;
 }
 
 message GetClustersRequest {
     string provider = 1;
     string region = 2;
-    string scope = 3;
-    string accountName = 4;
+    string accountName = 3;
 }
 
 message ClusterSpec {
@@ -102,9 +102,10 @@ message ClusterResponse {
 }
 
 message ClusterStatusRequest {
-    string clusterName = 1;
+    string provider = 1;
     string region = 2;
     string accountName = 3;
+    string clusterName = 4;
 }
 
 message ClusterStatusResponse {
@@ -113,8 +114,9 @@ message ClusterStatusResponse {
 }
 
 message AddTokenRequest{
-    string clusterName = 1;
+    string provider = 1;
     string region = 2;
+    string clusterName = 3;
 }
 
 message AddTokenResponse{
@@ -123,9 +125,10 @@ message AddTokenResponse{
 }
 
 message GetTokenRequest{
-    string clusterName = 1;
+    string provider = 1;
     string region = 2;
     string accountName = 3;
+    string clusterName = 4;
 }
 
 message GetTokenResponse{
@@ -137,10 +140,11 @@ message GetTokenResponse{
 }
 
 message AddRoute53RecordRequest{
-    string dnsName = 1;
-    string recordName = 2;
-    string regionName = 3;
-    string accountName = 4;
+    string provider = 1;
+    string region = 2;
+    string accountName = 3;
+    string dnsName = 4;
+    string recordName = 5;
 }
 
 message AddRoute53RecordResponse{
@@ -149,10 +153,11 @@ message AddRoute53RecordResponse{
 }
 
 message NodeSpawnRequest {
-    string clusterName = 1;
-    NodeSpec nodeSpec = 2;
-    string region =3;
-    string accountName = 4;
+    string provider = 1;
+    string region =2;
+    string accountName = 3;
+    string clusterName = 4;
+    NodeSpec nodeSpec = 5;
 }
 
 message NodeSpawnResponse {
@@ -160,9 +165,10 @@ message NodeSpawnResponse {
 }
 
 message ClusterDeleteRequest {
-    string clusterName = 1;
+    string provider = 1;
     string region = 2;
     string accountName = 3;
+    string clusterName = 4;
 }
 
 message ClusterDeleteResponse {
@@ -170,10 +176,11 @@ message ClusterDeleteResponse {
 }
 
 message NodeDeleteRequest {
-    string clusterName = 1;
-    string nodeGroupName = 2;
-    string region = 3;
-    string accountName = 4;
+    string provider = 1;
+    string region = 2;
+    string accountName = 3;
+    string clusterName = 4;
+    string nodeGroupName = 5;
 }
 
 message NodeDeleteResponse {
@@ -181,14 +188,14 @@ message NodeDeleteResponse {
 }
 
 message CreateVolumeRequest{
-    string availabilityzone = 1;
-    string volumetype = 2;
-    int64 size = 3;
-    string snapshotid = 4; 
-    string provider = 5;
-    string region = 6;
-    map<string, string> labels = 7;
-    string accountName = 8;
+    string provider = 1;
+    string region = 2;
+    string accountName = 3;
+    string availabilityzone = 4;
+    string volumetype = 5;
+    int64 size = 6;
+    string snapshotid = 7; 
+    map<string, string> labels = 8;
 }
 
 message CreateVolumeResponse{
@@ -197,10 +204,10 @@ message CreateVolumeResponse{
 }
 
 message DeleteVolumeRequest{
-    string volumeid=1;
-    string provider=2;
-    string region=3;
-    string accountName = 4;
+    string provider = 1;
+    string region = 2;
+    string accountName = 3;
+    string volumeid = 4;
 }
 
 message DeleteVolumeResponse{
@@ -209,11 +216,11 @@ message DeleteVolumeResponse{
 }
 
 message CreateSnapshotRequest{
-    string volumeid = 1;
-    string provider = 2;
-    string region = 3;
-    map<string, string> labels = 4;
-    string accountName = 5;
+    string provider = 1;
+    string region = 2;
+    string accountName = 3;
+    string volumeid = 4;
+    map<string, string> labels = 5;
 }
 
 message CreateSnapshotResponse{
@@ -222,11 +229,11 @@ message CreateSnapshotResponse{
 }
 
 message CreateSnapshotAndDeleteRequest{
-    string volumeid = 1;
-    string provider = 2;
-    string region = 3;
-    map<string, string> labels = 4;
-    string accountName = 5;
+    string provider = 1;
+    string region = 2;
+    string accountName = 3;
+    string volumeid = 4;
+    map<string, string> labels = 5;
 }
 
 message CreateSnapshotAndDeleteResponse{

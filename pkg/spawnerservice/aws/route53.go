@@ -12,7 +12,7 @@ import (
 
 func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
 	logger := svc.logger
-	session, err := NewSession(svc.config, req.RegionName, req.AccountName)
+	session, err := NewSession(svc.config, req.Region, req.AccountName)
 
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 	}
 	dnsName := req.GetDnsName()
 	recordName := req.GetRecordName()
-	regionName := req.GetRegionName()
+	regionName := req.GetRegion()
 	id, iderr := uuid.NewRandom()
 
 	if iderr != nil {
