@@ -18,6 +18,7 @@ import (
 const (
 	ClusterName = "test-nsp-cluster-01"
 	Region      = "us-west-2"
+	Provider    = "aws"
 )
 
 func main() {
@@ -64,7 +65,7 @@ func main() {
 		DiskSize: 13,
 	}
 	createClusterReq := &pb.ClusterRequest{
-		Provider:    "aws",
+		Provider:    Provider,
 		Region:      Region,
 		Node:        node,
 		Labels:      map[string]string{},
@@ -74,32 +75,38 @@ func main() {
 	addTokenReq := &pb.AddTokenRequest{
 		ClusterName: ClusterName,
 		Region:      Region,
+		Provider:    Provider,
 	}
 
 	getTokenReq := &pb.GetTokenRequest{
 		ClusterName: ClusterName,
 		Region:      Region,
+		Provider:    Provider,
 	}
 
 	addRoute53RecordReq := &pb.AddRoute53RecordRequest{
 		DnsName:    "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
 		RecordName: "*.mani.app.netbook.ai",
 		Region:     Region,
+		Provider:   Provider,
 		// RegionIdentifier: "Oregon region",
 	}
 
 	clusterStatusReq := &pb.ClusterStatusRequest{
 		ClusterName: ClusterName,
 		Region:      Region,
+		Provider:    Provider,
 	}
 
 	getClustersReq := &pb.GetClustersRequest{
-		Provider: "aws",
 		Region:   Region,
+		Provider: Provider,
 	}
 
 	getClusterReq := &pb.GetClusterRequest{
 		ClusterName: ClusterName,
+		Provider:    Provider,
+		Region:      Region,
 	}
 
 	addNode := &pb.NodeSpec{
@@ -112,18 +119,21 @@ func main() {
 	addNodeReq := &pb.NodeSpawnRequest{
 		ClusterName: ClusterName,
 		Region:      Region,
+		Provider:    Provider,
 		NodeSpec:    addNode,
 	}
 
 	deleteClusterReq := &pb.ClusterDeleteRequest{
 		ClusterName: ClusterName,
 		Region:      Region,
+		Provider:    Provider,
 	}
 
 	deleteNodeReq := &pb.NodeDeleteRequest{
 		ClusterName:   ClusterName,
 		NodeGroupName: "ng-04",
 		Region:        Region,
+		Provider:      Provider,
 	}
 
 	createVolumeReq := &pb.CreateVolumeRequest{
@@ -131,25 +141,25 @@ func main() {
 		Volumetype:       "gp2",
 		Size:             1,
 		Snapshotid:       "",
-		Provider:         "aws",
 		Region:           Region,
+		Provider:         Provider,
 	}
 
 	deleteVolumeReq := &pb.DeleteVolumeRequest{
 		Volumeid: "vol-05d7e98ae385b2e29",
-		Provider: "aws",
 		Region:   Region,
+		Provider: Provider,
 	}
 
 	createSnapshotReq := &pb.CreateSnapshotRequest{
 		Volumeid: "vol-07ccb258225e0e213",
-		Provider: "aws",
 		Region:   Region,
+		Provider: Provider,
 	}
 	createSnapshotAndDeleteReq := &pb.CreateSnapshotAndDeleteRequest{
 		Volumeid: "vol-0f220de036ebea748",
-		Provider: "aws",
 		Region:   Region,
+		Provider: Provider,
 	}
 
 	switch *method {

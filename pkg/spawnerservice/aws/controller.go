@@ -7,11 +7,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
-	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -43,8 +41,8 @@ type AWSController struct {
 }
 
 //NewAWSController
-func NewAWSController(logger *zap.SugaredLogger, config *config.Config) AWSController {
-	return AWSController{
+func NewAWSController(logger *zap.SugaredLogger, config *config.Config) *AWSController {
+	return &AWSController{
 		logger: logger,
 		config: config,
 	}
@@ -60,7 +58,7 @@ func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.Clu
 }
 
 //CreateCluster Create new cluster with given specification, no op if cluste already exist
-func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
+func (ctrl AWSController) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 
 	var clusterName string
 	if clusterName = req.ClusterName; len(clusterName) == 0 {
@@ -69,31 +67,31 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 
 	region := req.Region
 	accountName := req.AccountName
-	session, err := NewSession(svc.config, region, accountName)
+	session, err := NewSession(ctrl.config, region, accountName)
 
 	if err != nil {
 		return nil, err
 	}
 	eksClient := session.getEksClient()
 
-	svc.logger.Debugf("checking cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debugf("checking cluster status for '%s', region '%s'", clusterName, region)
 
 	cluster, err := getClusterSpec(ctx, eksClient, clusterName)
 
 	if err != nil {
 		if err.(awserr.Error).Code() == eks.ErrCodeResourceNotFoundException {
 
-			svc.logger.Debugf("cluster '%s' does not exist, creating ...", clusterName)
-			cluster, err = svc.createClusterInternal(ctx, session, clusterName, req)
+			ctrl.logger.Debugf("cluster '%s' does not exist, creating ...", clusterName)
+			cluster, err = ctrl.createClusterInternal(ctx, session, clusterName, req)
 			if err != nil {
-				svc.logger.Error("failed to create clsuter '%s' %s", clusterName, err.Error())
+				ctrl.logger.Error("failed to create clsuter '%s' %s", clusterName, err.Error())
 				return nil, err
 			}
 
-			svc.logger.Info("cluster '%s' is creating state, it might take some time, please check AWS console for status", clusterName)
+			ctrl.logger.Info("cluster '%s' is creating state, it might take some time, please check AWS console for status", clusterName)
 		}
 	} else {
-		svc.logger.Infof("cluster '%s', already exist", clusterName)
+		ctrl.logger.Infof("cluster '%s', already exist", clusterName)
 	}
 
 	return &pb.ClusterResponse{
@@ -102,15 +100,15 @@ func (svc AWSController) CreateCluster(ctx context.Context, req *pb.ClusterReque
 }
 
 //GetCluster Describe cluster with the given name and region
-func (svc AWSController) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+func (ctrl AWSController) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
 
 	response := &pb.ClusterSpec{}
 	region := req.Region
 	clusterName := req.ClusterName
 	accountName := req.AccountName
-	session, err := NewSession(svc.config, region, accountName)
+	session, err := NewSession(ctrl.config, region, accountName)
 
-	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	if err != nil {
 		return nil, err
 	}
@@ -119,20 +117,20 @@ func (svc AWSController) GetCluster(ctx context.Context, req *pb.GetClusterReque
 	cluster, err := getClusterSpec(ctx, client, clusterName)
 
 	if err != nil {
-		svc.logger.Error("failed to fetch cluster status", err)
+		ctrl.logger.Error("failed to fetch cluster status", err)
 		return nil, err
 	}
 
 	k8sClient, err := session.getK8sClient(cluster)
 	if err != nil {
-		svc.logger.Error(" Failed to create kube client ", err)
+		ctrl.logger.Error(" Failed to create kube client ", err)
 		return nil, err
 	}
 	nodeList, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	response.Name = clusterName
 
 	if err != nil {
-		svc.logger.Error(" Failed to query node list ", err)
+		ctrl.logger.Error(" Failed to query node list ", err)
 		return nil, err
 	}
 
@@ -181,14 +179,14 @@ func (svc AWSController) GetCluster(ctx context.Context, req *pb.GetClusterReque
 	return response, nil
 }
 
-func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+func (ctrl AWSController) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
 
 	//TODO: what does Scope mean here ?
 
 	//get all clusters in given region
 	region := req.Region
 	accountName := req.AccountName
-	session, err := NewSession(svc.config, region, accountName)
+	session, err := NewSession(ctrl.config, region, accountName)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +197,7 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 	listClusterInput := &eks.ListClustersInput{}
 	listClusterOut, err := client.ListClustersWithContext(ctx, listClusterInput)
 	if err != nil {
-		svc.logger.Error("failed to list clusters", err)
+		ctrl.logger.Error("failed to list clusters", err)
 		return &pb.GetClustersResponse{}, err
 	}
 
@@ -213,7 +211,7 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 		input := &eks.ListNodegroupsInput{ClusterName: cluster}
 		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 		if err != nil {
-			svc.logger.Errorf("failed to fetch nodegroups %s", err.Error())
+			ctrl.logger.Errorf("failed to fetch nodegroups %s", err.Error())
 		}
 
 		nodes := []*pb.NodeSpec{}
@@ -224,7 +222,7 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 			nodeGroupDetails, err := client.DescribeNodegroupWithContext(ctx, input)
 
 			if err != nil {
-				svc.logger.Error("failed to fetch nodegroups details ", *cNodeGroup)
+				ctrl.logger.Error("failed to fetch nodegroups details ", *cNodeGroup)
 			}
 
 			node := &pb.NodeSpec{Name: *cNodeGroup}
@@ -247,21 +245,21 @@ func (svc AWSController) GetClusters(ctx context.Context, req *pb.GetClustersReq
 	return &resp, nil
 }
 
-func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
+func (ctrl AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
 	region := req.Region
 	clusterName := req.ClusterName
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctrl.config, region, req.AccountName)
 
 	if err != nil {
 		return nil, err
 	}
 	client := session.getEksClient()
 
-	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	cluster, err := getClusterSpec(ctx, client, clusterName)
 
 	if err != nil {
-		svc.logger.Error("failed to fetch cluster status", err)
+		ctrl.logger.Error("failed to fetch cluster status", err)
 		return &pb.ClusterStatusResponse{
 			Error: err.Error(),
 		}, err
@@ -274,12 +272,12 @@ func (svc AWSController) ClusterStatus(ctx context.Context, req *pb.ClusterStatu
 
 //getDefaultNode Get any existing node from the cluster as default node
 //if node with `newNode` exist return error
-func (svc AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, clusterName, nodeName string) (*eks.Nodegroup, error) {
+func (ctrl AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, clusterName, nodeName string) (*eks.Nodegroup, error) {
 
 	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
 	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 	if err != nil {
-		svc.logger.Errorf("failed to fetch nodegroups: %s", err.Error())
+		ctrl.logger.Errorf("failed to fetch nodegroups: %s", err.Error())
 		return nil, err
 	}
 
@@ -302,38 +300,38 @@ func (svc AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, cl
 
 }
 
-func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *Session, cluster *eks.Cluster, nodeSpec *pb.NodeSpec) (*eks.CreateNodegroupInput, error) {
+func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *Session, cluster *eks.Cluster, nodeSpec *pb.NodeSpec) (*eks.CreateNodegroupInput, error) {
 
 	iamClient := session.getIAMClient()
 
 	roleName := AWS_NODE_GROUP_ROLE_NAME
-	nodeRole, newRole, err := svc.createRoleOrGetExisting(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
+	nodeRole, newRole, err := ctrl.createRoleOrGetExisting(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
 
 	if err != nil {
-		svc.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
+		ctrl.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
 		return nil, err
 	}
 
 	if newRole {
 
-		err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
+		err = ctrl.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
 
 		if err != nil {
-			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			ctrl.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
 			return nil, err
 		}
 
-		err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
+		err = ctrl.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
 
 		if err != nil {
-			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			ctrl.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
 			return nil, err
 		}
 
-		err = svc.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
+		err = ctrl.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
 
 		if err != nil {
-			svc.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			ctrl.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
 			return nil, err
 		}
 	}
@@ -345,7 +343,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 	amiType := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if nodeSpec.GpuEnabled {
-		svc.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
+		ctrl.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
 		amiType = "AL2_x86_64_GPU"
 	} else {
 		amiType = "AL2_x86_64"
@@ -370,7 +368,7 @@ func (svc AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, ses
 
 }
 
-func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *pb.NodeSpec) *eks.CreateNodegroupInput {
+func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *pb.NodeSpec) *eks.CreateNodegroupInput {
 	diskSize := int64(nodeSpec.DiskSize)
 
 	//add labels from the given spec
@@ -379,7 +377,7 @@ func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clus
 	amiType := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if nodeSpec.GpuEnabled {
-		svc.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
+		ctrl.logger.Infof("requested gpu node for '%s'", nodeSpec.Name)
 		amiType = "AL2_x86_64_GPU"
 	} else {
 		amiType = "AL2_x86_64"
@@ -405,14 +403,14 @@ func (svc AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clus
 }
 
 //AddNode adds new node group to the existing cluster, cluster atleast have 1 node group already present
-func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
+func (ctrl AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
 
 	//create a new node on the given cluster with the NodeSpec
 	clusterName := req.ClusterName
 	region := req.Region
 	nodeSpec := req.NodeSpec
 
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctrl.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -422,50 +420,50 @@ func (svc AWSController) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) 
 
 	if err != nil {
 
-		svc.logger.Errorf("unable to get cluster '%s': %s", clusterName, err.Error())
+		ctrl.logger.Errorf("unable to get cluster '%s': %s", clusterName, err.Error())
 		return nil, err
 	}
 
-	svc.logger.Infof("querying default nodes on cluster '%s' in region '%s'", clusterName, region)
-	defaultNode, err := svc.getDefaultNode(ctx, client, clusterName, nodeSpec.Name)
+	ctrl.logger.Infof("querying default nodes on cluster '%s' in region '%s'", clusterName, region)
+	defaultNode, err := ctrl.getDefaultNode(ctx, client, clusterName, nodeSpec.Name)
 
 	var newNodeGroupInput *eks.CreateNodegroupInput
 
 	if err != nil {
 		if errors.Is(err, ERR_NODEGROUP_EXIST) {
-			svc.logger.Errorf("nodegroup '%s' already exist in cluster '%s'", nodeSpec.Name, clusterName)
+			ctrl.logger.Errorf("nodegroup '%s' already exist in cluster '%s'", nodeSpec.Name, clusterName)
 			return nil, err
 		}
 
 		if errors.Is(err, ERR_NO_NODEGROUP) {
 			//no node group present,
-			svc.logger.Infof("default nodegroup not found in cluster '%s', creating NodegroupRequest from cluster config ", clusterName)
-			newNodeGroupInput, err = svc.getNewNodeGroupSpecFromCluster(ctx, session, cluster, nodeSpec)
+			ctrl.logger.Infof("default nodegroup not found in cluster '%s', creating NodegroupRequest from cluster config ", clusterName)
+			newNodeGroupInput, err = ctrl.getNewNodeGroupSpecFromCluster(ctx, session, cluster, nodeSpec)
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		svc.logger.Infof("found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
-		newNodeGroupInput = svc.getNodeSpecFromDefault(defaultNode, clusterName, nodeSpec)
+		ctrl.logger.Infof("found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
+		newNodeGroupInput = ctrl.getNodeSpecFromDefault(defaultNode, clusterName, nodeSpec)
 	}
 
 	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroupInput)
 	if err != nil {
-		svc.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
+		ctrl.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
 		return nil, err
 	}
-	svc.logger.Infof("creating nodegroup '%s' on cluster '%s', Status : %s, it might take some time. Please check AWS console.", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
+	ctrl.logger.Infof("creating nodegroup '%s' on cluster '%s', Status : %s, it might take some time. Please check AWS console.", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
 	return &pb.NodeSpawnResponse{}, err
 }
 
 //DeleteCluster delete empty cluster, cluster should not have any nodegroup attached.
-func (svc AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
+func (ctrl AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
 
 	clusterName := req.ClusterName
 	region := req.Region
 
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctrl.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -476,23 +474,23 @@ func (svc AWSController) DeleteCluster(ctx context.Context, req *pb.ClusterDelet
 	})
 
 	if err != nil {
-		svc.logger.Errorf("failed to delete cluster '%s': %s", clusterName, err.Error())
+		ctrl.logger.Errorf("failed to delete cluster '%s': %s", clusterName, err.Error())
 		return &pb.ClusterDeleteResponse{
 			Error: err.Error(),
 		}, err
 	}
 
-	svc.logger.Infof("requested cluster '%s' to be deleted, Status :%s. It might take some time, check AWS console for more.", clusterName, *deleteOut.Cluster.Status)
+	ctrl.logger.Infof("requested cluster '%s' to be deleted, Status :%s. It might take some time, check AWS console for more.", clusterName, *deleteOut.Cluster.Status)
 
 	return &pb.ClusterDeleteResponse{}, nil
 }
 
-func (svc AWSController) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
+func (ctrl AWSController) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
 	clusterName := req.ClusterName
 	nodeName := req.NodeGroupName
 	region := req.Region
 
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctrl.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -504,33 +502,33 @@ func (svc AWSController) DeleteNode(ctx context.Context, req *pb.NodeDeleteReque
 	})
 
 	if err != nil {
-		svc.logger.Errorf("failed to delete nodegroup '%s': %s", nodeName, err.Error())
+		ctrl.logger.Errorf("failed to delete nodegroup '%s': %s", nodeName, err.Error())
 		return &pb.NodeDeleteResponse{Error: err.Error()}, err
 	}
-	svc.logger.Infof("requested nodegroup '%s' to be deleted, Status %s. It might take some time, check AWS console for more.", nodeName, *nodeDeleteOut.Nodegroup.Status)
+	ctrl.logger.Infof("requested nodegroup '%s' to be deleted, Status %s. It might take some time, check AWS console for more.", nodeName, *nodeDeleteOut.Nodegroup.Status)
 	return &pb.NodeDeleteResponse{}, nil
 }
 
-func (svc AWSController) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+func (ctrl AWSController) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
 	return &pb.AddTokenResponse{}, nil
 }
 
-func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+func (ctrl AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
 
 	region := req.Region
 	clusterName := req.ClusterName
 
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctrl.config, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
 	client := session.getEksClient()
-	svc.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	cluster, err := getClusterSpec(ctx, client, clusterName)
 
 	kubeConfig, err := session.getKubeConfig(cluster)
 	if err != nil {
-		svc.logger.Errorf("failed to get k8s %s", err.Error())
+		ctrl.logger.Errorf("failed to get k8s %s", err.Error())
 		return nil, err
 	}
 	return &pb.GetTokenResponse{
@@ -540,50 +538,6 @@ func (svc AWSController) GetToken(ctx context.Context, req *pb.GetTokenRequest) 
 	}, nil
 }
 
-func (svc AWSController) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
-
-	clusterName := req.ClusterName
-	svc.logger.Info("registering cluster with rancher ", req.ClusterName)
-
-	client, err := rancher.CreateRancherClient(svc.config.RancherAddr, svc.config.RancherUsername, svc.config.RancherPassword)
-
-	if err != nil {
-		svc.logger.Error("failed to get rancher client ", client)
-
-		return nil, err
-	}
-
-	regCluster := rnchrClient.Cluster{
-		DockerRootDir:           "/var/lib/docker",
-		Name:                    req.ClusterName,
-		WindowsPreferedCluster:  false,
-		EnableClusterAlerting:   false,
-		EnableClusterMonitoring: false,
-	}
-
-	registeredCluster, err := client.Cluster.Create(&regCluster)
-
-	if err != nil {
-		svc.logger.Errorf("failed to create a rancher cluster '%s' %s", clusterName, err.Error())
-		return nil, err
-	}
-
-	registrationToken, err := client.ClusterRegistrationToken.Create(&rnchrClient.ClusterRegistrationToken{
-		ClusterID: registeredCluster.ID,
-	})
-
-	if err != nil {
-		//TODO: we may want to revert the creation process,
-		//but we will keep it now, so we can manually deal with the registration in case of failure.
-
-		svc.logger.Errorf("failed to fetch registration token for '%s' %s", clusterName, err.Error())
-		return nil, err
-	}
-	svc.logger.Infof("cluster created on the rancher, apply the manifest file on the target cluster '%s'", registrationToken.ManifestURL)
-
-	return &pb.RancherRegistrationResponse{
-		ClusterName: registeredCluster.Name,
-		ClusterID:   registrationToken.ClusterID,
-		ManifestURL: registrationToken.ManifestURL,
-	}, nil
+func (ctrl AWSController) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+	return nil, nil
 }
