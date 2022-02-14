@@ -2,6 +2,7 @@ package system
 
 import (
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -81,8 +82,16 @@ func createSession(region string) (*session.Session, error) {
 }
 
 func parseCredentials(blob string) (*credentials.Credentials, error) {
-	//TODO: given the blob format decode it into credentials fields
-	return &credentials.Credentials{}, nil
+
+	//secret_id,secret_key
+	splits := strings.Split(blob, ",")
+	if len(splits) != 2 {
+		return nil, errors.New("invalid credentials found in secrets")
+	}
+	// token is set to blank for now
+	creds := credentials.NewStaticCredentials(splits[0], splits[1], "")
+
+	return creds, nil
 }
 
 //GetAwsCredentials Retrieve user credentials from the secret manager
