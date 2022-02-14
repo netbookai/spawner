@@ -84,7 +84,7 @@ func main() {
 	addRoute53RecordReq := &pb.AddRoute53RecordRequest{
 		DnsName:    "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
 		RecordName: "*.mani.app.netbook.ai",
-		RegionName: Region,
+		Region:     Region,
 		// RegionIdentifier: "Oregon region",
 	}
 
@@ -96,7 +96,6 @@ func main() {
 	getClustersReq := &pb.GetClustersRequest{
 		Provider: "aws",
 		Region:   Region,
-		Scope:    "public",
 	}
 
 	getClusterReq := &pb.GetClusterRequest{
@@ -260,8 +259,6 @@ func main() {
 	case "RegisterWithRancher":
 		v, err := svc.RegisterWithRancher(context.Background(), &pb.RancherRegistrationRequest{
 			ClusterName: ClusterName,
-			Region:      Region,
-			AccountName: "netbook",
 		})
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error registering cluster with rancher", "error", err)
