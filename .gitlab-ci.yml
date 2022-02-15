@@ -49,6 +49,7 @@ docker_creation:
     - docker push registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA
   only:
     refs:
+      - tags
       - main
       - development
 
