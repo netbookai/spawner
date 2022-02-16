@@ -76,8 +76,15 @@ func main() {
 		Region:      "us-west-2",
 	}
 
+	addRoute53RecordReq := &pb.AddRoute53RecordRequest{
+		DnsName:    "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
+		RecordName: "*.mani.app.netbook.ai",
+		RegionName: "us-west-1",
+		// RegionIdentifier: "Oregon region",
+	}
+
 	clusterStatusReq := &pb.ClusterStatusRequest{
-		ClusterName: "infra-test",
+		ClusterName: "local",
 	}
 
 	getClustersReq := &pb.GetClustersRequest{
@@ -158,6 +165,13 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("GetToken method", "response", v)
+	case "AddRoute53Record":
+		v, err := svc.AddRoute53Record(context.Background(), addRoute53RecordReq)
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("error creating Alias record", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("AddRoute53Record method", "response", v)
 	case "GetCluster":
 		v, err := svc.GetCluster(context.Background(), getClusterReq)
 		if err != nil && err.Error() != "" {

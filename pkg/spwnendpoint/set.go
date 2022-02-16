@@ -22,6 +22,7 @@ import (
 type Set struct {
 	CreateClusterEndpoint           endpoint.Endpoint
 	AddTokenEndpoint                endpoint.Endpoint
+	AddRoute53RecordEndpoint        endpoint.Endpoint
 	GetTokenEndpoint                endpoint.Endpoint
 	GetClustersEndpoint             endpoint.Endpoint
 	GetClusterEndpoint              endpoint.Endpoint
@@ -85,6 +86,15 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		getTokenEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getTokenEndpoint)
 		getTokenEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "GetToken"))(getTokenEndpoint)
 		getTokenEndpoint = InstrumentingMiddleware(duration.With("method", "GetToken"))(getTokenEndpoint)
+	}
+
+	var addRoute53RecordEndpoint endpoint.Endpoint
+	{
+		addRoute53RecordEndpoint = MakeAddRoute53RecordEndpoint(svc)
+		addRoute53RecordEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(addRoute53RecordEndpoint)
+		addRoute53RecordEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(addRoute53RecordEndpoint)
+		addRoute53RecordEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "AddRoute53Record"))(addRoute53RecordEndpoint)
+		addRoute53RecordEndpoint = InstrumentingMiddleware(duration.With("method", "AddRoute53Record"))(addRoute53RecordEndpoint)
 	}
 
 	var clusterStatusEndpoint endpoint.Endpoint
@@ -163,6 +173,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		CreateClusterEndpoint:           createClusterEndpoint,
 		AddTokenEndpoint:                addTokenEndpoint,
 		GetTokenEndpoint:                getTokenEndpoint,
+		AddRoute53RecordEndpoint:        addRoute53RecordEndpoint,
 		GetClustersEndpoint:             getClustersEndpoint,
 		GetClusterEndpoint:              getClusterEndpoint,
 		CusterStatusEndpoint:            clusterStatusEndpoint,
@@ -232,6 +243,26 @@ func MakeGetTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint 
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(*pb.GetTokenRequest)
 		resp, err := s.GetToken(ctx, req)
+		return resp, err
+	}
+}
+
+// Implements the service interface, so Set may be used as a service.
+// This is primarily useful in the context of a client library.
+func (s Set) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+	resp, err := s.AddRoute53RecordEndpoint(ctx, req)
+	if err != nil {
+		return &pb.AddRoute53RecordResponse{}, err
+	}
+	response := resp.(*pb.AddRoute53RecordResponse)
+	return response, fmt.Errorf(response.Error)
+}
+
+// MakeAddRoute53RecordEndpoint constructs a AddRoute53Record endpoint wrapping the service.
+func MakeAddRoute53RecordEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.AddRoute53RecordRequest)
+		resp, err := s.AddRoute53Record(ctx, req)
 		return resp, err
 	}
 }

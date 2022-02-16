@@ -7,8 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/maps"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +31,7 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 
 func addAWSTags(labels map[string]string) []*ec2.Tag {
 
-	tagsMap := util.SimpleReplaceMerge(map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.AWS_LABEL}, labels)
+	tagsMap := maps.SimpleReplaceMerge(map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.AWS_LABEL}, labels)
 	tags := []*ec2.Tag{}
 	for key, value := range tagsMap {
 		tags = append(tags, &ec2.Tag{

@@ -17,8 +17,14 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.imagePullPolicy }}
         command: [ "/go/bin/spawnersvc"]
-        args: [ " -grpc-addr=:8083 -debug-addr=:8081" ]
+        args: []
         env:
+        - name: ENV
+          value: {{ .Values.env }}
+        - name: PORT
+          value: '{{ .Values.port }}'
+        - name: DEBUG_PORT
+          value: '{{ .Values.debug_port }}'
         - name: RANCHER_ADDRESS
           value: {{ .Values.rancher.address }}
         - name: RANCHER_USERNAME
@@ -29,7 +35,7 @@ spec:
           value: {{ .Values.rancher.aws_cred_name }}
 
         ports:
-          - containerPort: 8083
+          - containerPort: {{ .Values.port }} 
       imagePullSecrets:
         - name: dockerconfigjson-gitlab
       serviceAccountName: awskube2iam

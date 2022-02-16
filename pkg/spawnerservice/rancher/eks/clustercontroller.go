@@ -5,9 +5,9 @@ import (
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	"gitlab.com/netbook-devs/spawner-service/pb"
+	"gitlab.com/netbook-devs/spawner-service/pkg/maps"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher/common"
-	"gitlab.com/netbook-devs/spawner-service/pkg/util"
 )
 
 func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRequest, tags map[string]string) (rnchrClient.ClusterSpec, error) {
@@ -26,13 +26,13 @@ func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRe
 		DesiredSize:   common.Int64Ptr(1),
 		MaxSize:       common.Int64Ptr(1),
 		Gpu:           common.BoolPtr(false),
-		Labels: common.MapPtr(util.SimpleReplaceMerge(
+		Labels: common.MapPtr(maps.SimpleReplaceMerge(
 			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, constants.NODE_NAME_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.NODE_LABEL_SELECTOR_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.INSTANCE_LABEL: nodeSpawnRequest.NodeSpec.Instance, "type": "nodegroup"},
 			cluster.Labels,
 			nodeSpawnRequest.NodeSpec.Labels,
 		)),
 		RequestSpotInstances: common.BoolPtr(false),
-		ResourceTags: common.MapPtr(util.SimpleReplaceMerge(
+		ResourceTags: common.MapPtr(maps.SimpleReplaceMerge(
 			map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL, constants.NODE_NAME_LABEL: nodeSpawnRequest.NodeSpec.Name, constants.INSTANCE_LABEL: nodeSpawnRequest.NodeSpec.Instance},
 			cluster.Labels,
 			nodeSpawnRequest.NodeSpec.Labels,
@@ -91,7 +91,7 @@ func CreateCluster(awsCred rnchrClient.CloudCredential, clusterReq *pb.ClusterRe
 		DesiredSize:          common.Int64Ptr(1),
 		MaxSize:              common.Int64Ptr(1),
 		Gpu:                  common.BoolPtr(false),
-		Labels:               common.MapPtr(util.SimpleReplaceMerge(map[string]string{"node": clusterReq.Node.Name, constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL}, clusterReq.Labels)),
+		Labels:               common.MapPtr(maps.SimpleReplaceMerge(map[string]string{"node": clusterReq.Node.Name, constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL}, clusterReq.Labels)),
 		RequestSpotInstances: common.BoolPtr(false),
 		ResourceTags:         &map[string]string{},
 		Version:              common.StrPtr("1.20"),
@@ -122,7 +122,7 @@ func CreateCluster(awsCred rnchrClient.CloudCredential, clusterReq *pb.ClusterRe
 			Subnets:                &subnets,
 			Tags:                   &clusterTags,
 		},
-		Labels:                  util.SimpleReplaceMerge(map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL}, clusterReq.Labels),
+		Labels:                  maps.SimpleReplaceMerge(map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.RANCHER_LABEL}, clusterReq.Labels),
 		WindowsPreferedCluster:  false,
 		EnableClusterAlerting:   false,
 		EnableClusterMonitoring: false,
