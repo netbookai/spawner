@@ -35,8 +35,8 @@ type ClusterController interface {
 }
 
 type SpawnerService struct {
-	awsController  *aws.AWSController
-	noopController *NoopController
+	awsController  ClusterController
+	noopController ClusterController
 	logger         *zap.SugaredLogger
 	config         *config.Config
 }

@@ -181,8 +181,6 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *pb.GetClusterRequ
 
 func (ctrl AWSController) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
 
-	//TODO: what does Scope mean here ?
-
 	//get all clusters in given region
 	region := req.Region
 	accountName := req.AccountName

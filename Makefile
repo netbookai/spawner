@@ -1,3 +1,6 @@
+ALL_GO_FILES=$(shell find . -type f  -name '*.go')
+
+
 deps:
 	go mod tidy
 run:
@@ -10,3 +13,9 @@ clean:
 
 proto:
 	./pb/compile.sh
+
+fmt:
+	goimports -w $(ALL_GO_FILES)
+
+lint:
+	golint ./...
