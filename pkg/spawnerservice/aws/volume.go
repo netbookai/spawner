@@ -31,7 +31,12 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 
 func addAWSTags(labels map[string]string) []*ec2.Tag {
 
-	tagsMap := maps.SimpleReplaceMerge(map[string]string{constants.CREATOR_LABEL: constants.SPAWNER_SERVICE_LABEL, constants.PROVISIONER_LABEL: constants.AWS_LABEL}, labels)
+	tagsMap := maps.SimpleReplaceMerge(
+		map[string]string{
+			constants.CreatorLabel:     constants.SpawnerServiceLabel,
+			constants.ProvisionerLabel: constants.AwsLabel},
+		labels)
+
 	tags := []*ec2.Tag{}
 	for key, value := range tagsMap {
 		tags = append(tags, &ec2.Tag{

@@ -31,11 +31,11 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 			AssumeRolePolicyDocument: &assumeRoleDoc,
 			Description:              &description,
 			Tags: []*iam.Tag{{
-				Key:   common.StrPtr(constants.CREATOR_LABEL),
-				Value: common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+				Key:   common.StrPtr(constants.CreatorLabel),
+				Value: common.StrPtr(constants.SpawnerServiceLabel),
 			},
 				{
-					Key:   common.StrPtr(constants.NAME_LABEL),
+					Key:   common.StrPtr(constants.NameLabel),
 					Value: &roleName,
 				},
 			},

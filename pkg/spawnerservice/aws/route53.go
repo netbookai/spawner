@@ -66,7 +66,7 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 		return res, errors.New("Region does not have matching ELB HostedZoneId")
 	}
 
-	hostedZoenId := svc.config.AwsRoute53HostedZoneId
+	hostedZoenId := svc.config.AwsRoute53HostedZoneID
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{

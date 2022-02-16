@@ -14,8 +14,8 @@ func WaitTillInstanceRunning(sess *Session, region string, instanceLabelMap map[
 	return sess.getEC2Client().WaitUntilInstanceRunning(&ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NODE_NAME_LABEL)),
-				Values: aws.StringSlice([]string{instanceLabelMap[constants.NODE_NAME_LABEL]}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NodeNameLabel)),
+				Values: aws.StringSlice([]string{instanceLabelMap[constants.NodeNameLabel]}),
 			},
 		},
 	})
@@ -26,8 +26,8 @@ func WaitTillInstanceTerminated(sess *Session, region string, instanceLabelMap m
 	return sess.getEC2Client().WaitUntilInstanceTerminated(&ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NODE_NAME_LABEL)),
-				Values: aws.StringSlice([]string{instanceLabelMap[constants.NODE_NAME_LABEL]}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NodeNameLabel)),
+				Values: aws.StringSlice([]string{instanceLabelMap[constants.NodeNameLabel]}),
 			},
 		},
 	})

@@ -15,7 +15,7 @@ type Config struct {
 	RancherPassword        string `mapstructure:"RANCHER_PASSWORD"`
 	RancherAddr            string `mapstructure:"RANCHER_ADDRESS"`
 	AwsCredName            string `mapstructure:"RANCHER_AWS_CRED_NAME"`
-	AwsRoute53HostedZoneId string `mapstructure:"AWS_ROUTE53_HOSTEDZONEID"`
+	AwsRoute53HostedZoneID string `mapstructure:"AWS_ROUTE53_HOSTEDZONEID"`
 	AWSAccessID            string `mapstructure:"AWS_ACCESS_ID"`
 	AWSSecretKey           string `mapstructure:"AWS_SECRET_KEY"`
 	AWSToken               string `mapstructure:"AWS_TOKEN"`

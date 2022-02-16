@@ -43,8 +43,8 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnetIds)
 	}
 	tags := map[string]*string{
-		constants.CLUSTER_NAME_LABEL: &clusterName,
-		constants.CREATOR_LABEL:      common.StrPtr(constants.SPAWNER_SERVICE_LABEL),
+		constants.ClusterNameLabel: &clusterName,
+		constants.CreatorLabel:     common.StrPtr(constants.SpawnerServiceLabel),
 	}
 
 	for k, v := range req.Labels {

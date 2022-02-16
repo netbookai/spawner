@@ -48,20 +48,20 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 	vpcOut, err := sess.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NAME_LABEL)),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NameLabel)),
 				Values: aws.StringSlice([]string{vpcName}),
 			},
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.CREATOR_LABEL)),
-				Values: aws.StringSlice([]string{constants.SPAWNER_SERVICE_LABEL}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.CreatorLabel)),
+				Values: aws.StringSlice([]string{constants.SpawnerServiceLabel}),
 			},
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.PROVISIONER_LABEL)),
-				Values: aws.StringSlice([]string{constants.RANCHER_LABEL}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.ProvisionerLabel)),
+				Values: aws.StringSlice([]string{constants.RancherLabel}),
 			},
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NB_TYPE_TAG_KEY)),
-				Values: aws.StringSlice([]string{constants.NB_REGION_WKSP_NETWORK_STK}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NBTypeTagkey)),
+				Values: aws.StringSlice([]string{constants.NBRegionWkspNetworkStack}),
 			},
 		},
 	})
@@ -112,7 +112,7 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 	subnetOut, err := sess.DescribeSubnets(&ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.VPC_TAG_KEY)),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.VpcTagKey)),
 				Values: aws.StringSlice([]string{vpcName}),
 			},
 		},
@@ -269,20 +269,20 @@ func CreateVPC(client *ec2.EC2, name string, vpcCidr string) (*ec2.Vpc, error) {
 				ResourceType: aws.String(ec2.ResourceTypeVpc),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 					{
-						Key:   aws.String(constants.NB_TYPE_TAG_KEY),
-						Value: aws.String(constants.NB_REGION_WKSP_NETWORK_STK),
+						Key:   aws.String(constants.NBTypeTagkey),
+						Value: aws.String(constants.NBRegionWkspNetworkStack),
 					},
 				},
 			},
@@ -307,16 +307,16 @@ func CreateInternetGateway(client *ec2.EC2, name string) (*ec2.InternetGateway, 
 				ResourceType: aws.String(ec2.ResourceTypeInternetGateway),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 				},
 			},
@@ -351,16 +351,16 @@ func CreateRouteTable(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.RouteTab
 				ResourceType: aws.String(ec2.ResourceTypeRouteTable),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 				},
 			},
@@ -398,20 +398,20 @@ func CreateSubnet(client *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, ci
 				ResourceType: aws.String(ec2.ResourceTypeSubnet),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.VPC_TAG_KEY),
+						Key:   aws.String(constants.VpcTagKey),
 						Value: aws.String(vpcName),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 				},
 			},

@@ -34,6 +34,7 @@ type ClusterController interface {
 	RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error)
 }
 
+//SpawnerService manage provider and clusters
 type SpawnerService struct {
 	awsController  ClusterController
 	noopController ClusterController
@@ -43,6 +44,7 @@ type SpawnerService struct {
 
 var _ ClusterController = (*SpawnerService)(nil)
 
+//New
 func New(logger *zap.SugaredLogger, config *config.Config, ints metrics.Counter) ClusterController {
 
 	var svc ClusterController
@@ -65,62 +67,77 @@ func (svc SpawnerService) controller(provider string) ClusterController {
 	return svc.noopController
 }
 
+//CreateCluster create cluster on the provider specified in request
 func (svc SpawnerService) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	return svc.controller(req.Provider).CreateCluster(ctx, req)
 }
 
+//GetCluster get cluster on the providerr specified in request
 func (svc SpawnerService) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
 	return svc.controller(req.Provider).GetCluster(ctx, req)
 }
 
+//GetClusters get the available clusters in the given provider
 func (svc SpawnerService) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
 	return svc.controller(req.Provider).GetClusters(ctx, req)
 }
 
+//AddToken deprecated as of now
 func (svc SpawnerService) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
 	return svc.controller(req.Provider).AddToken(ctx, req)
 }
 
+//GetToken return the kube token for the cluster in given provider
 func (svc SpawnerService) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
 	return svc.controller(req.Provider).GetToken(ctx, req)
 }
 
+//AddRoute53Record
 func (svc SpawnerService) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
 	return svc.controller(req.Provider).AddRoute53Record(ctx, req)
 }
 
+//ClusterStatus get cluster status in given provider
 func (svc SpawnerService) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
 	return svc.controller(req.Provider).ClusterStatus(ctx, req)
 }
 
+//AddNode adds new node to the cluster on the provider
 func (svc SpawnerService) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
 	return svc.controller(req.Provider).AddNode(ctx, req)
 }
 
+//DeleteCluster deletes empty cluster on the provider, fails when cluster has nodegroup
 func (svc SpawnerService) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
 	return svc.controller(req.Provider).DeleteCluster(ctx, req)
 }
 
+//DeleteNode deletes node on the given provider cluster
 func (svc SpawnerService) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
 	return svc.controller(req.Provider).DeleteNode(ctx, req)
 }
 
+//CreateVolume create new volume on the provider
 func (svc SpawnerService) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
 	return svc.controller(req.Provider).CreateVolume(ctx, req)
 }
 
+//DeleteVolume delete the volumne on the provider
 func (svc SpawnerService) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
 	return svc.controller(req.Provider).DeleteVolume(ctx, req)
 }
 
+//CreateSnapshot
 func (svc SpawnerService) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
 	return svc.controller(req.Provider).CreateSnapshot(ctx, req)
 }
 
+//CreateSnapshotAndDelete
 func (svc SpawnerService) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
 	return svc.controller(req.Provider).CreateSnapshotAndDelete(ctx, req)
 }
 
+//RegisterWithRancher register cluster on the rancher, returns the kube manifest to apply on the cluster
 func (svc SpawnerService) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
 
 	clusterName := req.ClusterName
