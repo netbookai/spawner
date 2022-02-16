@@ -1,4 +1,4 @@
-package rancher
+package rancher_old
 
 import (
 	"testing"

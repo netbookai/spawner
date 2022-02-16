@@ -34,6 +34,7 @@ type Set struct {
 	DeleteVolumeEndpoint            endpoint.Endpoint
 	CreateSnapshotEndpoint          endpoint.Endpoint
 	CreateSnapshotAndDeleteEndpoint endpoint.Endpoint
+	RegisterWithRancherEndpoint     endpoint.Endpoint
 }
 
 // New returns a Set that wraps the provided server, and wires in all of the
@@ -169,6 +170,15 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		createSnapshotAndDeleteEndpoint = InstrumentingMiddleware(duration.With("method", "CreateSnapshotAndDelete"))(createSnapshotAndDeleteEndpoint)
 	}
 
+	var registerWithRancherEndpoint endpoint.Endpoint
+	{
+		registerWithRancherEndpoint = MakeRegisterWithRancherEndpoint(svc)
+		registerWithRancherEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(registerWithRancherEndpoint)
+		registerWithRancherEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(registerWithRancherEndpoint)
+		registerWithRancherEndpoint = LoggingMiddleware(logger.With("logger", logger, "method", "RegisterWithRancherEndpoint"))(registerWithRancherEndpoint)
+		registerWithRancherEndpoint = InstrumentingMiddleware(duration.With("method", "CreateSnapshotAndDelete"))(registerWithRancherEndpoint)
+	}
+
 	return Set{
 		CreateClusterEndpoint:           createClusterEndpoint,
 		AddTokenEndpoint:                addTokenEndpoint,
@@ -184,6 +194,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		DeleteVolumeEndpoint:            deleteVolumeEndpoint,
 		CreateSnapshotEndpoint:          createSnapshotEndpoint,
 		CreateSnapshotAndDeleteEndpoint: createSnapshotAndDeleteEndpoint,
+		RegisterWithRancherEndpoint:     registerWithRancherEndpoint,
 	}
 }
 
@@ -433,6 +444,7 @@ func MakeGetClustersEndpoint(s spawnerservice.ClusterController) endpoint.Endpoi
 }
 
 func (s Set) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+
 	resp, err := s.GetClusterEndpoint(ctx, req)
 	if err != nil {
 		return &pb.ClusterSpec{}, err
@@ -445,6 +457,24 @@ func MakeGetClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endpoin
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(*pb.GetClusterRequest)
 		resp, err := s.GetCluster(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+	fmt.Println(" register with rancher")
+	resp, err := s.RegisterWithRancherEndpoint(ctx, req)
+	if err != nil {
+		return &pb.RancherRegistrationResponse{}, err
+	}
+	response := resp.(*pb.RancherRegistrationResponse)
+	return response, fmt.Errorf("")
+}
+
+func MakeRegisterWithRancherEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*pb.RancherRegistrationRequest)
+		resp, err := s.RegisterWithRancher(ctx, req)
 		return resp, err
 	}
 }

@@ -38,44 +38,30 @@ var (
 	subnetUpto8Cidr = [8]string{"192.168.0.0/18", "192.168.64.0/18", "192.168.128.0/18"}
 )
 
-func CreateAwsEc2Session(region string) (*ec2.EC2, error) {
-	sess, err := CreateBaseSession(region)
-	if err != nil {
-		return nil, err
-	}
-
-	awsEc2Sess := ec2.New(sess)
-
-	return awsEc2Sess, nil
-}
-
-func GetRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, error) {
+func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, error) {
+	sess := session.getEC2Client()
+	region := session.Region
 	vpcName := fmt.Sprintf(vpcNameFmt, region)
 
 	rv := &AwsWkspRegionNetworkStack{}
 
-	sess, err := CreateAwsEc2Session(region)
-	if err != nil {
-		return rv, errors.Wrapf(err, "error creating ec2 session for region %s", region)
-	}
-
 	vpcOut, err := sess.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NAME_LABEL)),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NameLabel)),
 				Values: aws.StringSlice([]string{vpcName}),
 			},
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.CREATOR_LABEL)),
-				Values: aws.StringSlice([]string{constants.SPAWNER_SERVICE_LABEL}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.CreatorLabel)),
+				Values: aws.StringSlice([]string{constants.SpawnerServiceLabel}),
 			},
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.PROVISIONER_LABEL)),
-				Values: aws.StringSlice([]string{constants.RANCHER_LABEL}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.ProvisionerLabel)),
+				Values: aws.StringSlice([]string{constants.RancherLabel}),
 			},
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NB_TYPE_TAG_KEY)),
-				Values: aws.StringSlice([]string{constants.NB_REGION_WKSP_NETWORK_STK}),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.NBTypeTagkey)),
+				Values: aws.StringSlice([]string{constants.NBRegionWkspNetworkStack}),
 			},
 		},
 	})
@@ -99,9 +85,11 @@ func GetRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, error
 			},
 		},
 	})
+
 	if err != nil {
 		return rv, errors.Wrapf(err, "error getting internet gateway from aws attached to vpc %s", *vpc.VpcId)
 	}
+
 	if len(igwOut.InternetGateways) > 0 {
 		rv.Gateway = igwOut.InternetGateways[0]
 	}
@@ -124,7 +112,7 @@ func GetRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, error
 	subnetOut, err := sess.DescribeSubnets(&ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String(fmt.Sprintf("tag:%s", constants.VPC_TAG_KEY)),
+				Name:   aws.String(fmt.Sprintf("tag:%s", constants.VpcTagKey)),
 				Values: aws.StringSlice([]string{vpcName}),
 			},
 		},
@@ -142,14 +130,13 @@ func GetRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, error
 	return rv, nil
 }
 
-func DeleteRegionWkspNetworkStack(region string, netStk AwsWkspRegionNetworkStack) error {
-	sess, err := CreateAwsEc2Session(region)
-	if err != nil {
-		return errors.Wrapf(err, "error creating ec2 session for region %s", region)
-	}
+func DeleteRegionWkspNetworkStack(session *Session, netStk AwsWkspRegionNetworkStack) error {
 
+	client := session.getEC2Client()
+	region := session.Region
+	var err error
 	for _, subn := range netStk.Subnets {
-		_, err := sess.DeleteSubnet(&ec2.DeleteSubnetInput{
+		_, err := client.DeleteSubnet(&ec2.DeleteSubnetInput{
 			SubnetId: subn.SubnetId,
 		})
 		if err != nil {
@@ -166,7 +153,7 @@ func DeleteRegionWkspNetworkStack(region string, netStk AwsWkspRegionNetworkStac
 	})
 	for _, routeTbl := range netStk.RouteTables {
 		if routeTbl.Associations == nil || len(routeTbl.Associations) == 0 || !*routeTbl.Associations[0].Main {
-			_, err = sess.DeleteRouteTable(&ec2.DeleteRouteTableInput{
+			_, err = client.DeleteRouteTable(&ec2.DeleteRouteTableInput{
 				RouteTableId: routeTbl.RouteTableId,
 			})
 			if err != nil {
@@ -176,7 +163,7 @@ func DeleteRegionWkspNetworkStack(region string, netStk AwsWkspRegionNetworkStac
 	}
 
 	if netStk.Gateway != nil {
-		_, err = sess.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
+		_, err = client.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
 			InternetGatewayId: netStk.Gateway.InternetGatewayId,
 			VpcId:             netStk.Vpc.VpcId,
 		})
@@ -184,7 +171,7 @@ func DeleteRegionWkspNetworkStack(region string, netStk AwsWkspRegionNetworkStac
 			return errors.Wrapf(err, "error detaching internet gateway %s from vpc %s in region %s", *netStk.Gateway.InternetGatewayId, *netStk.Vpc.VpcId, region)
 		}
 
-		_, err = sess.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
+		_, err = client.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
 			InternetGatewayId: netStk.Gateway.InternetGatewayId,
 		})
 		if err != nil {
@@ -192,7 +179,7 @@ func DeleteRegionWkspNetworkStack(region string, netStk AwsWkspRegionNetworkStac
 		}
 	}
 
-	_, err = sess.DeleteVpc(&ec2.DeleteVpcInput{
+	_, err = client.DeleteVpc(&ec2.DeleteVpcInput{
 		VpcId: netStk.Vpc.VpcId,
 	})
 	if err != nil {
@@ -202,7 +189,10 @@ func DeleteRegionWkspNetworkStack(region string, netStk AwsWkspRegionNetworkStac
 	return nil
 }
 
-func CreateRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, error) {
+func CreateRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, error) {
+	region := session.Region
+	client := session.getEC2Client()
+
 	vpcName := fmt.Sprintf(vpcNameFmt, region)
 	gatewayName := fmt.Sprintf(gatewayNameFmt, region)
 	routeTableName := fmt.Sprintf(routeTableNameFmt, region)
@@ -210,12 +200,7 @@ func CreateRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, er
 
 	rv := &AwsWkspRegionNetworkStack{}
 
-	sess, err := CreateAwsEc2Session(region)
-	if err != nil {
-		return rv, errors.Wrapf(err, "error creating ec2 session for region %s", region)
-	}
-
-	azsInRegion, err := sess.DescribeAvailabilityZones(&ec2.DescribeAvailabilityZonesInput{
+	azsInRegion, err := client.DescribeAvailabilityZones(&ec2.DescribeAvailabilityZonesInput{
 		Filters: []*ec2.Filter{
 			{
 				Name:   aws.String("region-name"),
@@ -227,30 +212,30 @@ func CreateRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, er
 		return rv, errors.Wrapf(err, "error getting azs for region %s", region)
 	}
 
-	vpc, err := CreateVPC(sess, vpcName, vpcCidr)
+	vpc, err := CreateVPC(client, vpcName, vpcCidr)
 	if err != nil {
 		return rv, errors.Wrapf(err, "error creating vpc for region %s", region)
 	}
 	rv.Vpc = vpc
 
-	gateway, err := CreateInternetGateway(sess, gatewayName)
+	gateway, err := CreateInternetGateway(client, gatewayName)
 	if err != nil {
 		return rv, errors.Wrapf(err, "error creating gateway for region %s", region)
 	}
 	rv.Gateway = gateway
 
-	err = AttachIntGatewayVpc(sess, vpc, gateway)
+	err = AttachIntGatewayVpc(client, vpc, gateway)
 	if err != nil {
 		return rv, errors.Wrapf(err, "error attaching vpc and internet gateway for region %s vpc %s gateway %s", region, *vpc.VpcId, *gateway.InternetGatewayId)
 	}
 
-	routeTable, err := CreateRouteTable(sess, vpc, routeTableName)
+	routeTable, err := CreateRouteTable(client, vpc, routeTableName)
 	if err != nil {
 		return rv, errors.Wrapf(err, "error creating route table for region %s vpc %s", region, *vpc.VpcId)
 	}
 	rv.RouteTables = []*ec2.RouteTable{routeTable}
 
-	route, err := CreateRoute(sess, routeTable, gateway, routeName)
+	route, err := CreateRoute(client, routeTable, gateway, routeName)
 	if err != nil || !(*route) {
 		return rv, errors.Wrapf(err, "error creating route for region %s route table %s gateway %s", region, *routeTable.RouteTableId, *gateway.InternetGatewayId)
 	}
@@ -266,7 +251,7 @@ func CreateRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, er
 	for ind, avblZone := range azsInRegion.AvailabilityZones {
 		subnetName := fmt.Sprintf(subnetNameFmt, region, strconv.Itoa(ind))
 		subnetAz := avblZone.ZoneName
-		subnet, err := CreateSubnetStack(sess, vpc, vpcName, subnetName, subnetCidrArr[ind], *subnetAz, routeTable)
+		subnet, err := CreateSubnetStack(client, vpc, vpcName, subnetName, subnetCidrArr[ind], *subnetAz, routeTable)
 		if err != nil {
 			return rv, errors.Wrapf(err, "error creating subnet %s for region %s vpc %s az %s", subnetName, region, *vpc.VpcId, *subnetAz)
 		}
@@ -276,28 +261,28 @@ func CreateRegionWkspNetworkStack(region string) (*AwsWkspRegionNetworkStack, er
 	return rv, nil
 }
 
-func CreateVPC(sess *ec2.EC2, name string, vpcCidr string) (*ec2.Vpc, error) {
-	vpcOut, err := sess.CreateVpc(&ec2.CreateVpcInput{
+func CreateVPC(client *ec2.EC2, name string, vpcCidr string) (*ec2.Vpc, error) {
+	vpcOut, err := client.CreateVpc(&ec2.CreateVpcInput{
 		CidrBlock: aws.String(vpcCidr),
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String(ec2.ResourceTypeVpc),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 					{
-						Key:   aws.String(constants.NB_TYPE_TAG_KEY),
-						Value: aws.String(constants.NB_REGION_WKSP_NETWORK_STK),
+						Key:   aws.String(constants.NBTypeTagkey),
+						Value: aws.String(constants.NBRegionWkspNetworkStack),
 					},
 				},
 			},
@@ -308,30 +293,30 @@ func CreateVPC(sess *ec2.EC2, name string, vpcCidr string) (*ec2.Vpc, error) {
 		return nil, errors.Wrap(err, "error creating aws vpc")
 	}
 
-	waitErr := sess.WaitUntilVpcAvailable(&ec2.DescribeVpcsInput{
+	waitErr := client.WaitUntilVpcAvailable(&ec2.DescribeVpcsInput{
 		VpcIds: []*string{vpcOut.Vpc.VpcId},
 	})
 
 	return vpcOut.Vpc, waitErr
 }
 
-func CreateInternetGateway(sess *ec2.EC2, name string) (*ec2.InternetGateway, error) {
-	intGateOut, err := sess.CreateInternetGateway(&ec2.CreateInternetGatewayInput{
+func CreateInternetGateway(client *ec2.EC2, name string) (*ec2.InternetGateway, error) {
+	intGateOut, err := client.CreateInternetGateway(&ec2.CreateInternetGatewayInput{
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String(ec2.ResourceTypeInternetGateway),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 				},
 			},
@@ -345,8 +330,8 @@ func CreateInternetGateway(sess *ec2.EC2, name string) (*ec2.InternetGateway, er
 	return intGateOut.InternetGateway, nil
 }
 
-func AttachIntGatewayVpc(sess *ec2.EC2, vpc *ec2.Vpc, intGateway *ec2.InternetGateway) error {
-	_, err := sess.AttachInternetGateway(&ec2.AttachInternetGatewayInput{
+func AttachIntGatewayVpc(client *ec2.EC2, vpc *ec2.Vpc, intGateway *ec2.InternetGateway) error {
+	_, err := client.AttachInternetGateway(&ec2.AttachInternetGatewayInput{
 		InternetGatewayId: intGateway.InternetGatewayId,
 		VpcId:             vpc.VpcId,
 	})
@@ -358,24 +343,24 @@ func AttachIntGatewayVpc(sess *ec2.EC2, vpc *ec2.Vpc, intGateway *ec2.InternetGa
 	return nil
 }
 
-func CreateRouteTable(sess *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.RouteTable, error) {
-	routeTableOut, err := sess.CreateRouteTable(&ec2.CreateRouteTableInput{
+func CreateRouteTable(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.RouteTable, error) {
+	routeTableOut, err := client.CreateRouteTable(&ec2.CreateRouteTableInput{
 		VpcId: vpc.VpcId,
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String(ec2.ResourceTypeRouteTable),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 				},
 			},
@@ -389,8 +374,8 @@ func CreateRouteTable(sess *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.RouteTable
 	return routeTableOut.RouteTable, nil
 }
 
-func CreateRoute(sess *ec2.EC2, routeTable *ec2.RouteTable, intGateway *ec2.InternetGateway, name string) (*bool, error) {
-	routeOut, err := sess.CreateRoute(&ec2.CreateRouteInput{
+func CreateRoute(client *ec2.EC2, routeTable *ec2.RouteTable, intGateway *ec2.InternetGateway, name string) (*bool, error) {
+	routeOut, err := client.CreateRoute(&ec2.CreateRouteInput{
 		RouteTableId:         routeTable.RouteTableId,
 		DestinationCidrBlock: aws.String("0.0.0.0/0"),
 		GatewayId:            intGateway.InternetGatewayId,
@@ -403,8 +388,8 @@ func CreateRoute(sess *ec2.EC2, routeTable *ec2.RouteTable, intGateway *ec2.Inte
 	return routeOut.Return, nil
 }
 
-func CreateSubnet(sess *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, cidrBlock string, avblZone string) (*ec2.Subnet, error) {
-	subnetOut, err := sess.CreateSubnet(&ec2.CreateSubnetInput{
+func CreateSubnet(client *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, cidrBlock string, avblZone string) (*ec2.Subnet, error) {
+	subnetOut, err := client.CreateSubnet(&ec2.CreateSubnetInput{
 		AvailabilityZone: &avblZone,
 		CidrBlock:        &cidrBlock,
 		VpcId:            vpc.VpcId,
@@ -413,20 +398,20 @@ func CreateSubnet(sess *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, cidr
 				ResourceType: aws.String(ec2.ResourceTypeSubnet),
 				Tags: []*ec2.Tag{
 					{
-						Key:   aws.String(constants.NAME_LABEL),
+						Key:   aws.String(constants.NameLabel),
 						Value: aws.String(name),
 					},
 					{
-						Key:   aws.String(constants.VPC_TAG_KEY),
+						Key:   aws.String(constants.VpcTagKey),
 						Value: aws.String(vpcName),
 					},
 					{
-						Key:   aws.String(constants.CREATOR_LABEL),
-						Value: aws.String(constants.SPAWNER_SERVICE_LABEL),
+						Key:   aws.String(constants.CreatorLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
-						Key:   aws.String(constants.PROVISIONER_LABEL),
-						Value: aws.String(constants.RANCHER_LABEL),
+						Key:   aws.String(constants.ProvisionerLabel),
+						Value: aws.String(constants.RancherLabel),
 					},
 				},
 			},
@@ -437,15 +422,15 @@ func CreateSubnet(sess *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, cidr
 		return nil, errors.Wrap(err, "error creating aws subnet")
 	}
 
-	waitErr := sess.WaitUntilSubnetAvailable(&ec2.DescribeSubnetsInput{
+	waitErr := client.WaitUntilSubnetAvailable(&ec2.DescribeSubnetsInput{
 		SubnetIds: []*string{subnetOut.Subnet.SubnetId},
 	})
 
 	return subnetOut.Subnet, waitErr
 }
 
-func ModifySubnetMapPublicIp(sess *ec2.EC2, subnet *ec2.Subnet) error {
-	_, err := sess.ModifySubnetAttribute(&ec2.ModifySubnetAttributeInput{
+func ModifySubnetMapPublicIp(client *ec2.EC2, subnet *ec2.Subnet) error {
+	_, err := client.ModifySubnetAttribute(&ec2.ModifySubnetAttributeInput{
 		SubnetId:            subnet.SubnetId,
 		MapPublicIpOnLaunch: &ec2.AttributeBooleanValue{Value: aws.Bool(true)},
 	})
@@ -457,8 +442,8 @@ func ModifySubnetMapPublicIp(sess *ec2.EC2, subnet *ec2.Subnet) error {
 	return nil
 }
 
-func CreateSubnetRouteTblAssn(sess *ec2.EC2, routeTable *ec2.RouteTable, subnet *ec2.Subnet) (*string, error) {
-	assnOut, err := sess.AssociateRouteTable(&ec2.AssociateRouteTableInput{
+func CreateSubnetRouteTblAssn(client *ec2.EC2, routeTable *ec2.RouteTable, subnet *ec2.Subnet) (*string, error) {
+	assnOut, err := client.AssociateRouteTable(&ec2.AssociateRouteTableInput{
 		RouteTableId: routeTable.RouteTableId,
 		SubnetId:     subnet.SubnetId,
 	})
@@ -470,17 +455,17 @@ func CreateSubnetRouteTblAssn(sess *ec2.EC2, routeTable *ec2.RouteTable, subnet 
 	return assnOut.AssociationId, nil
 }
 
-func CreateSubnetStack(sess *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, cidrBlock string, avblZone string, routeTable *ec2.RouteTable) (*ec2.Subnet, error) {
-	subnet, err := CreateSubnet(sess, vpc, vpcName, name, cidrBlock, avblZone)
+func CreateSubnetStack(client *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, cidrBlock string, avblZone string, routeTable *ec2.RouteTable) (*ec2.Subnet, error) {
+	subnet, err := CreateSubnet(client, vpc, vpcName, name, cidrBlock, avblZone)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error creating subnet %s for vpc %s az %s", name, *vpc.VpcId, avblZone)
 	}
-	err = ModifySubnetMapPublicIp(sess, subnet)
+	err = ModifySubnetMapPublicIp(client, subnet)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error modifying subnet %s for vpc %s az %s", *subnet.SubnetId, *vpc.VpcId, avblZone)
 	}
 
-	_, err = CreateSubnetRouteTblAssn(sess, routeTable, subnet)
+	_, err = CreateSubnetRouteTblAssn(client, routeTable, subnet)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error creating subnet route table association for subnet %s route table %s", *subnet.SubnetId, *routeTable.RouteTableId)
 	}

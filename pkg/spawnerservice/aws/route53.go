@@ -10,19 +10,13 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pb"
 )
 
-func CreateAwsRoute53Session(region string) (*route53.Route53, error) {
-	sess, err := CreateBaseSession(region)
+func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+	logger := svc.logger
+	session, err := NewSession(svc.config, req.Region, req.AccountName)
+
 	if err != nil {
 		return nil, err
 	}
-
-	awsAwsRoute53Sess := route53.New(sess)
-
-	return awsAwsRoute53Sess, nil
-}
-
-func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
-	logger := svc.logger
 
 	regionClassicLoadBalancerHostedID := map[string]string{
 		"us-east-2":      "Z3AADJGX6KTTL2",
@@ -54,7 +48,7 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 	}
 	dnsName := req.GetDnsName()
 	recordName := req.GetRecordName()
-	regionName := req.GetRegionName()
+	regionName := req.GetRegion()
 	id, iderr := uuid.NewRandom()
 
 	if iderr != nil {
@@ -72,7 +66,7 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 		return res, errors.New("Region does not have matching ELB HostedZoneId")
 	}
 
-	hostedZoenId := svc.config.AwsRoute53HostedZoneId
+	hostedZoenId := svc.config.AwsRoute53HostedZoneID
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{
@@ -98,21 +92,21 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 		HostedZoneId: aws.String(hostedZoenId), //Z08929991BJOO3WMC7L0Q
 	}
 	// Creating AWS Route53 session
-	awsAwsRoute53Sess, err := CreateAwsRoute53Session(regionName)
+	route53Client := session.getRoute53Client()
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
 		return nil, err
 	}
 
-	result, err := awsAwsRoute53Sess.ChangeResourceRecordSets(input)
+	result, err := route53Client.ChangeResourceRecordSets(input)
 
 	if err != nil {
 		LogError("AddAwsRoute53Record", logger, err)
 		return &pb.AddRoute53RecordResponse{}, err
 	}
 
-	err = awsAwsRoute53Sess.WaitUntilResourceRecordSetsChanged(&route53.GetChangeInput{
+	err = route53Client.WaitUntilResourceRecordSetsChanged(&route53.GetChangeInput{
 		Id: *&result.ChangeInfo.Id,
 	})
 

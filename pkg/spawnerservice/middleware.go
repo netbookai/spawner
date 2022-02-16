@@ -48,7 +48,7 @@ func (mw loggingMiddleware) GetCluster(ctx context.Context, req *pb.GetClusterRe
 
 func (mw loggingMiddleware) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (res *pb.GetClustersResponse, err error) {
 	defer func() {
-		mw.logger.Infow("spawnerservice", "method", "GetClusters", "provider", req.Provider, "region", req.Region, "scope", req.Scope, "response", res, "error", err)
+		mw.logger.Infow("spawnerservice", "method", "GetClusters", "provider", req.Provider, "region", "response", res, "error", err)
 	}()
 	return mw.next.GetClusters(ctx, req)
 }
@@ -121,6 +121,13 @@ func (mw loggingMiddleware) AddRoute53Record(ctx context.Context, req *pb.AddRou
 		mw.logger.Infow("spawnerservice", "method", "AddRoute53Record", "response", res, "error", err)
 	}()
 	return mw.next.AddRoute53Record(ctx, req)
+}
+
+func (mw loggingMiddleware) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (res *pb.RancherRegistrationResponse, err error) {
+	defer func() {
+		mw.logger.Infow("spawnerservice", "method", "RegisterWithRancher", "response", res, "error", err)
+	}()
+	return mw.next.RegisterWithRancher(ctx, req)
 }
 
 // InstrumentingMiddleware returns a service middleware that instruments
@@ -217,6 +224,12 @@ func (mw instrumentingMiddleware) GetToken(ctx context.Context, req *pb.GetToken
 
 func (mw instrumentingMiddleware) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
 	v, err := mw.next.AddRoute53Record(ctx, req)
+	mw.ints.Add(float64(1))
+	return v, err
+}
+
+func (mw instrumentingMiddleware) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+	v, err := mw.next.RegisterWithRancher(ctx, req)
 	mw.ints.Add(float64(1))
 	return v, err
 }

@@ -12,5 +12,7 @@
 # See also
 #  https://github.com/grpc/grpc-go/tree/master/examples
 
-protoc spawnersvc.proto --go_out=. --go_opt=paths=source_relative
-protoc spawnersvc.proto --go-grpc_out=. --go-grpc_opt=paths=source_relative
+PROTO_DIR="./pb"
+
+protoc $PROTO_DIR/spawnersvc.proto --go_out=. --go_opt=paths=source_relative
+protoc $PROTO_DIR/spawnersvc.proto --go-grpc_out=. --go-grpc_opt=paths=source_relative
