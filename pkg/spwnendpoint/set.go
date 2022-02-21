@@ -10,8 +10,9 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/ratelimit"
 	"github.com/sony/gobreaker"
-	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
+
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
@@ -200,19 +201,19 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
+func (s Set) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 	resp, err := s.CreateClusterEndpoint(ctx, req)
 	if err != nil {
-		return &pb.ClusterResponse{}, err
+		return &proto.ClusterResponse{}, err
 	}
-	response := resp.(*pb.ClusterResponse)
+	response := resp.(*proto.ClusterResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeCreateClusterEndpoint constructs a CreateCluster endpoint wrapping the service.
 func MakeCreateClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.ClusterRequest)
+		req := request.(*proto.ClusterRequest)
 		resp, err := s.CreateCluster(ctx, req)
 		return resp, err
 	}
@@ -220,19 +221,19 @@ func MakeCreateClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endp
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+func (s Set) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
 	resp, err := s.AddTokenEndpoint(ctx, req)
 	if err != nil {
-		return &pb.AddTokenResponse{}, err
+		return &proto.AddTokenResponse{}, err
 	}
-	response := resp.(*pb.AddTokenResponse)
+	response := resp.(*proto.AddTokenResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeAddTokenEndpoint constructs a AddToken endpoint wrapping the service.
 func MakeAddTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.AddTokenRequest)
+		req := request.(*proto.AddTokenRequest)
 		resp, err := s.AddToken(ctx, req)
 		return resp, err
 	}
@@ -240,19 +241,19 @@ func MakeAddTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint 
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+func (s Set) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
 	resp, err := s.GetTokenEndpoint(ctx, req)
 	if err != nil {
-		return &pb.GetTokenResponse{}, err
+		return &proto.GetTokenResponse{}, err
 	}
-	response := resp.(*pb.GetTokenResponse)
+	response := resp.(*proto.GetTokenResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeGetTokenEndpoint constructs a GetToken endpoint wrapping the service.
 func MakeGetTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.GetTokenRequest)
+		req := request.(*proto.GetTokenRequest)
 		resp, err := s.GetToken(ctx, req)
 		return resp, err
 	}
@@ -260,19 +261,19 @@ func MakeGetTokenEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint 
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+func (s Set) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
 	resp, err := s.AddRoute53RecordEndpoint(ctx, req)
 	if err != nil {
-		return &pb.AddRoute53RecordResponse{}, err
+		return &proto.AddRoute53RecordResponse{}, err
 	}
-	response := resp.(*pb.AddRoute53RecordResponse)
+	response := resp.(*proto.AddRoute53RecordResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeAddRoute53RecordEndpoint constructs a AddRoute53Record endpoint wrapping the service.
 func MakeAddRoute53RecordEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.AddRoute53RecordRequest)
+		req := request.(*proto.AddRoute53RecordRequest)
 		resp, err := s.AddRoute53Record(ctx, req)
 		return resp, err
 	}
@@ -280,19 +281,19 @@ func MakeAddRoute53RecordEndpoint(s spawnerservice.ClusterController) endpoint.E
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
+func (s Set) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	resp, err := s.CusterStatusEndpoint(ctx, req)
 	if err != nil {
-		return &pb.ClusterStatusResponse{}, err
+		return &proto.ClusterStatusResponse{}, err
 	}
-	response := resp.(*pb.ClusterStatusResponse)
+	response := resp.(*proto.ClusterStatusResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeCusterStatusEndpoint constructs a ClusterStatus endpoint wrapping the service.
 func MakeCusterStatusEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.ClusterStatusRequest)
+		req := request.(*proto.ClusterStatusRequest)
 		resp, err := s.ClusterStatus(ctx, req)
 		return resp, err
 	}
@@ -300,19 +301,19 @@ func MakeCusterStatusEndpoint(s spawnerservice.ClusterController) endpoint.Endpo
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
+func (s Set) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
 	resp, err := s.AddNodeEndpoint(ctx, req)
 	if err != nil {
-		return &pb.NodeSpawnResponse{}, err
+		return &proto.NodeSpawnResponse{}, err
 	}
-	response := resp.(*pb.NodeSpawnResponse)
+	response := resp.(*proto.NodeSpawnResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeAddNodeEndpoint constructs a AddNode endpoint wrapping the service.
 func MakeAddNodeEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.NodeSpawnRequest)
+		req := request.(*proto.NodeSpawnRequest)
 		resp, err := s.AddNode(ctx, req)
 		return resp, err
 	}
@@ -320,19 +321,19 @@ func MakeAddNodeEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
+func (s Set) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
 	resp, err := s.DeleteClusterEndpoint(ctx, req)
 	if err != nil {
-		return &pb.ClusterDeleteResponse{}, err
+		return &proto.ClusterDeleteResponse{}, err
 	}
-	response := resp.(*pb.ClusterDeleteResponse)
+	response := resp.(*proto.ClusterDeleteResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeClusterDeleteEndpointt constructs a ClusterStatus endpoint wrapping the service.
 func MakeClusterDeleteEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.ClusterDeleteRequest)
+		req := request.(*proto.ClusterDeleteRequest)
 		resp, err := s.DeleteCluster(ctx, req)
 		return resp, err
 	}
@@ -340,140 +341,140 @@ func MakeClusterDeleteEndpoint(s spawnerservice.ClusterController) endpoint.Endp
 
 // Implements the service interface, so Set may be used as a service.
 // This is primarily useful in the context of a client library.
-func (s Set) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
+func (s Set) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 	resp, err := s.DeleteNodeEndpoint(ctx, req)
 	if err != nil {
-		return &pb.NodeDeleteResponse{}, err
+		return &proto.NodeDeleteResponse{}, err
 	}
-	response := resp.(*pb.NodeDeleteResponse)
+	response := resp.(*proto.NodeDeleteResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 // MakeClusterDeleteEndpointt constructs a ClusterStatus endpoint wrapping the service.
 func MakeNodeDeleteEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.NodeDeleteRequest)
+		req := request.(*proto.NodeDeleteRequest)
 		resp, err := s.DeleteNode(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
+func (s Set) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 	resp, err := s.CreateVolumeEndpoint(ctx, req)
 	if err != nil {
-		return &pb.CreateVolumeResponse{}, err
+		return &proto.CreateVolumeResponse{}, err
 	}
-	response := resp.(*pb.CreateVolumeResponse)
+	response := resp.(*proto.CreateVolumeResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 func MakeCreateVolumeEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.CreateVolumeRequest)
+		req := request.(*proto.CreateVolumeRequest)
 		resp, err := s.CreateVolume(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
+func (s Set) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
 	resp, err := s.DeleteVolumeEndpoint(ctx, req)
 	if err != nil {
-		return &pb.DeleteVolumeResponse{}, err
+		return &proto.DeleteVolumeResponse{}, err
 	}
-	response := resp.(*pb.DeleteVolumeResponse)
+	response := resp.(*proto.DeleteVolumeResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 func MakeDeleteVolumeEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.DeleteVolumeRequest)
+		req := request.(*proto.DeleteVolumeRequest)
 		resp, err := s.DeleteVolume(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
+func (s Set) CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 	resp, err := s.CreateSnapshotEndpoint(ctx, req)
 	if err != nil {
-		return &pb.CreateSnapshotResponse{}, err
+		return &proto.CreateSnapshotResponse{}, err
 	}
-	response := resp.(*pb.CreateSnapshotResponse)
+	response := resp.(*proto.CreateSnapshotResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 func MakeCreateSnapshotEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.CreateSnapshotRequest)
+		req := request.(*proto.CreateSnapshotRequest)
 		resp, err := s.CreateSnapshot(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
+func (s Set) CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 	resp, err := s.CreateSnapshotAndDeleteEndpoint(ctx, req)
 	if err != nil {
-		return &pb.CreateSnapshotAndDeleteResponse{}, err
+		return &proto.CreateSnapshotAndDeleteResponse{}, err
 	}
-	response := resp.(*pb.CreateSnapshotAndDeleteResponse)
+	response := resp.(*proto.CreateSnapshotAndDeleteResponse)
 	return response, fmt.Errorf(response.Error)
 }
 
 func MakeCreateSnapshotAndDeleteEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.CreateSnapshotAndDeleteRequest)
+		req := request.(*proto.CreateSnapshotAndDeleteRequest)
 		resp, err := s.CreateSnapshotAndDelete(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+func (s Set) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
 	resp, err := s.GetClustersEndpoint(ctx, req)
 	if err != nil {
-		return &pb.GetClustersResponse{}, err
+		return &proto.GetClustersResponse{}, err
 	}
-	response := resp.(*pb.GetClustersResponse)
+	response := resp.(*proto.GetClustersResponse)
 	return response, fmt.Errorf("")
 }
 
 func MakeGetClustersEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.GetClustersRequest)
+		req := request.(*proto.GetClustersRequest)
 		resp, err := s.GetClusters(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+func (s Set) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
 
 	resp, err := s.GetClusterEndpoint(ctx, req)
 	if err != nil {
-		return &pb.ClusterSpec{}, err
+		return &proto.ClusterSpec{}, err
 	}
-	response := resp.(*pb.ClusterSpec)
+	response := resp.(*proto.ClusterSpec)
 	return response, fmt.Errorf("")
 }
 
 func MakeGetClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.GetClusterRequest)
+		req := request.(*proto.GetClusterRequest)
 		resp, err := s.GetCluster(ctx, req)
 		return resp, err
 	}
 }
 
-func (s Set) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+func (s Set) RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error) {
 	fmt.Println(" register with rancher")
 	resp, err := s.RegisterWithRancherEndpoint(ctx, req)
 	if err != nil {
-		return &pb.RancherRegistrationResponse{}, err
+		return &proto.RancherRegistrationResponse{}, err
 	}
-	response := resp.(*pb.RancherRegistrationResponse)
+	response := resp.(*proto.RancherRegistrationResponse)
 	return response, fmt.Errorf("")
 }
 
 func MakeRegisterWithRancherEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*pb.RancherRegistrationRequest)
+		req := request.(*proto.RancherRegistrationRequest)
 		resp, err := s.RegisterWithRancher(ctx, req)
 		return resp, err
 	}

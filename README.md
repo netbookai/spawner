@@ -14,14 +14,17 @@
     ```
 
 # Running the service
-1. cd into pb folder and run the compile.sh file to generate Go and gRPC generated code
+1. Run make proto to generate rpc and protobuf go files
+    ```
+    make proto
+    ```
 2. setup AWS_ROLE_ARN environment variable
     ```
     export AWS_ROLE_ARN=arn:aws:iam::965734315247:role/sandboxClusterSecretManagerRole
     ```
 3. cd into cmd/spawnersvc and run the spawnersvc.go to start the server
     ```
-    go run spawnersvc.go -grpc-addr=:8083 -debug-addr=:8081
+    make run
     ```
     This starts a gRPC server running on port 8083 and binds the service to it
 4. cd cmd/spawnercli and run the spawnercli.go to use the client to call the service

@@ -4,21 +4,22 @@ import (
 	"context"
 	"time"
 
-	"gitlab.com/netbook-devs/spawner-service/pb"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
-	"google.golang.org/grpc"
-
-	"github.com/sony/gobreaker"
-	"golang.org/x/time/rate"
-
 	"github.com/go-kit/kit/circuitbreaker"
 	"github.com/go-kit/kit/endpoint"
-	kitzap "github.com/go-kit/kit/log/zap"
 	"github.com/go-kit/kit/ratelimit"
 	"github.com/go-kit/kit/transport"
+	"github.com/sony/gobreaker"
+
+	kitzap "github.com/go-kit/kit/log/zap"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
+
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
 )
 
 type grpcServer struct {
@@ -38,11 +39,11 @@ type grpcServer struct {
 	createSnapshotAndDelete grpctransport.Handler
 	registerWithRancher     grpctransport.Handler
 
-	pb.UnimplementedSpawnerServiceServer
+	proto.UnimplementedSpawnerServiceServer
 }
 
 // NewGRPCServer makes a set of endpoints available as a gRPC AddServer.
-func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) pb.SpawnerServiceServer {
+func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) proto.SpawnerServiceServer {
 	kitZapLogger := kitzap.NewZapSugarLogger(logger.Desugar(), zap.InfoLevel)
 	options := []grpctransport.ServerOption{
 		grpctransport.ServerErrorHandler(transport.NewLogErrorHandler(kitZapLogger)),
@@ -201,124 +202,124 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) pb.Spa
 	}
 }
 
-func (s *grpcServer) CreateCluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
+func (s *grpcServer) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 	_, rep, err := s.createCluster.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.ClusterResponse), nil
+	return rep.(*proto.ClusterResponse), nil
 }
 
-func (s *grpcServer) AddToken(ctx context.Context, req *pb.AddTokenRequest) (*pb.AddTokenResponse, error) {
+func (s *grpcServer) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
 	_, rep, err := s.addToken.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.AddTokenResponse), nil
+	return rep.(*proto.AddTokenResponse), nil
 }
 
-func (s *grpcServer) GetToken(ctx context.Context, req *pb.GetTokenRequest) (*pb.GetTokenResponse, error) {
+func (s *grpcServer) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
 	_, rep, err := s.getToken.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.GetTokenResponse), nil
+	return rep.(*proto.GetTokenResponse), nil
 }
 
-func (s *grpcServer) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+func (s *grpcServer) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
 	_, rep, err := s.addRoute53Record.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.AddRoute53RecordResponse), nil
+	return rep.(*proto.AddRoute53RecordResponse), nil
 }
 
-func (s *grpcServer) GetClusters(ctx context.Context, req *pb.GetClustersRequest) (*pb.GetClustersResponse, error) {
+func (s *grpcServer) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
 	_, rep, err := s.getClusters.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.GetClustersResponse), nil
+	return rep.(*proto.GetClustersResponse), nil
 }
 
-func (s *grpcServer) GetCluster(ctx context.Context, req *pb.GetClusterRequest) (*pb.ClusterSpec, error) {
+func (s *grpcServer) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
 	_, rep, err := s.getCluster.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.ClusterSpec), nil
+	return rep.(*proto.ClusterSpec), nil
 }
 
-func (s *grpcServer) ClusterStatus(ctx context.Context, req *pb.ClusterStatusRequest) (*pb.ClusterStatusResponse, error) {
+func (s *grpcServer) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	_, rep, err := s.clusterStatus.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.ClusterStatusResponse), nil
+	return rep.(*proto.ClusterStatusResponse), nil
 }
 
-func (s *grpcServer) AddNode(ctx context.Context, req *pb.NodeSpawnRequest) (*pb.NodeSpawnResponse, error) {
+func (s *grpcServer) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
 	_, rep, err := s.addNode.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.NodeSpawnResponse), nil
+	return rep.(*proto.NodeSpawnResponse), nil
 }
 
-func (s *grpcServer) DeleteCluster(ctx context.Context, req *pb.ClusterDeleteRequest) (*pb.ClusterDeleteResponse, error) {
+func (s *grpcServer) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
 	_, rep, err := s.deleteCluster.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.ClusterDeleteResponse), nil
+	return rep.(*proto.ClusterDeleteResponse), nil
 }
 
-func (s *grpcServer) DeleteNode(ctx context.Context, req *pb.NodeDeleteRequest) (*pb.NodeDeleteResponse, error) {
+func (s *grpcServer) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 	_, rep, err := s.deleteNode.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.NodeDeleteResponse), nil
+	return rep.(*proto.NodeDeleteResponse), nil
 }
 
-func (s *grpcServer) CreateVolume(ctx context.Context, req *pb.CreateVolumeRequest) (*pb.CreateVolumeResponse, error) {
+func (s *grpcServer) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 	_, rep, err := s.createVolume.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.CreateVolumeResponse), nil
+	return rep.(*proto.CreateVolumeResponse), nil
 }
 
-func (s *grpcServer) DeleteVolume(ctx context.Context, req *pb.DeleteVolumeRequest) (*pb.DeleteVolumeResponse, error) {
+func (s *grpcServer) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
 	_, rep, err := s.deleteVolume.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.DeleteVolumeResponse), nil
+	return rep.(*proto.DeleteVolumeResponse), nil
 }
 
-func (s *grpcServer) CreateSnapshot(ctx context.Context, req *pb.CreateSnapshotRequest) (*pb.CreateSnapshotResponse, error) {
+func (s *grpcServer) CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 	_, rep, err := s.createSnapshot.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.CreateSnapshotResponse), nil
+	return rep.(*proto.CreateSnapshotResponse), nil
 }
 
-func (s *grpcServer) CreateSnapshotAndDelete(ctx context.Context, req *pb.CreateSnapshotAndDeleteRequest) (*pb.CreateSnapshotAndDeleteResponse, error) {
+func (s *grpcServer) CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 	_, rep, err := s.createSnapshotAndDelete.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.CreateSnapshotAndDeleteResponse), nil
+	return rep.(*proto.CreateSnapshotAndDeleteResponse), nil
 }
 
-func (s *grpcServer) RegisterWithRancher(ctx context.Context, req *pb.RancherRegistrationRequest) (*pb.RancherRegistrationResponse, error) {
+func (s *grpcServer) RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error) {
 	_, rep, err := s.registerWithRancher.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return rep.(*pb.RancherRegistrationResponse), nil
+	return rep.(*proto.RancherRegistrationResponse), nil
 }
 
 // NewGRPCClient returns an AddService backed by a gRPC server at the other end
@@ -344,7 +345,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		createClusterEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"CreateCluster",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -352,7 +353,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.ClusterResponse{},
+			proto.ClusterResponse{},
 			append(options)...,
 		).Endpoint()
 		createClusterEndpoint = limiter(createClusterEndpoint)
@@ -366,7 +367,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		getClustersEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"GetClusters",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -374,7 +375,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.GetClustersResponse{},
+			proto.GetClustersResponse{},
 			append(options)...,
 		).Endpoint()
 		getClustersEndpoint = limiter(getClustersEndpoint)
@@ -388,7 +389,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		getClusterEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"GetCluster",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -396,7 +397,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.ClusterSpec{},
+			proto.ClusterSpec{},
 			append(options)...,
 		).Endpoint()
 		getClusterEndpoint = limiter(getClusterEndpoint)
@@ -410,7 +411,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		addTokenEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"AddToken",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -418,7 +419,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.AddTokenResponse{},
+			proto.AddTokenResponse{},
 			append(options)...,
 		).Endpoint()
 		addTokenEndpoint = limiter(addTokenEndpoint)
@@ -432,7 +433,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		getTokenEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"GetToken",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -440,7 +441,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.GetTokenResponse{},
+			proto.GetTokenResponse{},
 			append(options)...,
 		).Endpoint()
 		getTokenEndpoint = limiter(getTokenEndpoint)
@@ -454,7 +455,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		addRoute53RecordEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"AddRoute53Record",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -462,7 +463,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.AddRoute53RecordResponse{},
+			proto.AddRoute53RecordResponse{},
 			append(options)...,
 		).Endpoint()
 		addRoute53RecordEndpoint = limiter(addRoute53RecordEndpoint)
@@ -476,7 +477,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		clusterStatusEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"ClusterStatus",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -484,7 +485,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.ClusterStatusResponse{},
+			proto.ClusterStatusResponse{},
 			append(options)...,
 		).Endpoint()
 		clusterStatusEndpoint = limiter(clusterStatusEndpoint)
@@ -498,7 +499,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		addNodeEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"AddNode",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -506,7 +507,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.NodeSpawnResponse{},
+			proto.NodeSpawnResponse{},
 			append(options)...,
 		).Endpoint()
 		addNodeEndpoint = limiter(addNodeEndpoint)
@@ -520,7 +521,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		deleteClusterEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"DeleteCluster",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -528,7 +529,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.ClusterDeleteResponse{},
+			proto.ClusterDeleteResponse{},
 			append(options)...,
 		).Endpoint()
 		deleteClusterEndpoint = limiter(deleteClusterEndpoint)
@@ -542,7 +543,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		deleteNodeEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"DeleteNode",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -550,7 +551,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.NodeDeleteResponse{},
+			proto.NodeDeleteResponse{},
 			append(options)...,
 		).Endpoint()
 		deleteNodeEndpoint = limiter(deleteNodeEndpoint)
@@ -564,7 +565,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		createVolumeEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"CreateVolume",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -572,7 +573,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.CreateVolumeResponse{},
+			proto.CreateVolumeResponse{},
 			append(options)...,
 		).Endpoint()
 		createVolumeEndpoint = limiter(createVolumeEndpoint)
@@ -586,7 +587,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		deleteVolumeEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"DeleteVolume",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -594,7 +595,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.DeleteVolumeResponse{},
+			proto.DeleteVolumeResponse{},
 			append(options)...,
 		).Endpoint()
 		deleteVolumeEndpoint = limiter(deleteVolumeEndpoint)
@@ -608,7 +609,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		createSnapshotEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"CreateSnapshot",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -616,7 +617,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.CreateSnapshotResponse{},
+			proto.CreateSnapshotResponse{},
 			append(options)...,
 		).Endpoint()
 		createSnapshotEndpoint = limiter(createSnapshotEndpoint)
@@ -630,7 +631,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		createSnapshotAndDeleteEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"CreateSnapshotAndDelete",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -638,7 +639,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.CreateSnapshotAndDeleteResponse{},
+			proto.CreateSnapshotAndDeleteResponse{},
 			append(options)...,
 		).Endpoint()
 		createSnapshotAndDeleteEndpoint = limiter(createSnapshotAndDeleteEndpoint)
@@ -652,7 +653,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 	{
 		registerWithRancherEndpoint = grpctransport.NewClient(
 			conn,
-			"pb.SpawnerService",
+			"proto.SpawnerService",
 			"RegisterWithRancher",
 			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
 				return grpcReq, nil
@@ -660,7 +661,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
 				return grpcResp, nil
 			},
-			pb.RancherRegistrationResponse{},
+			proto.RancherRegistrationResponse{},
 			append(options)...,
 		).Endpoint()
 		registerWithRancherEndpoint = limiter(registerWithRancherEndpoint)
@@ -695,7 +696,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 // decodeGRPCSumRequest is a transport/grpc.DecodeRequestFunc that converts a
 // gRPC sum request to a user-domain sum request. Primarily useful in a server.
 func decodeGRPCClusterRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
-	// req := grpcReq.(*pb.ClusterRequest)
+	// req := grpcReq.(*proto.ClusterRequest)
 	// return req, nil
 	return grpcReq, nil
 }
@@ -703,7 +704,7 @@ func decodeGRPCClusterRequest(_ context.Context, grpcReq interface{}) (interface
 // encodeGRPCSumResponse is a transport/grpc.EncodeResponseFunc that converts a
 // user-domain sum response to a gRPC sum reply. Primarily useful in a server.
 func encodeGRPCClusterResponse(_ context.Context, response interface{}) (interface{}, error) {
-	// resp := response.(*pb.ClusterResponse)
+	// resp := response.(*proto.ClusterResponse)
 	// return &resp, nil
 	return response, nil
 }

@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go/service/eks"
-	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
-func (svc AWSController) createClusterInternal(ctx context.Context, session *Session, clusterName string, req *pb.ClusterRequest) (*eks.Cluster, error) {
+func (svc AWSController) createClusterInternal(ctx context.Context, session *Session, clusterName string, req *proto.ClusterRequest) (*eks.Cluster, error) {
 
 	var subnetIds []*string
 	region := session.Region

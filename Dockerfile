@@ -11,7 +11,7 @@ COPY go.mod ./
 COPY go.sum ./
 COPY config.env ./
 COPY cmd ./cmd
-COPY pb ./pb
+COPY proto ./proto
 COPY pkg ./pkg
 
 WORKDIR /spawnerservice/cmd/spawnersvc

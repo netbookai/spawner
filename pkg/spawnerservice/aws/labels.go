@@ -1,12 +1,12 @@
 package aws
 
 import (
-	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
-func getNodeLabel(nodeSpec *pb.NodeSpec) map[string]*string {
+func getNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	labels := map[string]*string{
 		constants.CreatorLabel:           common.StrPtr(constants.SpawnerServiceLabel),
 		constants.NodeNameLabel:          &nodeSpec.Name,

@@ -1,8 +1,9 @@
 ALL_GO_FILES=$(shell find . -type f  -name '*.go')
+GO_VERSION=1.17
 
 
 deps:
-	go mod tidy
+	go mod tidy -compat=$(GO_VERSION)
 run:
 	go run cmd/spawnersvc/spawnersvc.go
 test:
@@ -11,8 +12,9 @@ test:
 clean:
 	go clean ./...
 
+.PHONY: proto
 proto:
-	./pb/compile.sh
+	./proto/compile.sh
 
 fmt:
 	goimports -w $(ALL_GO_FILES)

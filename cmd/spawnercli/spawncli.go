@@ -8,9 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"gitlab.com/netbook-devs/spawner-service/pb"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -28,43 +26,34 @@ func main() {
 	defer sugar.Sync()
 
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
-	var (
-		// httpAddr = fs.String("http-addr", "", "HTTP address of addsvc")
-		grpcAddr = fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
-		method   = fs.String("method", "ClusterStatus", "ClusterStatus")
-	)
+	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
+	method := fs.String("method", "ClusterStatus", "ClusterStatus")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
 
-	// This is a demonstration client, which supports multiple transports.
-	var (
-		svc spawnerservice.ClusterController
-		err error
-	)
-
-	if *grpcAddr != "" {
-		conn, err := grpc.Dial(*grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
-		if err != nil {
-			sugar.Errorw("error connecting to remote", "error", err)
-			os.Exit(1)
-		}
-		defer conn.Close()
-		svc = spwntransport.NewGRPCClient(conn, zap.NewNop().Sugar())
-	} else {
+	if *grpcAddr == "" {
+		sugar.Errorf("host address is empty '%s'", *grpcAddr)
+		os.Exit(1)
+	}
+	conn, err := grpc.Dial(*grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
+	if err != nil {
 		sugar.Errorw("error connecting to remote", "error", err)
 		os.Exit(1)
 	}
+	defer conn.Close()
+	client := proto.NewSpawnerServiceClient(conn)
+
 	if err != nil {
 		sugar.Errorw("error connecting to remote", "error", err)
 		os.Exit(1)
 	}
 
-	node := &pb.NodeSpec{
+	node := &proto.NodeSpec{
 		Name:     "sandbox-test-nsp-ng-01",
 		Instance: "t3.medium",
 		DiskSize: 13,
 	}
-	createClusterReq := &pb.ClusterRequest{
+	createClusterReq := &proto.ClusterRequest{
 		Provider:    provider,
 		Region:      region,
 		Node:        node,
@@ -72,19 +61,19 @@ func main() {
 		ClusterName: clusterName,
 	}
 
-	addTokenReq := &pb.AddTokenRequest{
+	addTokenReq := &proto.AddTokenRequest{
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
 	}
 
-	getTokenReq := &pb.GetTokenRequest{
+	getTokenReq := &proto.GetTokenRequest{
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
 	}
 
-	addRoute53RecordReq := &pb.AddRoute53RecordRequest{
+	addRoute53RecordReq := &proto.AddRoute53RecordRequest{
 		DnsName:    "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
 		RecordName: "*.mani.app.netbook.ai",
 		Region:     region,
@@ -92,51 +81,51 @@ func main() {
 		// RegionIdentifier: "Oregon region",
 	}
 
-	clusterStatusReq := &pb.ClusterStatusRequest{
+	clusterStatusReq := &proto.ClusterStatusRequest{
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
 	}
 
-	getClustersReq := &pb.GetClustersRequest{
+	getClustersReq := &proto.GetClustersRequest{
 		Region:   region,
 		Provider: provider,
 	}
 
-	getClusterReq := &pb.GetClusterRequest{
+	getClusterReq := &proto.GetClusterRequest{
 		ClusterName: clusterName,
 		Provider:    provider,
 		Region:      region,
 	}
 
-	addNode := &pb.NodeSpec{
+	addNode := &proto.NodeSpec{
 		Name:       "sandbox-node-ng-gpu-01",
 		Instance:   "t2.medium",
 		DiskSize:   20,
 		GpuEnabled: true,
 	}
 
-	addNodeReq := &pb.NodeSpawnRequest{
+	addNodeReq := &proto.NodeSpawnRequest{
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
 		NodeSpec:    addNode,
 	}
 
-	deleteClusterReq := &pb.ClusterDeleteRequest{
+	deleteClusterReq := &proto.ClusterDeleteRequest{
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
 	}
 
-	deleteNodeReq := &pb.NodeDeleteRequest{
+	deleteNodeReq := &proto.NodeDeleteRequest{
 		ClusterName:   clusterName,
 		NodeGroupName: "ng-04",
 		Region:        region,
 		Provider:      provider,
 	}
 
-	createVolumeReq := &pb.CreateVolumeRequest{
+	createVolumeReq := &proto.CreateVolumeRequest{
 		Availabilityzone: "us-west-2a",
 		Volumetype:       "gp2",
 		Size:             1,
@@ -145,18 +134,18 @@ func main() {
 		Provider:         provider,
 	}
 
-	deleteVolumeReq := &pb.DeleteVolumeRequest{
+	deleteVolumeReq := &proto.DeleteVolumeRequest{
 		Volumeid: "vol-05d7e98ae385b2e29",
 		Region:   region,
 		Provider: provider,
 	}
 
-	createSnapshotReq := &pb.CreateSnapshotRequest{
+	createSnapshotReq := &proto.CreateSnapshotRequest{
 		Volumeid: "vol-07ccb258225e0e213",
 		Region:   region,
 		Provider: provider,
 	}
-	createSnapshotAndDeleteReq := &pb.CreateSnapshotAndDeleteRequest{
+	createSnapshotAndDeleteReq := &proto.CreateSnapshotAndDeleteRequest{
 		Volumeid: "vol-0f220de036ebea748",
 		Region:   region,
 		Provider: provider,
@@ -164,70 +153,70 @@ func main() {
 
 	switch *method {
 	case "CreateCluster":
-		v, err := svc.CreateCluster(context.Background(), createClusterReq)
+		v, err := client.CreateCluster(context.Background(), createClusterReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error creating cluster", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("CreateCluster method", "response", v)
 	case "AddToken":
-		v, err := svc.AddToken(context.Background(), addTokenReq)
+		v, err := client.AddToken(context.Background(), addTokenReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error adding token", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("AddToken method", "reponse", v)
 	case "GetToken":
-		v, err := svc.GetToken(context.Background(), getTokenReq)
+		v, err := client.GetToken(context.Background(), getTokenReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error getting token", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetToken method", "response", v)
 	case "AddRoute53Record":
-		v, err := svc.AddRoute53Record(context.Background(), addRoute53RecordReq)
+		v, err := client.AddRoute53Record(context.Background(), addRoute53RecordReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error creating Alias record", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("AddRoute53Record method", "response", v)
 	case "GetCluster":
-		v, err := svc.GetCluster(context.Background(), getClusterReq)
+		v, err := client.GetCluster(context.Background(), getClusterReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetCluster method", "response", v)
 	case "GetClusters":
-		v, err := svc.GetClusters(context.Background(), getClustersReq)
+		v, err := client.GetClusters(context.Background(), getClustersReq)
 		if err != nil && err.Error() != "" {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetClusters method", "response", v)
 	case "ClusterStatus":
-		v, err := svc.ClusterStatus(context.Background(), clusterStatusReq)
+		v, err := client.ClusterStatus(context.Background(), clusterStatusReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error fetching cluster status", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("ClusterStatus method", "response", v)
 	case "AddNode":
-		v, err := svc.AddNode(context.Background(), addNodeReq)
+		v, err := client.AddNode(context.Background(), addNodeReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error adding node", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("AddNode method", "response", v)
 	case "DeleteCluster":
-		v, err := svc.DeleteCluster(context.Background(), deleteClusterReq)
+		v, err := client.DeleteCluster(context.Background(), deleteClusterReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error deleting cluster", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("DeleteCluster method", "response", v)
 	case "DeleteNode":
-		v, err := svc.DeleteNode(context.Background(), deleteNodeReq)
+		v, err := client.DeleteNode(context.Background(), deleteNodeReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error deleting node", "error", err)
 			os.Exit(1)
@@ -235,7 +224,7 @@ func main() {
 		sugar.Infow("DeleteNode method", "response", v)
 
 	case "CreateVolume":
-		v, err := svc.CreateVolume(context.Background(), createVolumeReq)
+		v, err := client.CreateVolume(context.Background(), createVolumeReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error creating volume", "error", err)
 			os.Exit(1)
@@ -243,7 +232,7 @@ func main() {
 		sugar.Infow("CreateVolume method", "response", v)
 
 	case "DeleteVolume":
-		v, err := svc.DeleteVolume(context.Background(), deleteVolumeReq)
+		v, err := client.DeleteVolume(context.Background(), deleteVolumeReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error deleting volume", "error", err)
 			os.Exit(1)
@@ -251,7 +240,7 @@ func main() {
 		sugar.Infow("DeleteVolume method", "response", v)
 
 	case "CreateSnapshot":
-		v, err := svc.CreateSnapshot(context.Background(), createSnapshotReq)
+		v, err := client.CreateSnapshot(context.Background(), createSnapshotReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error creating snapshot", "error", err)
 			os.Exit(1)
@@ -259,7 +248,7 @@ func main() {
 		sugar.Infow("CreateSnapshot method", "response", v)
 
 	case "CreateSnapshotAndDelete":
-		v, err := svc.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)
+		v, err := client.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error creating snapshot and deleting volume", "error", err)
 			os.Exit(1)
@@ -267,7 +256,7 @@ func main() {
 		sugar.Infow("CreateSnapshotAndDelete method", "response", v)
 
 	case "RegisterWithRancher":
-		v, err := svc.RegisterWithRancher(context.Background(), &pb.RancherRegistrationRequest{
+		v, err := client.RegisterWithRancher(context.Background(), &proto.RancherRegistrationRequest{
 			ClusterName: clusterName,
 		})
 		if err != nil && err.Error() != "" {
