@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
-	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/maps"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/rancher_old/common"
+	"gitlab.com/netbook-devs/spawner-service/proto"
 )
 
-func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRequest, tags map[string]string) (rnchrClient.ClusterSpec, error) {
+func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *proto.NodeSpawnRequest, tags map[string]string) (rnchrClient.ClusterSpec, error) {
 
 	for _, nodeGroup := range *cluster.EKSConfig.NodeGroups {
 		if nodeSpawnRequest.NodeSpec.Name == *nodeGroup.NodegroupName {
@@ -54,7 +54,7 @@ func AddNodeGroup(cluster *rnchrClient.Cluster, nodeSpawnRequest *pb.NodeSpawnRe
 	return newClusterSpec, nil
 }
 
-func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *pb.NodeDeleteRequest) (rnchrClient.NodeGroup, rnchrClient.ClusterSpec, error) {
+func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *proto.NodeDeleteRequest) (rnchrClient.NodeGroup, rnchrClient.ClusterSpec, error) {
 
 	index := -1
 	for i, nodeGroup := range *cluster.EKSConfig.NodeGroups {
@@ -82,7 +82,7 @@ func DeleteNodeGroup(cluster *rnchrClient.Cluster, nodeDeleteRequest *pb.NodeDel
 	return ngToRemove, newClusterSpec, nil
 }
 
-func CreateCluster(awsCred rnchrClient.CloudCredential, clusterReq *pb.ClusterRequest, clusterName string, clusterTags map[string]string, nodeGroupTags map[string]string, subnets []string) *rnchrClient.Cluster {
+func CreateCluster(awsCred rnchrClient.CloudCredential, clusterReq *proto.ClusterRequest, clusterName string, clusterTags map[string]string, nodeGroupTags map[string]string, subnets []string) *rnchrClient.Cluster {
 	newNodeGroup := rnchrClient.NodeGroup{
 		DiskSize:             common.Int64Ptr(int64(clusterReq.Node.DiskSize)),
 		InstanceType:         common.StrPtr(clusterReq.Node.Instance),

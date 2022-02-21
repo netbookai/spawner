@@ -10,11 +10,11 @@ import (
 	"github.com/go-kit/kit/metrics/prometheus"
 	kitgrpc "github.com/go-kit/kit/transport/grpc"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
-	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -73,7 +73,7 @@ func init() {
 
 	lis = bufconn.Listen(bufSize)
 	baseServer := grpc.NewServer(grpc.UnaryInterceptor(kitgrpc.Interceptor))
-	pb.RegisterSpawnerServiceServer(baseServer, grpcServer)
+	proto.RegisterSpawnerServiceServer(baseServer, grpcServer)
 	go func() {
 		if err := baseServer.Serve(lis); err != nil {
 			sugar.Errorw("Server exited with error", "error", err)
@@ -97,7 +97,7 @@ func TestClusterStatus(t *testing.T) {
 
 	svc := spwntransport.NewGRPCClient(conn, zap.NewNop().Sugar())
 
-	clusterStatusReq := &pb.ClusterStatusRequest{
+	clusterStatusReq := &proto.ClusterStatusRequest{
 		ClusterName: "infra-test",
 	}
 

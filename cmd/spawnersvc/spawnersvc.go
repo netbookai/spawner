@@ -18,11 +18,11 @@ import (
 	"github.com/gogo/status"
 	"github.com/oklog/oklog/pkg/group"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
-	"gitlab.com/netbook-devs/spawner-service/pb"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -154,7 +154,7 @@ func main() {
 		// we add the Go Kit gRPC Interceptor to our gRPC service as it is used by
 		// the here demonstrated zipkin tracing middleware.
 		baseServer := grpc.NewServer(grpc.ChainUnaryInterceptor(kitgrpc.Interceptor, getUnaryRecoveryInterceptors()))
-		pb.RegisterSpawnerServiceServer(baseServer, grpcServer)
+		proto.RegisterSpawnerServiceServer(baseServer, grpcServer)
 		return baseServer.Serve(grpcListener)
 	}, func(error) {
 		grpcListener.Close()

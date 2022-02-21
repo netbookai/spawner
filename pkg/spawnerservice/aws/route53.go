@@ -7,10 +7,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/google/uuid"
-	"gitlab.com/netbook-devs/spawner-service/pb"
+
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
-func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute53RecordRequest) (*pb.AddRoute53RecordResponse, error) {
+func (svc AWSController) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
 	logger := svc.logger
 	session, err := NewSession(svc.config, req.Region, req.AccountName)
 
@@ -53,13 +54,13 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 
 	if iderr != nil {
 		LogError("Failed creating random UUID", logger, iderr)
-		return &pb.AddRoute53RecordResponse{}, iderr
+		return &proto.AddRoute53RecordResponse{}, iderr
 	}
 
 	_, ok := regionClassicLoadBalancerHostedID[regionName]
 	if !ok {
 		logger.Errorw("Region does not have matching ELB HostedZoneId")
-		res := &pb.AddRoute53RecordResponse{
+		res := &proto.AddRoute53RecordResponse{
 			Status: "Failed",
 			Error:  "",
 		}
@@ -103,7 +104,7 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 
 	if err != nil {
 		LogError("AddAwsRoute53Record", logger, err)
-		return &pb.AddRoute53RecordResponse{}, err
+		return &proto.AddRoute53RecordResponse{}, err
 	}
 
 	err = route53Client.WaitUntilResourceRecordSetsChanged(&route53.GetChangeInput{
@@ -112,10 +113,10 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *pb.AddRoute5
 
 	if err != nil {
 		LogError("WaitAddAwsRoute53Record", logger, err)
-		return &pb.AddRoute53RecordResponse{}, err
+		return &proto.AddRoute53RecordResponse{}, err
 	}
 
-	res := &pb.AddRoute53RecordResponse{
+	res := &proto.AddRoute53RecordResponse{
 		Status: *result.ChangeInfo.Id,
 	}
 

@@ -7,7 +7,7 @@ package aws
 //	"github.com/aws/aws-sdk-go/aws"
 //	"github.com/aws/aws-sdk-go/service/ec2"
 //	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-//	"gitlab.com/netbook-devs/spawner-service/pb"
+//	"gitlab.com/netbook-devs/spawner-service/proto"
 //)
 //
 //type mockedCreateVolume struct {
@@ -60,13 +60,13 @@ package aws
 //
 //	type testCase struct {
 //		name           string                   // test case name
-//		input          *pb.CreateVolumeRequest  // function input
-//		expectedOutput *pb.CreateVolumeResponse // expected outcome
+//		input          *proto.CreateVolumeRequest  // function input
+//		expectedOutput *proto.CreateVolumeResponse // expected outcome
 //		err            error                    //error
 //	}
 //
 //	//CreateVolume() test input and expected outputs
-//	var createVolumeRequest1 = &pb.CreateVolumeRequest{
+//	var createVolumeRequest1 = &proto.CreateVolumeRequest{
 //		Availabilityzone: "us-west-2a",
 //		Volumetype:       "gp2",
 //		Size:             1,
@@ -75,7 +75,7 @@ package aws
 //		Region:           "us-west-2",
 //	}
 //
-//	var createVolumeResponse1 = &pb.CreateVolumeResponse{
+//	var createVolumeResponse1 = &proto.CreateVolumeResponse{
 //		Volumeid: *aws.String("test-vol-id"),
 //		Error:    "",
 //	}
@@ -141,19 +141,19 @@ package aws
 //
 //	type testCase struct {
 //		name           string                   // test case name
-//		input          *pb.DeleteVolumeRequest  // function input
-//		expectedOutput *pb.DeleteVolumeResponse // expected outcome
+//		input          *proto.DeleteVolumeRequest  // function input
+//		expectedOutput *proto.DeleteVolumeResponse // expected outcome
 //		err            error                    //error
 //	}
 //
 //	//DeleteVolume() test inputs and expected outputs
-//	var deleteVolumeRequest1 = &pb.DeleteVolumeRequest{
+//	var deleteVolumeRequest1 = &proto.DeleteVolumeRequest{
 //		Volumeid: *aws.String("test-vol-id"),
 //		Provider: "aws",
 //		Region:   "us-west-2",
 //	}
 //
-//	var deleteVolumeResponse1 = &pb.DeleteVolumeResponse{
+//	var deleteVolumeResponse1 = &proto.DeleteVolumeResponse{
 //		Deleted: true,
 //		Error:   "",
 //	}
@@ -209,19 +209,19 @@ package aws
 //
 //	type testCase struct {
 //		name           string                     // test case name
-//		input          *pb.CreateSnapshotRequest  // function input
-//		expectedOutput *pb.CreateSnapshotResponse // expected outcome
+//		input          *proto.CreateSnapshotRequest  // function input
+//		expectedOutput *proto.CreateSnapshotResponse // expected outcome
 //		err            error                      //error
 //	}
 //
 //	//CreateSnapshot() test inputs and expected outputs
-//	var createSnapshotRequest1 = &pb.CreateSnapshotRequest{
+//	var createSnapshotRequest1 = &proto.CreateSnapshotRequest{
 //		Volumeid: "test-vol-id",
 //		Provider: "aws",
 //		Region:   "us-west-2",
 //	}
 //
-//	var createSnapshotResponse1 = &pb.CreateSnapshotResponse{
+//	var createSnapshotResponse1 = &proto.CreateSnapshotResponse{
 //		Snapshotid: "test-snapshot-id",
 //		Error:      "",
 //	}
@@ -282,19 +282,19 @@ package aws
 //
 //	type testCase struct {
 //		name           string                              // test case name
-//		input          *pb.CreateSnapshotAndDeleteRequest  // function input
-//		expectedOutput *pb.CreateSnapshotAndDeleteResponse // expected outcome
+//		input          *proto.CreateSnapshotAndDeleteRequest  // function input
+//		expectedOutput *proto.CreateSnapshotAndDeleteResponse // expected outcome
 //		err            error                               //error
 //	}
 //
 //	// //CreateSnapshotAndDelete() test inputs and expected outputs
-//	var createSnapshotAndDeleteRequest1 = &pb.CreateSnapshotAndDeleteRequest{
+//	var createSnapshotAndDeleteRequest1 = &proto.CreateSnapshotAndDeleteRequest{
 //		Volumeid: *aws.String("test-vol-id"),
 //		Provider: "aws",
 //		Region:   "us-west-2",
 //	}
 //
-//	var createSnapshotAndDeleteResponse1 = &pb.CreateSnapshotAndDeleteResponse{
+//	var createSnapshotAndDeleteResponse1 = &proto.CreateSnapshotAndDeleteResponse{
 //		Snapshotid: "test-snapshot-id",
 //		Deleted:    true,
 //		Error:      "",
@@ -336,7 +336,7 @@ package aws
 //		}
 //
 //		//calling the function to be tested
-//		createSnapshotAndDeleteInput := pb.CreateSnapshotAndDeleteRequest{
+//		createSnapshotAndDeleteInput := proto.CreateSnapshotAndDeleteRequest{
 //			Volumeid: test.input.Volumeid,
 //		}
 //		actual, actualerr := v.CreateSnapshotAndDelete(context.Background(), &createSnapshotAndDeleteInput)
