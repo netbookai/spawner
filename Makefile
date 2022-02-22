@@ -5,7 +5,7 @@ GO_VERSION=1.17
 deps:
 	go mod tidy -compat=$(GO_VERSION)
 run:
-	go run cmd/spawnersvc/spawnersvc.go
+	go run cmd/spawnersvc/main.go
 test:
 	go test ./...
 
