@@ -3,7 +3,6 @@ package spawnerservice
 import (
 	"context"
 
-	"github.com/go-kit/kit/metrics"
 	"go.uber.org/zap"
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
@@ -44,18 +43,16 @@ type SpawnerService struct {
 
 var _ ClusterController = (*SpawnerService)(nil)
 
-//New
-func New(logger *zap.SugaredLogger, config *config.Config, ints metrics.Counter) ClusterController {
+//New return ClusterController
+func New(logger *zap.SugaredLogger, config *config.Config) ClusterController {
 
 	var svc ClusterController
-	svc = SpawnerService{
+	svc = &SpawnerService{
 		awsController:  aws.NewAWSController(logger, config),
 		noopController: &NoopController{},
 		logger:         logger,
 		config:         config,
 	}
-	svc = LoggingMiddleware(logger)(svc)
-	svc = InstrumentingMiddleware(ints)(svc)
 	return svc
 }
 
