@@ -16,7 +16,7 @@ func getMethod(info *grpc.UnaryServerInfo) string {
 func GetInterceptors(logger *zap.SugaredLogger) grpc.ServerOption {
 	return grpc.ChainUnaryInterceptor(
 		kitgrpc.Interceptor,
-		recoveryInterceptor(logger),
 		loggingInterceptor(logger),
+		recoveryInterceptor(logger),
 	)
 }
