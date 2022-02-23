@@ -63,6 +63,8 @@ helm_deploy_dev:
   only:
     refs:
     - tags
+    - main
+    - development
 
 helm_deploy_prod:
   stage: deploy
