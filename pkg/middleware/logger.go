@@ -20,6 +20,6 @@ func loggingInterceptor(logger *zap.SugaredLogger) grpc.UnaryServerInterceptor {
 
 		resp, err := handler(ctx, req)
 		logger.Infow("spawnerservice", "method", method, "request", request, "response", resp, "error", err, "took", time.Since(begin))
-		return nil, nil
+		return resp, err
 	}
 }
