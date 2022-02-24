@@ -253,7 +253,7 @@ func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterS
 	}
 	client := session.getEksClient()
 
-	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debugw("fetching cluster status", "cluster-name", clusterName, "region", region)
 	cluster, err := getClusterSpec(ctx, client, clusterName)
 
 	if err != nil {
@@ -429,7 +429,6 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 
 	if err != nil {
 		if errors.Is(err, ERR_NODEGROUP_EXIST) {
-			ctrl.logger.Errorf("nodegroup '%s' already exist in cluster '%s'", nodeSpec.Name, clusterName)
 			return nil, err
 		}
 
@@ -500,7 +499,7 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 	})
 
 	if err != nil {
-		ctrl.logger.Errorf("failed to delete nodegroup '%s': %s", nodeName, err.Error())
+		ctrl.logger.Errorw("failed to delete nodegroup", "nodename", nodeName)
 		return &proto.NodeDeleteResponse{Error: err.Error()}, err
 	}
 	ctrl.logger.Infof("requested nodegroup '%s' to be deleted, Status %s. It might take some time, check AWS console for more.", nodeName, *nodeDeleteOut.Nodegroup.Status)

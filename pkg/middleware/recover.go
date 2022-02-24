@@ -21,7 +21,7 @@ func recoveryInterceptor(logger *zap.SugaredLogger) grpc.UnaryServerInterceptor 
 			if r := recover(); r != nil || panicked {
 				//log error details and stack trace
 				methodName := getMethod(info)
-				logger.Errorf("failed to handle the request [PANIC]", "method", methodName, "error", err, "stacktrace", string(debug.Stack()))
+				logger.Errorw("failed to handle the request [PANIC]", "method", methodName, "error", err, "stacktrace", string(debug.Stack()))
 				err = status.Errorf(codes.Internal, "%v in call to method '%s'", r, methodName)
 			}
 		}()
