@@ -32,7 +32,7 @@ func NewSession(conf *config.Config, region string, accountName string) (*Sessio
 		err      error
 	)
 
-	if conf.Env == "dev" {
+	if conf.Env == "local" {
 		log.Println("running in dev mode, using ", conf.AWSAccessID)
 		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
 	} else {
