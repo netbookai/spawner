@@ -15,6 +15,7 @@ func getNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 		"type":                           common.StrPtr("nodegroup")}
 
 	for k, v := range nodeSpec.Labels {
+		v := v
 		labels[k] = &v
 	}
 

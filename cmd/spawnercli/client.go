@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	clusterName = "test-nsp-cluster-01"
+	clusterName = "test-nsp-cluster-05"
 	region      = "us-west-2"
 	provider    = "aws"
 )
@@ -54,10 +54,13 @@ func main() {
 		DiskSize: 13,
 	}
 	createClusterReq := &proto.ClusterRequest{
-		Provider:    provider,
-		Region:      region,
-		Node:        node,
-		Labels:      map[string]string{},
+		Provider: provider,
+		Region:   region,
+		Node:     node,
+		Labels: map[string]string{
+			"user":        "98fe250a-7d98-4604-8317-1fbadda737ea",
+			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
+		},
 		ClusterName: clusterName,
 	}
 
