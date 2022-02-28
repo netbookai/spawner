@@ -21,3 +21,6 @@ fmt:
 
 lint:
 	golint ./...
+
+fmt-proto:
+	clang-format --style=Chromium -i ./proto/netbookdevs/spawnerservice/spawner.proto
