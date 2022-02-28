@@ -48,6 +48,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 	}
 
 	for k, v := range req.Labels {
+		v := v
 		tags[k] = &v
 	}
 

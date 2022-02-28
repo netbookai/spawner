@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -179,6 +180,7 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 	return response, nil
 }
 
+//GetClusters return active, spawner created clusters
 func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
 
 	//get all clusters in given region
@@ -205,7 +207,23 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 
 	for _, cluster := range listClusterOut.Clusters {
 
-		//clusterDetails, _ := getClusterSpec(ctx, client, *cluster)
+		clusterSpec, err := getClusterSpec(ctx, client, *cluster)
+
+		if err != nil {
+			ctrl.logger.Errorw("failed to get cluster details", "cluster", *cluster, "error", err)
+			continue
+
+		}
+		creator, ok := clusterSpec.Tags[constants.CreatorLabel]
+		if !ok {
+			//unknown creator
+			continue
+		}
+
+		if *clusterSpec.Status != "ACTIVE" || *creator != constants.SpawnerServiceLabel {
+			continue
+		}
+
 		input := &eks.ListNodegroupsInput{ClusterName: cluster}
 		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 		if err != nil {
@@ -221,6 +239,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 
 			if err != nil {
 				ctrl.logger.Error("failed to fetch nodegroups details ", *cNodeGroup)
+				continue
 			}
 
 			node := &proto.NodeSpec{Name: *cNodeGroup}
@@ -239,7 +258,6 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 			NodeSpec: nodes,
 		})
 	}
-
 	return &resp, nil
 }
 
