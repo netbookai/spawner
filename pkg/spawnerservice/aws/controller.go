@@ -210,7 +210,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 		clusterSpec, err := getClusterSpec(ctx, client, *cluster)
 
 		if err != nil {
-			svc.logger.Errorw("failed to get cluster details", "cluster", *cluster, "error", err)
+			ctrl.logger.Errorw("failed to get cluster details", "cluster", *cluster, "error", err)
 			continue
 
 		}
