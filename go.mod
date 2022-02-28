@@ -3,7 +3,7 @@ module gitlab.com/netbook-devs/spawner-service
 go 1.17
 
 require (
-	github.com/aws/aws-sdk-go v1.42.53
+	github.com/aws/aws-sdk-go v1.43.5
 	github.com/go-kit/kit v0.12.0
 	github.com/google/uuid v1.3.0
 	github.com/netbook-ai/interceptors v0.0.1
@@ -51,6 +51,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
+	github.com/onsi/ginkgo v1.16.2 // indirect
+	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
@@ -65,10 +67,10 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
-	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220222213610-43724f9ea8cf // indirect

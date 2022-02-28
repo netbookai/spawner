@@ -16,3 +16,15 @@ const (
 	NBTypeTagkey             = "nb-type"
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
 )
+
+type CloudProvider string
+
+const (
+	AwsCloud   CloudProvider = "aws"
+	AzureCloud CloudProvider = "azure"
+	GcpCloud   CloudProvider = "gcp"
+)
+
+const (
+	WorkspaceId = "workspaceid"
+)

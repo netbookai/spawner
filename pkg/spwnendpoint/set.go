@@ -36,6 +36,7 @@ type Set struct {
 	CreateSnapshotEndpoint          endpoint.Endpoint
 	CreateSnapshotAndDeleteEndpoint endpoint.Endpoint
 	RegisterWithRancherEndpoint     endpoint.Endpoint
+	GetWorkspaceCostEndpoint        endpoint.Endpoint
 }
 
 // New returns a Set that wraps the provided server, and wires in all of the
@@ -165,6 +166,14 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		registerWithRancherEndpoint = InstrumentingMiddleware(duration.With("method", "CreateSnapshotAndDelete"))(registerWithRancherEndpoint)
 	}
 
+	var getWorkspaceCostEndpoint endpoint.Endpoint
+	{
+		getWorkspaceCostEndpoint = MakeGetWorkspaceCostEndpoint(svc)
+		getWorkspaceCostEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(getWorkspaceCostEndpoint)
+		getWorkspaceCostEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(getWorkspaceCostEndpoint)
+		getWorkspaceCostEndpoint = InstrumentingMiddleware(duration.With("method", "GetWorkspaceCost"))(getWorkspaceCostEndpoint)
+	}
+
 	return Set{
 		CreateClusterEndpoint:           createClusterEndpoint,
 		AddTokenEndpoint:                addTokenEndpoint,
@@ -181,6 +190,7 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		CreateSnapshotEndpoint:          createSnapshotEndpoint,
 		CreateSnapshotAndDeleteEndpoint: createSnapshotAndDeleteEndpoint,
 		RegisterWithRancherEndpoint:     registerWithRancherEndpoint,
+		GetWorkspaceCostEndpoint:        getWorkspaceCostEndpoint,
 	}
 }
 
@@ -463,4 +473,22 @@ func MakeRegisterWithRancherEndpoint(s spawnerservice.ClusterController) endpoin
 		resp, err := s.RegisterWithRancher(ctx, req)
 		return resp, err
 	}
+}
+
+func MakeGetWorkspaceCostEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*proto.GetWorkspaceCostRequest)
+		resp, err := s.GetWorkspaceCost(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) GetWorkspaceCost(ctx context.Context, req *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error) {
+
+	resp, err := s.GetWorkspaceCostEndpoint(ctx, req)
+	if err != nil {
+		return &proto.GetWorkspaceCostResponse{}, err
+	}
+	response := resp.(*proto.GetWorkspaceCostResponse)
+	return response, nil
 }

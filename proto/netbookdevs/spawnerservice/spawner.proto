@@ -47,6 +47,8 @@ service SpawnerService {
     rpc CreateSnapshotAndDelete(CreateSnapshotAndDeleteRequest) returns (CreateSnapshotAndDeleteResponse) {}
 
     rpc RegisterWithRancher(RancherRegistrationRequest) returns (RancherRegistrationResponse) {}
+
+    rpc GetWorkspaceCost(GetWorkspaceCostRequest) returns (GetWorkspaceCostResponse) {}
 }
 
 message NodeSpec {
@@ -251,4 +253,25 @@ message RancherRegistrationResponse {
     string clusterName = 2;
     string clusterID = 3;
     string manifestURL = 4;
+}
+
+message GetWorkspaceCostRequest {
+    string workspaceId = 1;
+    string provider    = 2;
+    string accountName = 3;
+    string startDate   = 4;
+    string endDate     = 5;
+    string granularity = 6;
+    string costType    = 7;
+    string groupBy     = 8;
+}
+
+message GetWorkspaceCostResponse {
+    double totalCost = 1;
+    repeated GetWorkspaceCostGroupResponse groupedCost = 2;
+}
+
+message GetWorkspaceCostGroupResponse {
+    string group = 1;
+    double cost = 2;
 }

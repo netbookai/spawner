@@ -38,6 +38,7 @@ type grpcServer struct {
 	createSnapshot          grpctransport.Handler
 	createSnapshotAndDelete grpctransport.Handler
 	registerWithRancher     grpctransport.Handler
+	getWorkspaceCost        grpctransport.Handler
 
 	proto.UnimplementedSpawnerServiceServer
 }
@@ -199,6 +200,16 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) proto.
 			},
 			append(options)...,
 		),
+		getWorkspaceCost: grpctransport.NewServer(
+			endpoints.GetWorkspaceCostEndpoint,
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, response interface{}) (interface{}, error) {
+				return response, nil
+			},
+			append(options)...,
+		),
 	}
 }
 
@@ -320,6 +331,14 @@ func (s *grpcServer) RegisterWithRancher(ctx context.Context, req *proto.Rancher
 		return nil, err
 	}
 	return rep.(*proto.RancherRegistrationResponse), nil
+}
+
+func (s *grpcServer) GetWorkspaceCost(ctx context.Context, req *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error) {
+	_, rep, err := s.getWorkspaceCost.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return rep.(*proto.GetWorkspaceCostResponse), nil
 }
 
 // NewGRPCClient returns an AddService backed by a gRPC server at the other end
@@ -671,6 +690,28 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 		}))(registerWithRancherEndpoint)
 	}
 
+	var getWorkspaceCostEndpoint endpoint.Endpoint
+	{
+		getWorkspaceCostEndpoint = grpctransport.NewClient(
+			conn,
+			"proto.SpawnerService",
+			"GetWorkspaceCost",
+			func(_ context.Context, grpcReq interface{}) (interface{}, error) {
+				return grpcReq, nil
+			},
+			func(_ context.Context, grpcResp interface{}) (interface{}, error) {
+				return grpcResp, nil
+			},
+			proto.GetWorkspaceCostResponse{},
+			append(options)...,
+		).Endpoint()
+		getWorkspaceCostEndpoint = limiter(getWorkspaceCostEndpoint)
+		getWorkspaceCostEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "GetWorkspaceCost",
+			Timeout: 30 * time.Second,
+		}))(getWorkspaceCostEndpoint)
+	}
+
 	// Returning the endpoint.Set as a service.Service relies on the
 	// endpoint.Set implementing the Service methods. That's just a simple bit
 	// of glue code.
@@ -690,6 +731,7 @@ func NewGRPCClient(conn *grpc.ClientConn, logger *zap.SugaredLogger) spawnerserv
 		CreateSnapshotEndpoint:          createSnapshotEndpoint,
 		CreateSnapshotAndDeleteEndpoint: createSnapshotAndDeleteEndpoint,
 		RegisterWithRancherEndpoint:     registerWithRancherEndpoint,
+		GetWorkspaceCostEndpoint:        getWorkspaceCostEndpoint,
 	}
 }
 
