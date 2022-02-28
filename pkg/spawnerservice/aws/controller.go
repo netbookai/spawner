@@ -207,15 +207,20 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 
 	for _, cluster := range listClusterOut.Clusters {
 
-		clusterDetails, _ := getClusterSpec(ctx, client, *cluster)
+		clusterSpec, err := getClusterSpec(ctx, client, *cluster)
 
-		creator, ok := clusterDetails.Tags[constants.CreatorLabel]
+		if err != nil {
+			svc.logger.Errorw("failed to get cluster details", "cluster", *cluster, "error", err)
+			continue
+
+		}
+		creator, ok := clusterSpec.Tags[constants.CreatorLabel]
 		if !ok {
 			//unknown creator
 			continue
 		}
 
-		if *clusterDetails.Status != "ACTIVE" || *creator != constants.SpawnerServiceLabel {
+		if *clusterSpec.Status != "ACTIVE" || *creator != constants.SpawnerServiceLabel {
 			continue
 		}
 
@@ -234,6 +239,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 
 			if err != nil {
 				ctrl.logger.Error("failed to fetch nodegroups details ", *cNodeGroup)
+				continue
 			}
 
 			node := &proto.NodeSpec{Name: *cNodeGroup}
