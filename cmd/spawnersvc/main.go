@@ -11,10 +11,10 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
+	"github.com/netbook-ai/interceptors"
 	"github.com/oklog/oklog/pkg/group"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/middleware"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
@@ -83,7 +83,7 @@ func main() {
 	}
 	g.Add(func() error {
 		sugar.Infow("in main", "transport", "gRPC", "grpcAddr", grpcAddr)
-		baseServer := grpc.NewServer(middleware.GetInterceptors(sugar))
+		baseServer := grpc.NewServer(interceptors.GetInterceptors("spawnerservice", sugar))
 		proto.RegisterSpawnerServiceServer(baseServer, grpcServer)
 		return baseServer.Serve(grpcListener)
 	}, func(error) {

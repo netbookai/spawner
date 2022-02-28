@@ -13,7 +13,10 @@
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
     ```
 
-# Running the service
+
+
+# Development
+
 1. Run make proto to generate rpc and protobuf go files
     ```
     make proto
@@ -32,6 +35,14 @@
     go run spawncli.go -grpc-addr=:8083 -method=ClusterStatus
     ```
     This calls the ClusterStatus method on the gRPC service on port 8083
+5. To update modules,
+    ```
+    make tidy
+    ```
+6. Run formatter before committing or set your editor to FORMAT ON SAVE with goimports.
+    ```
+    make fmt
+    ```
 
 # Creating a docker image
 
