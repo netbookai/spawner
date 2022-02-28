@@ -49,6 +49,10 @@ service SpawnerService {
     rpc RegisterWithRancher(RancherRegistrationRequest) returns (RancherRegistrationResponse) {}
 
     rpc GetWorkspaceCost(GetWorkspaceCostRequest) returns (GetWorkspaceCostResponse) {}
+
+    rpc WriteCredential(WriteCredentialRequest) returns (WriteCredentialResponse) {}
+
+    rpc ReadCredential(ReadCredentialRequest) returns (ReadCredentialResponse) {}
 }
 
 message NodeSpec {
@@ -275,3 +279,26 @@ message GetWorkspaceCostGroupResponse {
     string group = 1;
     double cost = 2;
 }
+
+message WriteCredentialRequest {
+string account = 1;
+string accessId = 2;
+string accessKey = 3;
+}
+
+message WriteCredentialResponse {
+string error = 1;
+}
+
+message ReadCredentialRequest {
+string account = 1;
+}
+
+message ReadCredentialResponse{
+string account = 1;
+string accessId = 2;
+string accessKey = 3;
+}
+
+
+
