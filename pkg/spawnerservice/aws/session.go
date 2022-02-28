@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/costexplorer"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
@@ -105,6 +106,10 @@ func (ses *Session) getEksClient() *eks.EKS {
 
 func (ses *Session) getEC2Client() *ec2.EC2 {
 	return ec2.New(ses.AwsSession)
+}
+
+func (ses *Session) getCostExplorerClient() *costexplorer.CostExplorer {
+	return costexplorer.New(ses.AwsSession)
 }
 
 func (ses *Session) getK8sClient(cluster *eks.Cluster) (*kubernetes.Clientset, error) {

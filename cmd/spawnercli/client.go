@@ -151,6 +151,17 @@ func main() {
 		Provider: provider,
 	}
 
+	getWorkspaceCost := &proto.GetWorkspaceCostRequest{
+		WorkspaceId: "test",
+		Provider:    "aws",
+		AccountName: "965734315247",
+		StartDate:   "2021-08-01",
+		EndDate:     "2022-02-01",
+		Granularity: "MONTHLY",
+		CostType:    "BlendedCost",
+		GroupBy:     "SERVICE",
+	}
+
 	switch *method {
 	case "CreateCluster":
 		v, err := client.CreateCluster(context.Background(), createClusterReq)
@@ -264,6 +275,13 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("RegisterWithRancher method", "response", v)
+	case "GetWorkspaceCost":
+		v, err := client.GetWorkspaceCost(context.Background(), getWorkspaceCost)
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("error registering cluster with rancher", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetWorkspaceCost method", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)

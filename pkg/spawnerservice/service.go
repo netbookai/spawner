@@ -28,6 +28,7 @@ type ClusterController interface {
 	DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error)
+	GetWorkspaceCost(context.Context, *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error)
 
 	// Provider contoller need not to implement this
 	RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error)
@@ -46,8 +47,7 @@ var _ ClusterController = (*SpawnerService)(nil)
 //New return ClusterController
 func New(logger *zap.SugaredLogger, config *config.Config) ClusterController {
 
-	var svc ClusterController
-	svc = &SpawnerService{
+	svc := &SpawnerService{
 		awsController:  aws.NewAWSController(logger, config),
 		noopController: &NoopController{},
 		logger:         logger,
@@ -132,6 +132,11 @@ func (svc SpawnerService) CreateSnapshot(ctx context.Context, req *proto.CreateS
 //CreateSnapshotAndDelete
 func (svc SpawnerService) CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 	return svc.controller(req.Provider).CreateSnapshotAndDelete(ctx, req)
+}
+
+//GetWorkspaceCost returns workspace cost grouped by given group
+func (svc SpawnerService) GetWorkspaceCost(ctx context.Context, req *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error) {
+	return svc.controller(req.Provider).GetWorkspaceCost(ctx, req)
 }
 
 //RegisterWithRancher register cluster on the rancher, returns the kube manifest to apply on the cluster
