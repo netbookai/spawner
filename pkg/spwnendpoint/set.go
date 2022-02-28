@@ -37,6 +37,8 @@ type Set struct {
 	CreateSnapshotAndDeleteEndpoint endpoint.Endpoint
 	RegisterWithRancherEndpoint     endpoint.Endpoint
 	GetWorkspaceCostEndpoint        endpoint.Endpoint
+	ReadCredentialEndpoint          endpoint.Endpoint
+	WriteCredentialEndpoint         endpoint.Endpoint
 }
 
 // New returns a Set that wraps the provided server, and wires in all of the
@@ -174,6 +176,22 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		getWorkspaceCostEndpoint = InstrumentingMiddleware(duration.With("method", "GetWorkspaceCost"))(getWorkspaceCostEndpoint)
 	}
 
+	var readCredentialsEndpoint endpoint.Endpoint
+	{
+		readCredentialsEndpoint = MakeReadCredentialsEndpoint(svc)
+		readCredentialsEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(readCredentialsEndpoint)
+		readCredentialsEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(readCredentialsEndpoint)
+		readCredentialsEndpoint = InstrumentingMiddleware(duration.With("method", "ReadCredential"))(readCredentialsEndpoint)
+	}
+
+	var writeCredentialsEndpoint endpoint.Endpoint
+	{
+		readCredentialsEndpoint = MakeWriteCredentialsEndpoint(svc)
+		readCredentialsEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(writeCredentialsEndpoint)
+		readCredentialsEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(writeCredentialsEndpoint)
+		readCredentialsEndpoint = InstrumentingMiddleware(duration.With("method", "WriteCredential"))(writeCredentialsEndpoint)
+	}
+
 	return Set{
 		CreateClusterEndpoint:           createClusterEndpoint,
 		AddTokenEndpoint:                addTokenEndpoint,
@@ -191,6 +209,8 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 		CreateSnapshotAndDeleteEndpoint: createSnapshotAndDeleteEndpoint,
 		RegisterWithRancherEndpoint:     registerWithRancherEndpoint,
 		GetWorkspaceCostEndpoint:        getWorkspaceCostEndpoint,
+		ReadCredentialEndpoint:          readCredentialsEndpoint,
+		WriteCredentialEndpoint:         writeCredentialsEndpoint,
 	}
 }
 
@@ -490,5 +510,41 @@ func (s Set) GetWorkspaceCost(ctx context.Context, req *proto.GetWorkspaceCostRe
 		return &proto.GetWorkspaceCostResponse{}, err
 	}
 	response := resp.(*proto.GetWorkspaceCostResponse)
+	return response, nil
+}
+
+func MakeWriteCredentialsEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*proto.WriteCredentialRequest)
+		resp, err := s.WriteCredential(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
+
+	resp, err := s.WriteCredentialEndpoint(ctx, req)
+	if err != nil {
+		return &proto.WriteCredentialResponse{}, err
+	}
+	response := resp.(*proto.WriteCredentialResponse)
+	return response, nil
+}
+
+func MakeReadCredentialsEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(*proto.WriteCredentialRequest)
+		resp, err := s.WriteCredential(ctx, req)
+		return resp, err
+	}
+}
+
+func (s Set) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
+
+	resp, err := s.WriteCredentialEndpoint(ctx, req)
+	if err != nil {
+		return &proto.ReadCredentialResponse{}, err
+	}
+	response := resp.(*proto.ReadCredentialResponse)
 	return response, nil
 }

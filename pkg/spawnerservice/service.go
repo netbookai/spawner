@@ -32,6 +32,9 @@ type ClusterController interface {
 
 	// Provider contoller need not to implement this
 	RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error)
+
+	WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error)
+	ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error)
 }
 
 //SpawnerService manage provider and clusters
@@ -187,4 +190,16 @@ func (svc SpawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ra
 		ManifestURL: registrationToken.ManifestURL,
 	}, nil
 
+}
+
+//WriteCredential
+func (svc SpawnerService) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
+
+	return nil, nil
+
+}
+
+//ReadCredential
+func (svc SpawnerService) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
+	return nil, nil
 }

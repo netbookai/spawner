@@ -285,6 +285,25 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
+
+	case "ReadCredential":
+		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
+			Account: "alex",
+		})
+		if err != nil {
+			sugar.Errorw("error reading credentials", "error", err)
+		}
+		sugar.Infow("ReadCredential", "response", v)
+
+	case "WriteCredential":
+		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
+			Account:   "alex",
+			AccessId:  "access_id",
+			AccessKey: "access_key"})
+		if err != nil {
+			sugar.Errorw("error writing credentials", "error", err)
+		}
+		sugar.Infow("WriteCredential", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
