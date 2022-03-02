@@ -63,7 +63,6 @@ helm_deploy_dev:
   only:
     refs:
     - tags
-    - main
     - development
 
 helm_deploy_prod:
@@ -75,3 +74,4 @@ helm_deploy_prod:
     name: production
   only:
     - tags
+    - main
