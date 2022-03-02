@@ -171,7 +171,7 @@ func WriteOrUpdateCredential(ctx context.Context, region, account, id, key strin
 				exist = false
 			}
 		}
-		//we will ignore an other might have accured, which is most lilkey to get caugh next,
+		//we will ignore any other might have accured, which is most lilkey to get caugh next,
 		//handling error here becomes tedius,
 	}
 

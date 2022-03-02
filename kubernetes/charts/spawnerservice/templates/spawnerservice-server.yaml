@@ -33,6 +33,8 @@ spec:
           value: {{ .Values.rancher.password }}
         - name: RANCHER_AWS_CRED_NAME
           value: {{ .Values.rancher.aws_cred_name }}
+        - name: SECRET_HOST_REGION
+          value: {{ .Values.secret_host_region }}
 
         ports:
           - containerPort: {{ .Values.port }} 

@@ -38,5 +38,5 @@ rancher:
   username: username
   password: password
   aws_cred_name: aws_cred_name
-
+secret_host_region: secret_host_region
 docker: docker
