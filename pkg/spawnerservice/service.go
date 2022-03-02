@@ -195,11 +195,35 @@ func (svc SpawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ra
 //WriteCredential
 func (svc SpawnerService) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
 
-	return nil, nil
+	region := svc.config.SecretHostRegion
+	id := req.GetAccessKeyID()
+	key := req.GetSecretAccessKey()
+	account := req.GetAccount()
+
+	err := svc.writeCredentials(ctx, region, account, id, key)
+	if err != nil {
+		svc.logger.Errorw("failed to save credentials", "error", err, "account", account)
+		return nil, err
+	}
+	return &proto.WriteCredentialResponse{}, nil
 
 }
 
 //ReadCredential
 func (svc SpawnerService) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
-	return nil, nil
+
+	region := svc.config.SecretHostRegion
+	account := req.GetAccount()
+
+	creds, err := svc.getCredentials(ctx, region, account)
+	if err != nil {
+		svc.logger.Errorw("failed to get the credentials", "account", account)
+		return nil, err
+	}
+	svc.logger.Debugw("credentials found", "account", account, "accessKeyID", creds.AccessKeyID)
+	return &proto.ReadCredentialResponse{
+		Account:         account,
+		AccessKeyID:     creds.AccessKeyID,
+		SecretAccessKey: creds.SecretAccessKey,
+	}, nil
 }

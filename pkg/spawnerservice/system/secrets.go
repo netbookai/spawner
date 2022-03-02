@@ -1,6 +1,8 @@
 package system
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"strings"
 
@@ -94,15 +96,25 @@ func parseCredentials(blob string) (*credentials.Credentials, error) {
 	return creds, nil
 }
 
-//GetAwsCredentials Retrieve user credentials from the secret manager
-func GetAwsCredentials(region, accountName string) (*credentials.Credentials, error) {
+func encodeCredentials(id, key string) string {
+	return fmt.Sprintf("%s,%s", id, key)
+}
+
+func getSecretManager(region string) (*secretsmanager.SecretsManager, error) {
+
 	sess, err := createSession(region)
 	if err != nil {
 		return nil, err
 	}
 
-	awsSecSvc := secretsmanager.New(sess)
+	secretManager := secretsmanager.New(sess)
 
+	return secretManager, nil
+}
+
+//GetAwsCredentials Retrieve user credentials from the secret manager
+func GetAwsCredentials(ctx context.Context, region, accountName string) (*credentials.Credentials, error) {
+	secret, err := getSecretManager(region)
 	if err != nil {
 		return nil, err
 	}
@@ -112,11 +124,27 @@ func GetAwsCredentials(region, accountName string) (*credentials.Credentials, er
 		VersionStage: aws.String("AWSCURRENT"),
 	}
 
-	result, err := awsSecSvc.GetSecretValue(input)
+	result, err := secret.GetSecretValueWithContext(ctx, input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			return nil, aerr
 		}
 	}
 	return parseCredentials(*result.SecretString)
+}
+
+func WriteCredential(ctx context.Context, region, account, id, key string) error {
+
+	secret, err := getSecretManager(region)
+	if err != nil {
+		return err
+	}
+
+	value := encodeCredentials(id, key)
+	_, err = secret.CreateSecretWithContext(ctx, &secretsmanager.CreateSecretInput{
+		Name:         &account,
+		SecretString: &value,
+	})
+	return err
+
 }

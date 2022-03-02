@@ -287,8 +287,8 @@ message GetWorkspaceCostGroupResponse {
 
 message WriteCredentialRequest {
   string account = 1;
-  string accessId = 2;
-  string accessKey = 3;
+  string accessKeyID = 2;
+  string secretAccessKey = 3;
 }
 
 message WriteCredentialResponse {
@@ -301,6 +301,6 @@ message ReadCredentialRequest {
 
 message ReadCredentialResponse {
   string account = 1;
-  string accessId = 2;
-  string accessKey = 3;
+  string accessKeyID = 2;
+  string secretAccessKey = 3;
 }

@@ -24,9 +24,9 @@ const _ = grpc.SupportPackageIsVersion7
 type SpawnerServiceClient interface {
 	// Spawn required cluster
 	CreateCluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*ClusterResponse, error)
-	//Create add token to secret manager
+	// Create add token to secret manager
 	AddToken(ctx context.Context, in *AddTokenRequest, opts ...grpc.CallOption) (*AddTokenResponse, error)
-	//Create get token to secret manager
+	// Create get token to secret manager
 	GetToken(ctx context.Context, in *GetTokenRequest, opts ...grpc.CallOption) (*GetTokenResponse, error)
 	// Add Route53 record for Caddy
 	AddRoute53Record(ctx context.Context, in *AddRoute53RecordRequest, opts ...grpc.CallOption) (*AddRoute53RecordResponse, error)
@@ -42,9 +42,9 @@ type SpawnerServiceClient interface {
 	DeleteCluster(ctx context.Context, in *ClusterDeleteRequest, opts ...grpc.CallOption) (*ClusterDeleteResponse, error)
 	// Delete Node
 	DeleteNode(ctx context.Context, in *NodeDeleteRequest, opts ...grpc.CallOption) (*NodeDeleteResponse, error)
-	//Create Volume
+	// Create Volume
 	CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error)
-	//Delete Vol
+	// Delete Vol
 	DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, in *CreateSnapshotAndDeleteRequest, opts ...grpc.CallOption) (*CreateSnapshotAndDeleteResponse, error)
@@ -230,9 +230,9 @@ func (c *spawnerServiceClient) ReadCredential(ctx context.Context, in *ReadCrede
 type SpawnerServiceServer interface {
 	// Spawn required cluster
 	CreateCluster(context.Context, *ClusterRequest) (*ClusterResponse, error)
-	//Create add token to secret manager
+	// Create add token to secret manager
 	AddToken(context.Context, *AddTokenRequest) (*AddTokenResponse, error)
-	//Create get token to secret manager
+	// Create get token to secret manager
 	GetToken(context.Context, *GetTokenRequest) (*GetTokenResponse, error)
 	// Add Route53 record for Caddy
 	AddRoute53Record(context.Context, *AddRoute53RecordRequest) (*AddRoute53RecordResponse, error)
@@ -248,9 +248,9 @@ type SpawnerServiceServer interface {
 	DeleteCluster(context.Context, *ClusterDeleteRequest) (*ClusterDeleteResponse, error)
 	// Delete Node
 	DeleteNode(context.Context, *NodeDeleteRequest) (*NodeDeleteResponse, error)
-	//Create Volume
+	// Create Volume
 	CreateVolume(context.Context, *CreateVolumeRequest) (*CreateVolumeResponse, error)
-	//Delete Vol
+	// Delete Vol
 	DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error)
 	CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(context.Context, *CreateSnapshotAndDeleteRequest) (*CreateSnapshotAndDeleteResponse, error)

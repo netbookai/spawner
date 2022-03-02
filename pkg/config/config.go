@@ -19,6 +19,7 @@ type Config struct {
 	AWSAccessID            string `mapstructure:"AWS_ACCESS_ID"`
 	AWSSecretKey           string `mapstructure:"AWS_SECRET_KEY"`
 	AWSToken               string `mapstructure:"AWS_TOKEN"`
+	SecretHostRegion       string `mapstructure:"SECRET_HOST_REGION"`
 }
 
 // Load reads configuration from file or environment variables.

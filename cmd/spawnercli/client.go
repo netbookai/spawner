@@ -297,9 +297,9 @@ func main() {
 
 	case "WriteCredential":
 		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
-			Account:   "alex",
-			AccessId:  "access_id",
-			AccessKey: "access_key"})
+			Account:         "alex",
+			AccessKeyID:     "access_id",
+			SecretAccessKey: "access_key"})
 		if err != nil {
 			sugar.Errorw("error writing credentials", "error", err)
 		}

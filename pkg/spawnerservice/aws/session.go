@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"context"
 	"encoding/base64"
 	"log"
 
@@ -27,6 +28,7 @@ type Session struct {
 }
 
 func NewSession(conf *config.Config, region string, accountName string) (*Session, error) {
+	ctx := context.TODO()
 
 	var (
 		awsCreds *credentials.Credentials
@@ -37,7 +39,7 @@ func NewSession(conf *config.Config, region string, accountName string) (*Sessio
 		log.Println("running in dev mode, using ", conf.AWSAccessID)
 		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
 	} else {
-		awsCreds, err = system.GetAwsCredentials(region, accountName)
+		awsCreds, err = system.GetAwsCredentials(ctx, region, accountName)
 		if err != nil {
 			return nil, err
 		}
