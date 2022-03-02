@@ -20,5 +20,7 @@ func (svc *SpawnerService) getCredentials(ctx context.Context, region, account s
 //writeCredentials just a wrapper over system func
 func (svc *SpawnerService) writeCredentials(ctx context.Context, region, account, id, key string) error {
 
-	return system.WriteCredential(ctx, region, account, id, key)
+	update, err := system.WriteOrUpdateCredential(ctx, region, account, id, key)
+	svc.logger.Infow("Secrets written successfully", "update", update)
+	return err
 }

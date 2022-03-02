@@ -146,18 +146,50 @@ func GetAwsCredentials(ctx context.Context, region, accountName string) (*creden
 	return parseCredentials(*result.SecretString)
 }
 
-func WriteCredential(ctx context.Context, region, account, id, key string) error {
+//WriteOrUpdateCredential Creates a new secrets in AWS, updates the existing if key already present
+// update will be set to true when key Update operation is perfromed,
+// false on new secret creation
+func WriteOrUpdateCredential(ctx context.Context, region, account, id, key string) (update bool, err error) {
 
 	secret, err := getSecretManager(region)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	value := encodeCredentials(id, key)
-	_, err = secret.CreateSecretWithContext(ctx, &secretsmanager.CreateSecretInput{
-		Name:         &account,
-		SecretString: &value,
-	})
-	return err
+	input := &secretsmanager.GetSecretValueInput{
+		SecretId:     &account,
+		VersionStage: aws.String("AWSCURRENT"),
+	}
+
+	exist := true
+	result, err := secret.GetSecretValueWithContext(ctx, input)
+	if err != nil {
+		//check if key exist
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == secretsmanager.ErrCodeResourceNotFoundException {
+				exist = false
+			}
+		}
+		//we will ignore an other might have accured, which is most lilkey to get caugh next,
+		//handling error here becomes tedius,
+	}
+
+	if !exist {
+
+		_, err = secret.CreateSecretWithContext(ctx, &secretsmanager.CreateSecretInput{
+			Name:         &account,
+			SecretString: &value,
+		})
+		update = false
+	} else {
+		_, err = secret.UpdateSecretWithContext(ctx, &secretsmanager.UpdateSecretInput{
+
+			SecretId:     result.Name,
+			SecretString: &value,
+		})
+		update = true
+	}
+	return
 
 }
