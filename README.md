@@ -13,15 +13,21 @@
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
     ```
 
-# Running the service
-1. cd into pb folder and run the compile.sh file to generate Go and gRPC generated code
+
+
+# Development
+
+1. Run make proto to generate rpc and protobuf go files
+    ```
+    make proto
+    ```
 2. setup AWS_ROLE_ARN environment variable
     ```
     export AWS_ROLE_ARN=arn:aws:iam::965734315247:role/sandboxClusterSecretManagerRole
     ```
 3. cd into cmd/spawnersvc and run the spawnersvc.go to start the server
     ```
-    go run spawnersvc.go -grpc-addr=:8083 -debug-addr=:8081
+    make run
     ```
     This starts a gRPC server running on port 8083 and binds the service to it
 4. cd cmd/spawnercli and run the spawnercli.go to use the client to call the service
@@ -29,6 +35,14 @@
     go run spawncli.go -grpc-addr=:8083 -method=ClusterStatus
     ```
     This calls the ClusterStatus method on the gRPC service on port 8083
+5. To update modules,
+    ```
+    make tidy
+    ```
+6. Run formatter before committing or set your editor to FORMAT ON SAVE with goimports.
+    ```
+    make fmt
+    ```
 
 # Creating a docker image
 
