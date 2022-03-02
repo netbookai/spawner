@@ -193,7 +193,7 @@ func (svc SpawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ra
 }
 
 //WriteCredential
-func (svc SpawnerService) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
+func (svc *SpawnerService) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
 
 	region := svc.config.SecretHostRegion
 	id := req.GetAccessKeyID()
@@ -210,7 +210,7 @@ func (svc SpawnerService) WriteCredential(ctx context.Context, req *proto.WriteC
 }
 
 //ReadCredential
-func (svc SpawnerService) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
+func (svc *SpawnerService) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
 
 	region := svc.config.SecretHostRegion
 	account := req.GetAccount()

@@ -186,10 +186,10 @@ func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, durati
 
 	var writeCredentialsEndpoint endpoint.Endpoint
 	{
-		readCredentialsEndpoint = MakeWriteCredentialsEndpoint(svc)
-		readCredentialsEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(writeCredentialsEndpoint)
-		readCredentialsEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(writeCredentialsEndpoint)
-		readCredentialsEndpoint = InstrumentingMiddleware(duration.With("method", "WriteCredential"))(writeCredentialsEndpoint)
+		writeCredentialsEndpoint = MakeWriteCredentialsEndpoint(svc)
+		writeCredentialsEndpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(writeCredentialsEndpoint)
+		writeCredentialsEndpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(writeCredentialsEndpoint)
+		writeCredentialsEndpoint = InstrumentingMiddleware(duration.With("method", "WriteCredential"))(writeCredentialsEndpoint)
 	}
 
 	return Set{
@@ -478,7 +478,6 @@ func MakeGetClusterEndpoint(s spawnerservice.ClusterController) endpoint.Endpoin
 }
 
 func (s Set) RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error) {
-	fmt.Println(" register with rancher")
 	resp, err := s.RegisterWithRancherEndpoint(ctx, req)
 	if err != nil {
 		return &proto.RancherRegistrationResponse{}, err
@@ -533,15 +532,15 @@ func (s Set) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequ
 
 func MakeReadCredentialsEndpoint(s spawnerservice.ClusterController) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(*proto.WriteCredentialRequest)
-		resp, err := s.WriteCredential(ctx, req)
+		req := request.(*proto.ReadCredentialRequest)
+		resp, err := s.ReadCredential(ctx, req)
 		return resp, err
 	}
 }
 
 func (s Set) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
 
-	resp, err := s.WriteCredentialEndpoint(ctx, req)
+	resp, err := s.ReadCredentialEndpoint(ctx, req)
 	if err != nil {
 		return &proto.ReadCredentialResponse{}, err
 	}

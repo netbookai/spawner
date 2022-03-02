@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 )
 
 //manages system level secrets,
@@ -69,15 +71,26 @@ func getSystemCredential() (*sts.Credentials, error) {
 
 //createSession create new application session
 func createSession(region string) (*session.Session, error) {
-	stsCreds, stserr := getSystemCredential()
+	conf := config.Get()
 
-	if stserr != nil {
-		return nil, stserr
+	var cred *credentials.Credentials
+
+	if conf.Env == "local" {
+		log.Println("running in dev mode, using ", conf.AWSAccessID)
+		cred = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+
+	} else {
+		stsCreds, stserr := getSystemCredential()
+
+		if stserr != nil {
+			return nil, stserr
+		}
+		cred = credentials.NewStaticCredentials(*stsCreds.AccessKeyId, *stsCreds.SecretAccessKey, *stsCreds.SessionToken)
 	}
 
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(*stsCreds.AccessKeyId, *stsCreds.SecretAccessKey, *stsCreds.SessionToken),
+		Credentials: cred,
 	})
 
 	return sess, err
