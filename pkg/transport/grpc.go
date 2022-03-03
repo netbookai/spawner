@@ -1,21 +1,28 @@
-package spwntransport
+package transport
 
 import (
 	"context"
+	"time"
 
+	"github.com/go-kit/kit/circuitbreaker"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/ratelimit"
 	"github.com/go-kit/kit/transport"
+	"github.com/sony/gobreaker"
+	"golang.org/x/time/rate"
 
 	kitzap "github.com/go-kit/kit/log/zap"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
 
-	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
+	spwnendpoint "gitlab.com/netbook-devs/spawner-service/pkg/endpoint"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 
 	"go.uber.org/zap"
 )
 
 type grpcServer struct {
+	echo                    grpctransport.Handler
+	healthCheck             grpctransport.Handler
 	createCluster           grpctransport.Handler
 	addToken                grpctransport.Handler
 	getToken                grpctransport.Handler
@@ -39,6 +46,14 @@ type grpcServer struct {
 }
 
 func newServer(endpoint endpoint.Endpoint, options []grpctransport.ServerOption) *grpctransport.Server {
+
+	endpoint = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second/10), 1))(endpoint)
+	endpoint = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+		Name:        "spawner-breaker",
+		Interval:    time.Second,
+		MaxRequests: 100,
+	}))(endpoint)
+
 	return grpctransport.NewServer(
 		endpoint,
 		func(_ context.Context, grpcReq interface{}) (interface{}, error) {
@@ -52,13 +67,15 @@ func newServer(endpoint endpoint.Endpoint, options []grpctransport.ServerOption)
 }
 
 // NewGRPCServer makes a set of endpoints available as a gRPC AddServer.
-func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) proto.SpawnerServiceServer {
+func NewGRPCServer(endpoints *spwnendpoint.SpawnerEndpoints, logger *zap.SugaredLogger) proto.SpawnerServiceServer {
 	kitZapLogger := kitzap.NewZapSugarLogger(logger.Desugar(), zap.InfoLevel)
 	options := []grpctransport.ServerOption{
 		grpctransport.ServerErrorHandler(transport.NewLogErrorHandler(kitZapLogger)),
 	}
 
 	return &grpcServer{
+		echo:                    newServer(endpoints.Echo, options),
+		healthCheck:             newServer(endpoints.HealthCheck, options),
 		createCluster:           newServer(endpoints.CreateClusterEndpoint, options),
 		addToken:                newServer(endpoints.AddTokenEndpoint, options),
 		getToken:                newServer(endpoints.GetTokenEndpoint, options),
@@ -78,6 +95,23 @@ func NewGRPCServer(endpoints spwnendpoint.Set, logger *zap.SugaredLogger) proto.
 		writeCredential:         newServer(endpoints.WriteCredentialEndpoint, options),
 		readCredential:          newServer(endpoints.ReadCredentialEndpoint, options),
 	}
+}
+
+//Echo
+func (s *grpcServer) Echo(ctx context.Context, req *proto.EchoRequest) (*proto.EchoResponse, error) {
+	_, resp, err := s.echo.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.EchoResponse), nil
+}
+
+func (s *grpcServer) HealthCheck(ctx context.Context, req *proto.Empty) (*proto.Empty, error) {
+	_, resp, err := s.healthCheck.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*proto.Empty), nil
 }
 
 func (s *grpcServer) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {

@@ -15,9 +15,9 @@ import (
 	"github.com/oklog/oklog/pkg/group"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
+	"gitlab.com/netbook-devs/spawner-service/pkg/endpoint"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spwnendpoint"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spwntransport"
+	"gitlab.com/netbook-devs/spawner-service/pkg/transport"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -58,8 +58,8 @@ func main() {
 	}
 
 	service := spawnerservice.New(sugar, &config)
-	endpoints := spwnendpoint.New(service, sugar, duration)
-	grpcServer := spwntransport.NewGRPCServer(endpoints, sugar)
+	endpoints := endpoint.New(service, sugar, duration)
+	grpcServer := transport.NewGRPCServer(endpoints, sugar)
 
 	var g group.Group
 	debugAddr := fmt.Sprintf("%s:%d", "", config.DebugPort)
@@ -69,7 +69,7 @@ func main() {
 		os.Exit(1)
 	}
 	g.Add(func() error {
-		sugar.Infow("error in debugListener", "transport", "debug/HTTP", "debugAddr", debugAddr)
+		sugar.Infow("in debugListener", "transport", "debug/HTTP", "debugAddr", debugAddr)
 		return http.Serve(debugListener, http.DefaultServeMux)
 	}, func(error) {
 		debugListener.Close()
@@ -78,12 +78,14 @@ func main() {
 	grpcAddr := fmt.Sprintf("%s:%d", "", config.Port)
 	grpcListener, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
-		sugar.Errorw("error in grpcListener", "transport", "gRPC", "during", "Listen", "err", err)
+		sugar.Errorw("error in grpcListener", "transport", "gRPC", "during", "Listen", "error", err)
 		os.Exit(1)
 	}
+
 	g.Add(func() error {
 		sugar.Infow("in main", "transport", "gRPC", "grpcAddr", grpcAddr)
 		baseServer := grpc.NewServer(interceptors.GetInterceptors("spawnerservice", sugar))
+
 		proto.RegisterSpawnerServiceServer(baseServer, grpcServer)
 		return baseServer.Serve(grpcListener)
 	}, func(error) {
