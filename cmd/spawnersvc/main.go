@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/endpoint"
+	"gitlab.com/netbook-devs/spawner-service/pkg/metrics"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/transport"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
@@ -59,10 +60,14 @@ func startGRPCServer(g *group.Group, config config.Config, logger *zap.SugaredLo
 		os.Exit(1)
 	}
 
+	interceptors := interceptors.NewInterceptor("spawnerservice",
+		logger,
+		interceptors.WithInterecptor(metrics.RPCInstrumentation()))
+
 	g.Add(func() error {
 		logger.Infow("startGRPCServer", "transport", "gRPC", "address", address)
 
-		baseServer := grpc.NewServer(interceptors.GetInterceptors("spawnerservice", logger))
+		baseServer := grpc.NewServer(interceptors.Get())
 
 		proto.RegisterSpawnerServiceServer(baseServer, grpcServer)
 		return baseServer.Serve(listener)
