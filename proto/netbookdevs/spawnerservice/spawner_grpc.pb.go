@@ -22,6 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SpawnerServiceClient interface {
+	HealthCheck(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error)
 	// Spawn required cluster
 	CreateCluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*ClusterResponse, error)
 	// Create add token to secret manager
@@ -60,6 +62,24 @@ type spawnerServiceClient struct {
 
 func NewSpawnerServiceClient(cc grpc.ClientConnInterface) SpawnerServiceClient {
 	return &spawnerServiceClient{cc}
+}
+
+func (c *spawnerServiceClient) HealthCheck(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/HealthCheck", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spawnerServiceClient) Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error) {
+	out := new(EchoResponse)
+	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/Echo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *spawnerServiceClient) CreateCluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*ClusterResponse, error) {
@@ -228,6 +248,8 @@ func (c *spawnerServiceClient) ReadCredential(ctx context.Context, in *ReadCrede
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
 type SpawnerServiceServer interface {
+	HealthCheck(context.Context, *Empty) (*Empty, error)
+	Echo(context.Context, *EchoRequest) (*EchoResponse, error)
 	// Spawn required cluster
 	CreateCluster(context.Context, *ClusterRequest) (*ClusterResponse, error)
 	// Create add token to secret manager
@@ -265,6 +287,12 @@ type SpawnerServiceServer interface {
 type UnimplementedSpawnerServiceServer struct {
 }
 
+func (UnimplementedSpawnerServiceServer) HealthCheck(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HealthCheck not implemented")
+}
+func (UnimplementedSpawnerServiceServer) Echo(context.Context, *EchoRequest) (*EchoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Echo not implemented")
+}
 func (UnimplementedSpawnerServiceServer) CreateCluster(context.Context, *ClusterRequest) (*ClusterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCluster not implemented")
 }
@@ -330,6 +358,42 @@ type UnsafeSpawnerServiceServer interface {
 
 func RegisterSpawnerServiceServer(s grpc.ServiceRegistrar, srv SpawnerServiceServer) {
 	s.RegisterService(&SpawnerService_ServiceDesc, srv)
+}
+
+func _SpawnerService_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).HealthCheck(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/spawnerservice.SpawnerService/HealthCheck",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).HealthCheck(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpawnerService_Echo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EchoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).Echo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/spawnerservice.SpawnerService/Echo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).Echo(ctx, req.(*EchoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _SpawnerService_CreateCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -663,6 +727,14 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "spawnerservice.SpawnerService",
 	HandlerType: (*SpawnerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "HealthCheck",
+			Handler:    _SpawnerService_HealthCheck_Handler,
+		},
+		{
+			MethodName: "Echo",
+			Handler:    _SpawnerService_Echo_Handler,
+		},
 		{
 			MethodName: "CreateCluster",
 			Handler:    _SpawnerService_CreateCluster_Handler,

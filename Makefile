@@ -1,5 +1,7 @@
-ALL_GO_FILES=$(shell find . -type f  -name '*.go')
 GO_VERSION=1.17
+
+ALL_GO_FILES=$(shell find . -type f  -name '*.go')
+ALL_PROTO_FILES=$(shell find ./proto/netbookdevs -type f  -name '*.proto')
 
 
 tidy:
@@ -14,7 +16,8 @@ clean:
 
 .PHONY: proto
 proto:
-	./proto/compile.sh
+	@echo "generating proto code"
+	@./proto/compile.sh
 
 fmt:
 	goimports -w $(ALL_GO_FILES)
@@ -23,4 +26,4 @@ lint:
 	golint ./...
 
 fmt-proto:
-	clang-format --style=Chromium -i ./proto/netbookdevs/spawnerservice/spawner.proto
+	clang-format --style=Chromium -i $(ALL_PROTO_FILES)

@@ -28,7 +28,7 @@ func main() {
 
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
 	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
-	method := fs.String("method", "ClusterStatus", "ClusterStatus")
+	method := fs.String("method", "HealthCheck", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
 
@@ -185,6 +185,24 @@ func main() {
 	}
 
 	switch *method {
+	case "Echo":
+		v, err := client.Echo(context.Background(), &proto.EchoRequest{Msg: "hello spawner"})
+
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("Echo", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Echo", "response", v)
+
+	case "HealthCheck":
+		v, err := client.HealthCheck(context.Background(), &proto.Empty{})
+
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("HealthCheck", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("HealthCheck", "response", v)
+
 	case "CreateCluster":
 		v, err := client.CreateCluster(context.Background(), createClusterReq)
 		if err != nil && err.Error() != "" {

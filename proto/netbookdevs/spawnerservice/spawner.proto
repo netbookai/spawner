@@ -6,6 +6,10 @@ package spawnerservice;
 
 // The Spawner service definition
 service SpawnerService {
+  rpc HealthCheck(Empty) returns (Empty) {}
+
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
+
   // Spawn required cluster
   rpc CreateCluster(ClusterRequest) returns (ClusterResponse) {}
 
@@ -58,6 +62,15 @@ service SpawnerService {
       returns (WriteCredentialResponse) {}
 
   rpc ReadCredential(ReadCredentialRequest) returns (ReadCredentialResponse) {}
+}
+
+message Empty {}
+
+message EchoRequest {
+  string msg = 1;
+}
+message EchoResponse {
+  string msg = 1;
 }
 
 message NodeSpec {
