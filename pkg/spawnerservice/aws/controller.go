@@ -553,6 +553,17 @@ func (ctrl AWSController) GetToken(ctx context.Context, req *proto.GetTokenReque
 	}, nil
 }
 
+//TODO: refactor service interface, this is not required here
 func (ctrl AWSController) RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error) {
+	return nil, nil
+}
+
+//WriteCredential
+func (ctrl AWSController) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
+	return nil, nil
+}
+
+//ReadCredential
+func (ctrl AWSController) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
 	return nil, nil
 }
