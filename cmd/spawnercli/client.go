@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	clusterName = "test-nsp-cluster-05"
+	clusterName = "us-west-2-netbook-aws-1646158981"
 	region      = "us-west-2"
 	provider    = "aws"
+	accountName = "netbook-aws"
 )
 
 func main() {
@@ -62,6 +63,7 @@ func main() {
 			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
 		},
 		ClusterName: clusterName,
+		AccountName: accountName,
 	}
 
 	addTokenReq := &proto.AddTokenRequest{
@@ -74,13 +76,15 @@ func main() {
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	addRoute53RecordReq := &proto.AddRoute53RecordRequest{
-		DnsName:    "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
-		RecordName: "*.mani.app.netbook.ai",
-		Region:     region,
-		Provider:   provider,
+		DnsName:     "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
+		RecordName:  "*.mani.app.netbook.ai",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 		// RegionIdentifier: "Oregon region",
 	}
 
@@ -88,24 +92,32 @@ func main() {
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	getClustersReq := &proto.GetClustersRequest{
-		Region:   region,
-		Provider: provider,
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	getClusterReq := &proto.GetClusterRequest{
 		ClusterName: clusterName,
 		Provider:    provider,
 		Region:      region,
+		AccountName: accountName,
 	}
 
 	addNode := &proto.NodeSpec{
-		Name:       "sandbox-node-ng-gpu-01",
+		Name:       "us-east-2-netbook-aws-1645989637-188fed-2",
 		Instance:   "t2.medium",
 		DiskSize:   20,
-		GpuEnabled: true,
+		GpuEnabled: false,
+		Labels: map[string]string{"cluster-name": "us-east-2-netbook-aws-1645989637",
+			"node-name":   "us-east-2-netbook-aws-1645989637-188fed",
+			"user":        "98fe250a-7d98-4604-8317-1fbadda737ea",
+			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
+		},
 	}
 
 	addNodeReq := &proto.NodeSpawnRequest{
@@ -113,12 +125,14 @@ func main() {
 		Region:      region,
 		Provider:    provider,
 		NodeSpec:    addNode,
+		AccountName: accountName,
 	}
 
 	deleteClusterReq := &proto.ClusterDeleteRequest{
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	deleteNodeReq := &proto.NodeDeleteRequest{
@@ -126,6 +140,7 @@ func main() {
 		NodeGroupName: "ng-04",
 		Region:        region,
 		Provider:      provider,
+		AccountName:   accountName,
 	}
 
 	createVolumeReq := &proto.CreateVolumeRequest{
@@ -135,23 +150,27 @@ func main() {
 		Snapshotid:       "",
 		Region:           region,
 		Provider:         provider,
+		AccountName:      accountName,
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
-		Volumeid: "vol-05d7e98ae385b2e29",
-		Region:   region,
-		Provider: provider,
+		Volumeid:    "vol-05d7e98ae385b2e29",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	createSnapshotReq := &proto.CreateSnapshotRequest{
-		Volumeid: "vol-07ccb258225e0e213",
-		Region:   region,
-		Provider: provider,
+		Volumeid:    "vol-07ccb258225e0e213",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 	createSnapshotAndDeleteReq := &proto.CreateSnapshotAndDeleteRequest{
-		Volumeid: "vol-0f220de036ebea748",
-		Region:   region,
-		Provider: provider,
+		Volumeid:    "vol-0f220de036ebea748",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	getWorkspaceCost := &proto.GetWorkspaceCostRequest{

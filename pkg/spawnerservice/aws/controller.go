@@ -380,6 +380,7 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 			MinSize:     common.Int64Ptr(1),
 			MaxSize:     common.Int64Ptr(1),
 		},
+		Tags: labels,
 	}, nil
 
 }
@@ -415,6 +416,7 @@ func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clu
 			MinSize:     common.Int64Ptr(1),
 			MaxSize:     common.Int64Ptr(1),
 		},
+		Tags: labels,
 	}
 }
 
