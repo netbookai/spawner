@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/kit/metrics"
 	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
 
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
@@ -39,7 +38,7 @@ type SpawnerEndpoints struct {
 
 // New returns a SpawnerEndpoints that wraps the provided server, and wires in all of the
 // expected endpoint middlewares via the various parameters.
-func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger, duration metrics.Histogram) *SpawnerEndpoints {
+func New(svc spawnerservice.ClusterController, logger *zap.SugaredLogger) *SpawnerEndpoints {
 
 	echoEndpoint := makeEchoEndpoint()
 	healthCheckEndpoint := makeHelathCheckEndpoint()
