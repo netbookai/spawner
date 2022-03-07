@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 )
 
 func WaitTillInstanceRunning(sess *Session, region string, instanceLabelMap map[string]string) error {

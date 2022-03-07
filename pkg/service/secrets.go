@@ -1,13 +1,13 @@
-package spawnerservice
+package service
 
 import (
 	"context"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/system"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 )
 
-func (svc *SpawnerService) getCredentials(ctx context.Context, region, account string) (credentials.Value, error) {
+func (svc *spawnerService) getCredentials(ctx context.Context, region, account string) (credentials.Value, error) {
 
 	creds, err := system.GetAwsCredentials(ctx, region, account)
 	if err != nil {
@@ -18,7 +18,7 @@ func (svc *SpawnerService) getCredentials(ctx context.Context, region, account s
 }
 
 //writeCredentials just a wrapper over system func
-func (svc *SpawnerService) writeCredentials(ctx context.Context, region, account, id, key string) error {
+func (svc *spawnerService) writeCredentials(ctx context.Context, region, account, id, key string) error {
 
 	update, err := system.WriteOrUpdateCredential(ctx, region, account, id, key)
 	svc.logger.Infow("Secrets written successfully", "update", update)
