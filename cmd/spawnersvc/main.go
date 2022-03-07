@@ -13,10 +13,9 @@ import (
 	"github.com/oklog/oklog/pkg/group"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/endpoint"
+	"gitlab.com/netbook-devs/spawner-service/pkg/gateway"
 	"gitlab.com/netbook-devs/spawner-service/pkg/metrics"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice"
-	"gitlab.com/netbook-devs/spawner-service/pkg/transport"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -50,10 +49,8 @@ func startHttpServer(g *group.Group, config config.Config, logger *zap.SugaredLo
 func startGRPCServer(g *group.Group, config config.Config, logger *zap.SugaredLogger) {
 
 	address := fmt.Sprintf("%s:%d", "", config.Port)
-	service := spawnerservice.New(logger, &config)
-	endpoints := endpoint.New(service, logger)
-	grpcServer := transport.NewGRPCServer(endpoints, logger)
-
+	service := service.New(logger, &config)
+	grpcServer := gateway.New(service)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		logger.Errorw("startGRPCServer", "transport", "gRPC", "during", "Listen", "error", err)

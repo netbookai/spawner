@@ -1,8 +1,8 @@
 package aws
 
 import (
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
