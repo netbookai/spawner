@@ -31,7 +31,7 @@ type SpawnerService interface {
 	DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error)
-	GetWorkspaceCost(context.Context, *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error)
+	GetWorkspacesCost(context.Context, *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error)
 
 	RegisterWithRancher(context.Context, *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error)
 	WriteCredential(context.Context, *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error)
@@ -196,12 +196,12 @@ func (s *spawnerService) CreateSnapshotAndDelete(ctx context.Context, req *proto
 }
 
 //GetWorkspaceCost returns workspace cost grouped by given group
-func (s *spawnerService) GetWorkspaceCost(ctx context.Context, req *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error) {
+func (s *spawnerService) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
 	provider, err := s.controller(req.Provider)
 	if err != nil {
 		return nil, err
 	}
-	return provider.GetWorkspaceCost(ctx, req)
+	return provider.GetWorkspacesCost(ctx, req)
 }
 
 //RegisterWithRancher register cluster on the rancher, returns the kube manifest to apply on the cluster
