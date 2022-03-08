@@ -6,6 +6,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
+<<<<<<< HEAD
+||||||| parent of eed216a (add default label with scope)
+	"gitlab.com/netbook-devs/spawner-service/pkg/maps"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+=======
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+>>>>>>> eed216a (add default label with scope)
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 
 	"go.uber.org/zap"
@@ -28,10 +35,25 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 	}
 }
 
+<<<<<<< HEAD
 func awsTags(labels map[string]string) []*ec2.Tag {
 	for k, v := range DefaultTags() {
 		labels[k] = *v
 	}
+||||||| parent of eed216a (add default label with scope)
+func addAWSTags(labels map[string]string) []*ec2.Tag {
+
+	tagsMap := maps.SimpleReplaceMerge(
+		map[string]string{
+			constants.CreatorLabel:     constants.SpawnerServiceLabel,
+			constants.ProvisionerLabel: constants.AwsLabel},
+		labels)
+=======
+func awsTags(labels map[string]string) []*ec2.Tag {
+
+	labels[constants.CreatorLabel] = constants.SpawnerServiceLabel
+	labels[constants.ProvisionerLabel] = constants.AwsLabel
+>>>>>>> eed216a (add default label with scope)
 
 	tags := []*ec2.Tag{}
 	for key, value := range labels {
