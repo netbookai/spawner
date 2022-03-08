@@ -173,15 +173,15 @@ func main() {
 		AccountName: accountName,
 	}
 
-	getWorkspaceCost := &proto.GetWorkspaceCostRequest{
-		WorkspaceId: "test",
-		Provider:    "aws",
-		AccountName: "965734315247",
-		StartDate:   "2021-08-01",
-		EndDate:     "2022-02-01",
-		Granularity: "MONTHLY",
-		CostType:    "BlendedCost",
-		GroupBy:     "SERVICE",
+	getWorkspacesCost := &proto.GetWorkspacesCostRequest{
+		WorkspaceIds: []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a"},
+		Provider:     "aws",
+		AccountName:  "netbook-aws",
+		StartDate:    "2021-08-01",
+		EndDate:      "2022-03-01",
+		Granularity:  "MONTHLY",
+		CostType:     "BlendedCost",
+		GroupBy:      "SERVICE",
 	}
 
 	switch *method {
@@ -315,8 +315,8 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("RegisterWithRancher method", "response", v)
-	case "GetWorkspaceCost":
-		v, err := client.GetWorkspaceCost(context.Background(), getWorkspaceCost)
+	case "GetWorkspacesCost":
+		v, err := client.GetWorkspacesCost(context.Background(), getWorkspacesCost)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error registering cluster with rancher", "error", err)
 			os.Exit(1)

@@ -104,8 +104,8 @@ func (g *gateway) RegisterWithRancher(ctx context.Context, req *proto.RancherReg
 	return g.service.RegisterWithRancher(ctx, req)
 }
 
-func (g *gateway) GetWorkspaceCost(ctx context.Context, req *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error) {
-	return g.service.GetWorkspaceCost(ctx, req)
+func (g *gateway) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
+	return g.service.GetWorkspacesCost(ctx, req)
 }
 
 func (g *gateway) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {

@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 	"k8s.io/client-go/dynamic"
@@ -112,6 +113,10 @@ func (ses *Session) getEC2Client() *ec2.EC2 {
 
 func (ses *Session) getCostExplorerClient() *costexplorer.CostExplorer {
 	return costexplorer.New(ses.AwsSession)
+}
+
+func (ses *Session) getSTSClient() *sts.STS {
+	return sts.New(ses.AwsSession)
 }
 
 func (ses *Session) getK8sClient(cluster *eks.Cluster) (*kubernetes.Clientset, error) {
