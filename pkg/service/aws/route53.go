@@ -107,6 +107,8 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *proto.AddRou
 		return &proto.AddRoute53RecordResponse{}, err
 	}
 
+	logger.Infow("added change record set's")
+
 	err = route53Client.WaitUntilResourceRecordSetsChanged(&route53.GetChangeInput{
 		Id: *&result.ChangeInfo.Id,
 	})

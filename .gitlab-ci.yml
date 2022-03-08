@@ -57,7 +57,7 @@ helm_deploy_dev:
   stage: deploy
   script:
   - sh .gitlab/ci-scripts/helm.sh
-  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set docker=$DOCKER_K8S_CONFIG --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA --set env="dev" --set secret_host_region=$SECRET_HOST_REGION
+  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set docker=$DOCKER_K8S_CONFIG --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA --set env="dev" --set secret_host_region=$SECRET_HOST_REGION --set route53_hotedzone_id=$AWS_ROUTE53_HOSTEDZONEID
   environment:
     name: development
   only:
@@ -69,7 +69,7 @@ helm_deploy_prod:
   stage: deploy
   script:
   - sh .gitlab/ci-scripts/helm.sh
-  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set docker=$DOCKER_K8S_CONFIG --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA --set env="prod" --set secret_host_region=$SECRET_HOST_REGION
+  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set docker=$DOCKER_K8S_CONFIG --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA --set env="prod" --set secret_host_region=$SECRET_HOST_REGION --set route53_hotedzone_id=$AWS_ROUTE53_HOSTEDZONEID
   environment:
     name: production
   only:
