@@ -36,7 +36,7 @@ spec:
         - name: SECRET_HOST_REGION
           value: {{ .Values.secret_host_region }}
         - name: AWS_ROUTE53_HOSTEDZONEID
-          value: {{ .Values.route53_hotedzone_id }}
+          value: {{ .Values.route53_hostedzone_id }}
 
         ports:
           - containerPort: {{ .Values.port }} 
