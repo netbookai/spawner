@@ -133,7 +133,12 @@ func main() {
 		Region:      region,
 		Provider:    provider,
 		AccountName: accountName,
+<<<<<<< HEAD
 		ForceDelete: true,
+||||||| parent of 0199a79 (update DeleteCluster api to accept force delete cluster with attached nodes)
+=======
+		Force:       true,
+>>>>>>> 0199a79 (update DeleteCluster api to accept force delete cluster with attached nodes)
 	}
 
 	deleteNodeReq := &proto.NodeDeleteRequest{
