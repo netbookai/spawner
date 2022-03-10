@@ -278,7 +278,7 @@ func CreateVPC(client *ec2.EC2, name string, vpcCidr string) (*ec2.Vpc, error) {
 					},
 					{
 						Key:   aws.String(constants.ProvisionerLabel),
-						Value: aws.String(constants.RancherLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 					{
 						Key:   aws.String(constants.NBTypeTagkey),
@@ -316,7 +316,7 @@ func CreateInternetGateway(client *ec2.EC2, name string) (*ec2.InternetGateway, 
 					},
 					{
 						Key:   aws.String(constants.ProvisionerLabel),
-						Value: aws.String(constants.RancherLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 				},
 			},
@@ -360,7 +360,7 @@ func CreateRouteTable(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.RouteTab
 					},
 					{
 						Key:   aws.String(constants.ProvisionerLabel),
-						Value: aws.String(constants.RancherLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 				},
 			},
@@ -411,7 +411,7 @@ func CreateSubnet(client *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, ci
 					},
 					{
 						Key:   aws.String(constants.ProvisionerLabel),
-						Value: aws.String(constants.RancherLabel),
+						Value: aws.String(constants.SpawnerServiceLabel),
 					},
 				},
 			},

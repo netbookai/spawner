@@ -1,11 +1,16 @@
 package constants
 
-const (
-	NameLabel                = "Name" //Capital N for Aws
-	CreatorLabel             = "creator"
+//we need address of this vars coz AWS SDK requirements
+//calling StrPtr() or aws.String() seems like repetetive
+
+var (
+	NameLabel           string = "Name" //Capital N for Aws
+	CreatorLabel               = "creator"
+	SpawnerServiceLabel        = "spawner-service"
+	Scope                      = "scope"
+
 	ProvisionerLabel         = "provisioner"
 	RancherLabel             = "rancher"
-	SpawnerServiceLabel      = "spawner-service"
 	ClusterNameLabel         = "cluster-name"
 	WorkspaceLabel           = "workspaceid"
 	NodeNameLabel            = "node-name"
@@ -15,6 +20,8 @@ const (
 	VpcTagKey                = "vpc"
 	NBTypeTagkey             = "nb-type"
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
+	WorkspaceId              = "workspaceid"
+	KubeVersion              = "1.20"
 )
 
 type CloudProvider string
@@ -23,8 +30,4 @@ const (
 	AwsCloud   CloudProvider = "aws"
 	AzureCloud CloudProvider = "azure"
 	GcpCloud   CloudProvider = "gcp"
-)
-
-const (
-	WorkspaceId = "workspaceid"
 )

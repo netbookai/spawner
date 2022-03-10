@@ -224,6 +224,15 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 			continue
 		}
 
+		scope, ok := clusterSpec.Tags[constants.Scope]
+		if !ok {
+			continue
+		}
+		if ctrl.config.Env != *scope {
+			//skip clusters which is of not spawner env scope
+			continue
+		}
+
 		input := &eks.ListNodegroupsInput{ClusterName: cluster}
 		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 		if err != nil {

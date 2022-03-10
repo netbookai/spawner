@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	clusterName = "us-west-2-netbook-aws-1646158981"
+	clusterName = "us-west-2-netbook-aws-test-1"
 	region      = "us-west-2"
 	provider    = "aws"
 	accountName = "netbook-aws"
