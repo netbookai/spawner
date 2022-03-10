@@ -42,11 +42,10 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 		}
 		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnetIds)
 	}
-	tags := map[string]*string{
-		constants.ClusterNameLabel: &clusterName,
-		constants.CreatorLabel:     common.StrPtr(constants.SpawnerServiceLabel),
-	}
 
+	tags := DefaultTags()
+	tags[constants.ClusterNameLabel] = &clusterName
+	//override with additional labels from request
 	for k, v := range req.Labels {
 		v := v
 		tags[k] = &v
@@ -84,7 +83,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 			EndpointPrivateAccess: common.BoolPtr(false),
 		},
 		Tags:    tags,
-		Version: common.StrPtr("1.20"),
+		Version: &constants.KubeVersion,
 		RoleArn: eksRole.Arn,
 	}
 

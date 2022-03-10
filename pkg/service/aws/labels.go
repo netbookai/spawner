@@ -1,24 +1,39 @@
 package aws
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
+func merge(maps ...map[string]*string) map[string]*string {
+	m := make(map[string]*string)
+
+	for _, _m := range maps {
+		for k, v := range _m {
+			m[k] = v
+		}
+	}
+	return m
+}
+
 func getNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	labels := map[string]*string{
-		constants.CreatorLabel:           common.StrPtr(constants.SpawnerServiceLabel),
 		constants.NodeNameLabel:          &nodeSpec.Name,
 		constants.InstanceLabel:          &nodeSpec.Instance,
 		constants.NodeLabelSelectorLabel: &nodeSpec.Name,
 		"type":                           common.StrPtr("nodegroup")}
 
-	for k, v := range nodeSpec.Labels {
-		v := v
-		labels[k] = &v
+	return merge(DefaultTags(), labels, aws.StringMap(nodeSpec.Labels))
+}
+
+//DefaultTags labels/tags which is added to all spawner resources
+func DefaultTags() map[string]*string {
+	scope := config.Get().Env
+	return map[string]*string{
+		constants.Scope:        &scope,
+		constants.CreatorLabel: &constants.SpawnerServiceLabel,
 	}
-
-	return labels
-
 }
