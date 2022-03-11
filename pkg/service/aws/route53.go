@@ -8,12 +8,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/google/uuid"
 
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
 func (svc AWSController) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
 	logger := svc.logger
-	session, err := NewSession(svc.config, req.Region, req.AccountName)
+	session, err := NewSession(ctx, req.Region, req.AccountName)
 
 	if err != nil {
 		return nil, err
@@ -67,7 +68,7 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *proto.AddRou
 		return res, errors.New("Region does not have matching ELB HostedZoneId")
 	}
 
-	hostedZoenId := svc.config.AwsRoute53HostedZoneID
+	hostedZoenId := config.Get().AwsRoute53HostedZoneID
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{

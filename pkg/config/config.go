@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var conf Config
+var config Config
 
 // Config stores all configuration of the application.
 // The values are read by viper from a config file or environment variable.
@@ -25,23 +25,22 @@ type Config struct {
 }
 
 // Load reads configuration from file or environment variables.
-func Load(path string) (config Config, err error) {
+func Load(path string) error {
 	viper.AddConfigPath(path)
 	viper.SetConfigName("config")
 	viper.SetConfigType("env")
 
 	viper.AutomaticEnv()
 
-	err = viper.ReadInConfig()
+	err := viper.ReadInConfig()
 	if err != nil {
-		return
+		return err
 	}
-
 	err = viper.Unmarshal(&config)
-	conf = config
-	return
+
+	return err
 }
 
 func Get() Config {
-	return conf
+	return config
 }

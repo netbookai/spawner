@@ -12,6 +12,7 @@ require (
 	github.com/rancher/norman v0.0.0-20220107203912-4feb41eafabd
 	github.com/rancher/rancher/pkg/client v0.0.0-20220215234952-3f302881015e
 	github.com/spf13/viper v1.10.1
+	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
@@ -51,6 +52,7 @@ require (
 	github.com/onsi/ginkgo v1.16.2 // indirect
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect

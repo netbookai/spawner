@@ -49,7 +49,7 @@ func startHttpServer(g *group.Group, config config.Config, logger *zap.SugaredLo
 func startGRPCServer(g *group.Group, config config.Config, logger *zap.SugaredLogger) {
 
 	address := fmt.Sprintf("%s:%d", "", config.Port)
-	service := service.New(logger, &config)
+	service := service.New(logger)
 	grpcServer := gateway.New(service)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
@@ -94,7 +94,7 @@ func startSignalHandler(g *group.Group) {
 
 func main() {
 
-	config, err := config.Load(".")
+	err := config.Load(".")
 
 	if err != nil {
 		log.Fatal("failed to load config", err)
@@ -103,6 +103,7 @@ func main() {
 	var logger *zap.Logger
 
 	//ENV value can be either prod or dev
+	config := config.Get()
 	if config.Env == "prod" {
 		logger, _ = zap.NewProduction()
 	} else {
