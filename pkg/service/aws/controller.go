@@ -97,6 +97,39 @@ func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterR
 	}, nil
 }
 
+func (ctrl AWSController) getNodeHealth(ctx context.Context, client *eks.EKS, cluster, nodeName string) (*eks.NodegroupHealth, error) {
+
+	node, err := client.DeleteNodegroupWithContext(ctx, &eks.DeleteNodegroupInput{
+		ClusterName:   &cluster,
+		NodegroupName: &nodeName,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return node.Nodegroup.Health, nil
+}
+
+func healthProto(health *eks.NodegroupHealth) *proto.Health {
+	pr := &proto.Health{}
+	issues := make([]*proto.Issue, 0, len(health.Issues))
+
+	for _, is := range health.Issues {
+		rids := make([]string, 0, 5)
+		for _, r := range is.ResourceIds {
+			rids = append(rids, *r)
+		}
+
+		issues = append(issues, &proto.Issue{
+			Code:        *is.Code,
+			Description: *is.Message,
+			ResourceIds: rids,
+		})
+	}
+	pr.Issue = issues
+	return pr
+}
+
 //GetCluster Describe cluster with the given name and region
 func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
 
@@ -134,6 +167,7 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 
 	var nodeSpecList []*proto.NodeSpec
 	for _, node := range nodeList.Items {
+		nodeGroupName := node.Labels[constants.NodeNameLabel]
 		addresses := node.Status.Addresses
 		ipAddr := ""
 		hostName := node.Name
@@ -156,10 +190,19 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 
 		ephemeralStorage := node.Status.Capacity.StorageEphemeral()
 
+		//get node health
+		var nodeHealth *proto.Health
+		health, err := ctrl.getNodeHealth(ctx, client, clusterName, nodeGroupName)
+		if err != nil {
+			ctrl.logger.Errorw("failed to get the health check", "error", err)
+		} else {
+			nodeHealth = healthProto(health)
+		}
+
 		//we will use MB for the disk size, int32 is too small for bytes
 		diskSize := ephemeralStorage.Value() / 1024 / 1024
 		nodeSpecList = append(nodeSpecList, &proto.NodeSpec{
-			Name: node.Name,
+			Name: nodeGroupName,
 			//ClusterId:        node.ClusterID,
 			Instance:         node.Labels["node.kubernetes.io/instance-type"],
 			DiskSize:         int32(diskSize),
@@ -169,7 +212,11 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 			IpAddr:           ipAddr,
 			Labels:           node.Labels,
 			Availabilityzone: node.Labels["topology.kubernetes.io/zone"],
+			Health:           nodeHealth,
 		})
+
+		fmt.Printf(" health check Node: %s ,%+v\n", nodeGroupName, *health)
+
 	}
 
 	response.NodeSpec = nodeSpecList
@@ -256,6 +303,8 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 			if nodeGroupDetails.Nodegroup.DiskSize != nil {
 				node.DiskSize = int32(*nodeGroupDetails.Nodegroup.DiskSize)
 			}
+
+			node.Health = healthProto(nodeGroupDetails.Nodegroup.Health)
 			nodes = append(nodes, node)
 		}
 
@@ -506,15 +555,8 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 
 	clusterName := req.ClusterName
 	region := req.Region
-<<<<<<< HEAD
-	forceDelete := req.ForceDelete
-||||||| parent of 68117c2 (refactor force field name and delete all nodes function)
-	forceDelete := req.Force
-
-=======
 	forceDelete := req.ForceDelete
 
->>>>>>> 68117c2 (refactor force field name and delete all nodes function)
 	session, err := NewSession(ctx, region, req.AccountName)
 	if err != nil {
 		return nil, err
