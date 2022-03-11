@@ -99,7 +99,7 @@ func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterR
 
 func (ctrl AWSController) getNodeHealth(ctx context.Context, client *eks.EKS, cluster, nodeName string) (*eks.NodegroupHealth, error) {
 
-	node, err := client.DeleteNodegroupWithContext(ctx, &eks.DeleteNodegroupInput{
+	node, err := client.DescribeNodegroupWithContext(ctx, &eks.DescribeNodegroupInput{
 		ClusterName:   &cluster,
 		NodegroupName: &nodeName,
 	})
@@ -214,8 +214,6 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 			Availabilityzone: node.Labels["topology.kubernetes.io/zone"],
 			Health:           nodeHealth,
 		})
-
-		fmt.Printf(" health check Node: %s ,%+v\n", nodeGroupName, *health)
 
 	}
 
