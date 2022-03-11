@@ -69,7 +69,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -113,7 +113,7 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *proto.DeleteVolu
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -164,7 +164,7 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -215,7 +215,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)

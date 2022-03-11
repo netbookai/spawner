@@ -13,7 +13,7 @@ import (
 
 func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
 
-	session, err := NewSession(svc.config, "", req.GetAccountName())
+	session, err := NewSession(ctx, "", req.GetAccountName())
 
 	if err != nil {
 		svc.logger.Errorw("can't start AWS session", "error", err)

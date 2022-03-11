@@ -1,6 +1,8 @@
 package aws
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
@@ -29,9 +31,13 @@ func getNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	return merge(DefaultTags(), labels, aws.StringMap(nodeSpec.Labels))
 }
 
+func ScopeTag() string {
+	return fmt.Sprintf("nb-%s", config.Get().Env)
+}
+
 //DefaultTags labels/tags which is added to all spawner resources
 func DefaultTags() map[string]*string {
-	scope := config.Get().Env
+	scope := ScopeTag()
 	return map[string]*string{
 		constants.Scope:        &scope,
 		constants.CreatorLabel: &constants.SpawnerServiceLabel,

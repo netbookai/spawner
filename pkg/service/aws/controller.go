@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
-	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
@@ -38,14 +37,12 @@ var (
 
 type AWSController struct {
 	logger *zap.SugaredLogger
-	config *config.Config
 }
 
 //NewAWSController
-func NewAWSController(logger *zap.SugaredLogger, config *config.Config) *AWSController {
+func NewAWSController(logger *zap.SugaredLogger) *AWSController {
 	return &AWSController{
 		logger: logger,
-		config: config,
 	}
 }
 
@@ -68,7 +65,7 @@ func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterR
 
 	region := req.Region
 	accountName := req.AccountName
-	session, err := NewSession(ctrl.config, region, accountName)
+	session, err := NewSession(ctx, region, accountName)
 
 	if err != nil {
 		return nil, err
@@ -107,7 +104,7 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 	region := req.Region
 	clusterName := req.ClusterName
 	accountName := req.AccountName
-	session, err := NewSession(ctrl.config, region, accountName)
+	session, err := NewSession(ctx, region, accountName)
 
 	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
 	if err != nil {
@@ -186,7 +183,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 	//get all clusters in given region
 	region := req.Region
 	accountName := req.AccountName
-	session, err := NewSession(ctrl.config, region, accountName)
+	session, err := NewSession(ctx, region, accountName)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +225,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 		if !ok {
 			continue
 		}
-		if ctrl.config.Env != *scope {
+		if ScopeTag() != *scope {
 			//skip clusters which is of not spawner env scope
 			continue
 		}
@@ -273,7 +270,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	region := req.Region
 	clusterName := req.ClusterName
-	session, err := NewSession(ctrl.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		return nil, err
@@ -437,7 +434,7 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 	region := req.Region
 	nodeSpec := req.NodeSpec
 
-	session, err := NewSession(ctrl.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +486,7 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 	clusterName := req.ClusterName
 	region := req.Region
 
-	session, err := NewSession(ctrl.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -516,7 +513,7 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 	nodeName := req.NodeGroupName
 	region := req.Region
 
-	session, err := NewSession(ctrl.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -544,7 +541,7 @@ func (ctrl AWSController) GetToken(ctx context.Context, req *proto.GetTokenReque
 	region := req.Region
 	clusterName := req.ClusterName
 
-	session, err := NewSession(ctrl.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 	if err != nil {
 		return nil, err
 	}

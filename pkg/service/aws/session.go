@@ -28,14 +28,14 @@ type Session struct {
 	TeamId     string
 }
 
-func NewSession(conf *config.Config, region string, accountName string) (*Session, error) {
-	ctx := context.TODO()
+func NewSession(ctx context.Context, region string, accountName string) (*Session, error) {
 
 	var (
 		awsCreds *credentials.Credentials
 		err      error
 	)
 
+	conf := config.Get()
 	if conf.Env == "local" {
 		log.Println("running in dev mode, using ", conf.AWSAccessID)
 		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)

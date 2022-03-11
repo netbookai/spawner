@@ -42,18 +42,16 @@ type SpawnerService interface {
 type spawnerService struct {
 	awsController Controller
 	logger        *zap.SugaredLogger
-	config        *config.Config
 
 	proto.UnimplementedSpawnerServiceServer
 }
 
 //New return ClusterController
-func New(logger *zap.SugaredLogger, config *config.Config) SpawnerService {
+func New(logger *zap.SugaredLogger) SpawnerService {
 
 	svc := &spawnerService{
-		awsController: aws.NewAWSController(logger, config),
+		awsController: aws.NewAWSController(logger),
 		logger:        logger,
-		config:        config,
 	}
 	return svc
 }
@@ -210,7 +208,8 @@ func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ran
 	clusterName := req.ClusterName
 	s.logger.Info("registering cluster with rancher ", req.ClusterName)
 
-	client, err := rancher.CreateRancherClient(s.config.RancherAddr, s.config.RancherUsername, s.config.RancherPassword)
+	conf := config.Get()
+	client, err := rancher.CreateRancherClient(conf.RancherAddr, conf.RancherUsername, conf.RancherPassword)
 
 	if err != nil {
 		s.logger.Error("failed to get rancher client ", client)
@@ -257,7 +256,7 @@ func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ran
 //WriteCredential
 func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
 
-	region := s.config.SecretHostRegion
+	region := config.Get().SecretHostRegion
 	id := req.GetAccessKeyID()
 	key := req.GetSecretAccessKey()
 	account := req.GetAccount()
@@ -274,7 +273,7 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 //ReadCredential
 func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
 
-	region := s.config.SecretHostRegion
+	region := config.Get().SecretHostRegion
 	account := req.GetAccount()
 
 	creds, err := s.getCredentials(ctx, region, account)
