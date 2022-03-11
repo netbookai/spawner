@@ -480,11 +480,33 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 	return &proto.NodeSpawnResponse{}, err
 }
 
+func (ctrl AWSController) deleteAllNodegroups(ctx context.Context, client *eks.EKS, clusterName string) error {
+	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
+	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
+	if err != nil {
+		return err
+	}
+
+	if len(nodeGroupList.Nodegroups) == 0 {
+		return nil
+	}
+
+	for _, nodeGroupName := range nodeGroupList.Nodegroups {
+		//drop em
+		if err = ctrl.deleteNode(ctx, client, clusterName, *nodeGroupName); err != nil {
+			return err
+		}
+	}
+	ctrl.logger.Infow("all attached nodegroups are being deleted")
+	return nil
+}
+
 //DeleteCluster delete empty cluster, cluster should not have any nodegroup attached.
 func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
 
 	clusterName := req.ClusterName
 	region := req.Region
+	forceDelete := req.ForceDelete
 
 	session, err := NewSession(ctx, region, req.AccountName)
 	if err != nil {
@@ -492,6 +514,18 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 	}
 	client := session.getEksClient()
 
+	//get node groups attached to clients when force delete is enabled.
+	//if available delete all attached node groups and proceed to deleting cluster
+	if forceDelete {
+		err = ctrl.deleteAllNodegroups(ctx, client, clusterName)
+		if err != nil {
+			ctrl.logger.Errorw("failed to delete attached nodegroups", "error", err)
+			return nil, err
+		}
+
+	}
+
+	//FIXME : cannot delete the cluster untill all nodes are dropped.
 	deleteOut, err := client.DeleteClusterWithContext(ctx, &eks.DeleteClusterInput{
 		Name: &clusterName,
 	})
@@ -508,6 +542,21 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 	return &proto.ClusterDeleteResponse{}, nil
 }
 
+func (ctrl AWSController) deleteNode(ctx context.Context, client *eks.EKS, cluster, node string) error {
+	nodeDeleteOut, err := client.DeleteNodegroupWithContext(ctx, &eks.DeleteNodegroupInput{
+		ClusterName:   &cluster,
+		NodegroupName: &node,
+	})
+
+	if err != nil {
+		return err
+
+	}
+	ctrl.logger.Infof("requested nodegroup '%s' to be deleted, Status %s. It might take some time, check AWS console for more.", node, *nodeDeleteOut.Nodegroup.Status)
+	return nil
+}
+
+//DeleteNode
 func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 	clusterName := req.ClusterName
 	nodeName := req.NodeGroupName
@@ -519,16 +568,12 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 	}
 	client := session.getEksClient()
 
-	nodeDeleteOut, err := client.DeleteNodegroupWithContext(ctx, &eks.DeleteNodegroupInput{
-		ClusterName:   &clusterName,
-		NodegroupName: &nodeName,
-	})
-
+	err = ctrl.deleteNode(ctx, client, clusterName, nodeName)
 	if err != nil {
 		ctrl.logger.Errorw("failed to delete nodegroup", "nodename", nodeName)
 		return &proto.NodeDeleteResponse{Error: err.Error()}, err
 	}
-	ctrl.logger.Infof("requested nodegroup '%s' to be deleted, Status %s. It might take some time, check AWS console for more.", nodeName, *nodeDeleteOut.Nodegroup.Status)
+
 	return &proto.NodeDeleteResponse{}, nil
 }
 
@@ -559,19 +604,4 @@ func (ctrl AWSController) GetToken(ctx context.Context, req *proto.GetTokenReque
 		CaData:   string(kubeConfig.CAData),
 		Endpoint: kubeConfig.Host,
 	}, nil
-}
-
-//TODO: refactor service interface, this is not required here
-func (ctrl AWSController) RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error) {
-	return nil, nil
-}
-
-//WriteCredential
-func (ctrl AWSController) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
-	return nil, nil
-}
-
-//ReadCredential
-func (ctrl AWSController) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
-	return nil, nil
 }

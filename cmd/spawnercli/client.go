@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	clusterName = "us-west-2-netbook-aws-test-1"
+	clusterName = "us-west-2-netbook-aws-test-2"
 	region      = "us-west-2"
 	provider    = "aws"
 	accountName = "netbook-aws"
@@ -133,6 +133,7 @@ func main() {
 		Region:      region,
 		Provider:    provider,
 		AccountName: accountName,
+		ForceDelete: true,
 	}
 
 	deleteNodeReq := &proto.NodeDeleteRequest{

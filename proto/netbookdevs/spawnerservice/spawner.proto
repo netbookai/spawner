@@ -193,6 +193,7 @@ message ClusterDeleteRequest {
   string region = 2;
   string accountName = 3;
   string clusterName = 4;
+  bool forceDelete = 5;
 }
 
 message ClusterDeleteResponse {
