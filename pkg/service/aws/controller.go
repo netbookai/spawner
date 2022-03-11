@@ -506,7 +506,15 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 
 	clusterName := req.ClusterName
 	region := req.Region
+<<<<<<< HEAD
 	forceDelete := req.ForceDelete
+||||||| parent of 68117c2 (refactor force field name and delete all nodes function)
+	forceDelete := req.Force
+
+=======
+	forceDelete := req.ForceDelete
+
+>>>>>>> 68117c2 (refactor force field name and delete all nodes function)
 	session, err := NewSession(ctx, region, req.AccountName)
 	if err != nil {
 		return nil, err
