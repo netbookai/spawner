@@ -281,7 +281,7 @@ func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterS
 	cluster, err := getClusterSpec(ctx, client, clusterName)
 
 	if err != nil {
-		ctrl.logger.Error("failed to fetch cluster status", err)
+		ctrl.logger.Errorw("failed to fetch cluster status", "error", err, "cluster", clusterName, "region", region)
 		return &proto.ClusterStatusResponse{
 			Error: err.Error(),
 		}, err
@@ -444,7 +444,7 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 
 	if err != nil {
 
-		ctrl.logger.Errorf("unable to get cluster '%s': %s", clusterName, err.Error())
+		ctrl.logger.Errorw("unable to get cluster, spec", "error", err.Error(), "cluster", clusterName, "region", region)
 		return nil, err
 	}
 
@@ -591,12 +591,17 @@ func (ctrl AWSController) GetToken(ctx context.Context, req *proto.GetTokenReque
 		return nil, err
 	}
 	client := session.getEksClient()
-	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debugw("fetching cluster status", "cluster", clusterName, "region", region)
+
 	cluster, err := getClusterSpec(ctx, client, clusterName)
+	if err != nil {
+		ctrl.logger.Errorw("failed to get cluster spec", "error", err, "cluster", clusterName, "region", region)
+		return nil, err
+	}
 
 	kubeConfig, err := session.getKubeConfig(cluster)
 	if err != nil {
-		ctrl.logger.Errorf("failed to get k8s %s", err.Error())
+		ctrl.logger.Errorw("failed to get k8s config", "error", err, "cluster", clusterName, "region", region)
 		return nil, err
 	}
 	return &proto.GetTokenResponse{
