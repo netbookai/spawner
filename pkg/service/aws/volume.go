@@ -53,7 +53,13 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	size := req.GetSize()
 	snapshotId := req.GetSnapshotid()
 	region := req.Region
-	tags := awsTags(req.GetLabels())
+	labels := req.GetLabels()
+
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	tags := awsTags(labels)
 
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
@@ -151,7 +157,14 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 
 	volumeid := req.GetVolumeid()
 	region := req.Region
-	tags := awsTags(req.GetLabels())
+
+	labels := req.GetLabels()
+
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	tags := awsTags(labels)
 
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
@@ -202,7 +215,14 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 
 	volumeid := req.GetVolumeid()
 	region := req.Region
-	tags := awsTags(req.GetLabels())
+
+	labels := req.GetLabels()
+
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	tags := awsTags(labels)
 
 	inputSnapshot := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
