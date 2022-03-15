@@ -75,6 +75,7 @@ func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterR
 	ctrl.logger.Debugf("checking cluster status for '%s', region '%s'", clusterName, region)
 
 	cluster, err := getClusterSpec(ctx, eksClient, clusterName)
+	fmt.Println(cluster, " \n ", err)
 
 	if err != nil {
 		if err.(awserr.Error).Code() == eks.ErrCodeResourceNotFoundException {
@@ -87,6 +88,9 @@ func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterR
 			}
 
 			ctrl.logger.Info("cluster '%s' is creating state, it might take some time, please check AWS console for status", clusterName)
+		} else {
+			ctrl.logger.Errorw("failed to check if cluster exist", "error", err)
+			return nil, err
 		}
 	} else {
 		ctrl.logger.Infof("cluster '%s', already exist", clusterName)
