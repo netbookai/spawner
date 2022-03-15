@@ -18,6 +18,7 @@ const (
 	region      = "us-west-2"
 	provider    = "aws"
 	accountName = "netbook-aws"
+	nodeName    = "spwaner-netbook-test-2"
 )
 
 func main() {
@@ -109,12 +110,12 @@ func main() {
 	}
 
 	addNode := &proto.NodeSpec{
-		Name:       "us-east-2-netbook-aws-1645989637-188fed-2",
+		Name:       nodeName,
 		Instance:   "t2.medium",
 		DiskSize:   20,
 		GpuEnabled: false,
-		Labels: map[string]string{"cluster-name": "us-east-2-netbook-aws-1645989637",
-			"node-name":   "us-east-2-netbook-aws-1645989637-188fed",
+		Labels: map[string]string{"cluster-name": clusterName,
+			"node-name":   nodeName,
 			"user":        "98fe250a-7d98-4604-8317-1fbadda737ea",
 			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
 		},

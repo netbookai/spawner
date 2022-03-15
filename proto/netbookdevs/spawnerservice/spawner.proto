@@ -85,6 +85,17 @@ message NodeSpec {
   string clusterId = 9;
   map<string, string> labels = 10;
   bool gpu_enabled = 11;
+  Health health = 12;
+}
+
+message Issue {
+  string code = 1;
+  string description = 2;
+  repeated string resourceIds = 3;
+}
+
+message Health {
+  repeated Issue issue = 1;
 }
 
 message ClusterRequest {
