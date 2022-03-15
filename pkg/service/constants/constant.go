@@ -10,7 +10,6 @@ var (
 	Scope                      = "scope"
 
 	ProvisionerLabel         = "provisioner"
-	RancherLabel             = "rancher"
 	ClusterNameLabel         = "cluster-name"
 	WorkspaceLabel           = "workspaceid"
 	NodeNameLabel            = "node-name"

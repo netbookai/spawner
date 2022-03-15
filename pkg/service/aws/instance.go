@@ -10,6 +10,8 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 )
 
+//FIXME: unused exported functions
+
 func WaitTillInstanceRunning(sess *Session, region string, instanceLabelMap map[string]string) error {
 	return sess.getEC2Client().WaitUntilInstanceRunning(&ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
