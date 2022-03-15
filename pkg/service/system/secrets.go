@@ -129,7 +129,7 @@ func getSecretManager(region string) (*secretsmanager.SecretsManager, error) {
 func GetAwsCredentials(ctx context.Context, region, accountName string) (*credentials.Credentials, error) {
 	secret, err := getSecretManager(region)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "GetAwsCredentials: failed to get secretsmanager")
 	}
 
 	input := &secretsmanager.GetSecretValueInput{
@@ -140,7 +140,7 @@ func GetAwsCredentials(ctx context.Context, region, accountName string) (*creden
 	result, err := secret.GetSecretValueWithContext(ctx, input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
-			return nil, aerr
+			return nil, errors.Wrapf(aerr, "GetAwsCredentials: failed to fetch user credentials")
 		}
 	}
 	return parseCredentials(*result.SecretString)

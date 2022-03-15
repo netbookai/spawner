@@ -40,7 +40,9 @@ func NewSession(ctx context.Context, region string, accountName string) (*Sessio
 		log.Println("running in dev mode, using ", conf.AWSAccessID)
 		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
 	} else {
-		awsCreds, err = system.GetAwsCredentials(ctx, region, accountName)
+		//secret manager is hosted in particular region, all writes happen to the same region
+		secretHostRegion := config.Get().SecretHostRegion
+		awsCreds, err = system.GetAwsCredentials(ctx, secretHostRegion, accountName)
 		if err != nil {
 			return nil, err
 		}
