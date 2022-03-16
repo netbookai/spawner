@@ -273,13 +273,24 @@ func CreateRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack,
 		subnetCidrArr = subnetUpto8Cidr[:]
 	}
 
+	azs := make([]string, len(azsInRegion.AvailabilityZones))
+	for _, az := range azsInRegion.AvailabilityZones {
+		azs = append(azs, *az.ZoneName)
+	}
+	// Sort AZ by names
+	sort.Strings(azs)
+
 	rv.Subnets = []*ec2.Subnet{}
-	for ind, avblZone := range azsInRegion.AvailabilityZones {
+	for ind, avblZone := range azs {
+		// Only considering first 3 AZs per region
+		if ind > 2 {
+			break
+		}
 		subnetName := fmt.Sprintf(subnetNameFmt, region, strconv.Itoa(ind))
-		subnetAz := avblZone.ZoneName
-		subnet, err := CreateSubnetStack(client, vpc, vpcName, subnetName, subnetCidrArr[ind], *subnetAz, routeTable)
+		subnetAz := avblZone
+		subnet, err := CreateSubnetStack(client, vpc, vpcName, subnetName, subnetCidrArr[ind], subnetAz, routeTable)
 		if err != nil {
-			return rv, errors.Wrapf(err, "error creating subnet %s for region %s vpc %s az %s", subnetName, region, *vpc.VpcId, *subnetAz)
+			return rv, errors.Wrapf(err, "error creating subnet %s for region %s vpc %s az %s", subnetName, region, *vpc.VpcId, subnetAz)
 		}
 		rv.Subnets = append(rv.Subnets, subnet)
 	}
