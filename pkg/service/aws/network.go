@@ -273,7 +273,7 @@ func CreateRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack,
 		subnetCidrArr = subnetUpto8Cidr[:]
 	}
 
-	azs := make([]string, len(azsInRegion.AvailabilityZones))
+	azs := make([]string, 0)
 	for _, az := range azsInRegion.AvailabilityZones {
 		azs = append(azs, *az.ZoneName)
 	}
