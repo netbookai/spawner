@@ -629,6 +629,21 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 	}
 	client := session.getEksClient()
 
+	nodeGroup, err := client.DescribeNodegroupWithContext(ctx, &eks.DescribeNodegroupInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeName,
+	})
+
+	if err != nil {
+		ctrl.logger.Errorw("failed to get nodegroup details", "error", err)
+		return nil, err
+	}
+
+	if scope, ok := nodeGroup.Nodegroup.Tags[constants.Scope]; !ok || *scope != ScopeTag() {
+		ctrl.logger.Errorw("nodegroup is not available in scope", "scope", ScopeTag())
+		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, ScopeTag())
+	}
+
 	err = ctrl.deleteNode(ctx, client, clusterName, nodeName)
 	if err != nil {
 		ctrl.logger.Errorw("failed to delete nodegroup", "nodename", nodeName)
