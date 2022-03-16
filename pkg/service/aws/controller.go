@@ -565,6 +565,16 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 	}
 	client := session.getEksClient()
 
+	cluster, err := getClusterSpec(ctx, client, clusterName)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "DeleteCluster: cannot get cluster spec")
+	}
+
+	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != ScopeTag() {
+		return nil, fmt.Errorf("cluster doesnt not available in '%s'", ScopeTag())
+	}
+
 	//get node groups attached to clients when force delete is enabled.
 	//if available delete all attached node groups and proceed to deleting cluster
 	if forceDelete {
