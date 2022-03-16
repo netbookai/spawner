@@ -90,7 +90,8 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 	client := session.getEksClient()
 	createClusterOutput, err := client.CreateClusterWithContext(ctx, clusterInput)
 	if err != nil {
-		svc.logger.Errorf("failed to create cluster %s", err.Error())
+		svc.logger.Errorw("failed to create cluster", "error", err)
+		return nil, err
 	}
 
 	return createClusterOutput.Cluster, nil
