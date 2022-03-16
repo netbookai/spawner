@@ -203,11 +203,13 @@ func DeleteRegionWkspNetworkStack(session *Session, netStk AwsWkspRegionNetworkS
 		}
 	}
 
-	_, err = client.DeleteVpc(&ec2.DeleteVpcInput{
-		VpcId: netStk.Vpc.VpcId,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "error deleting vpc %s in region %s", *netStk.Vpc.VpcId, region)
+	if netStk.Vpc != nil {
+		_, err = client.DeleteVpc(&ec2.DeleteVpcInput{
+			VpcId: netStk.Vpc.VpcId,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "error deleting vpc %s in region %s", *netStk.Vpc.VpcId, region)
+		}
 	}
 
 	return nil
