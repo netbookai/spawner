@@ -46,7 +46,7 @@ func (a *AzureController) ClusterStatus(ctx context.Context, req *proto.ClusterS
 }
 
 func (a *AzureController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return a.addNode(ctx, req)
 }
 
 func (a *AzureController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {

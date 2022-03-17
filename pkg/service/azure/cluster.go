@@ -48,6 +48,7 @@ func (az *AzureController) createAKSCluster(ctx context.Context, req *proto.Clus
 
 	}
 	nodeTags := labels.GetNodeLabel(req.Node)
+	fmt.Println("craeting cluster")
 
 	future, err := aksClient.CreateOrUpdate(
 		ctx,
@@ -81,6 +82,7 @@ func (az *AzureController) createAKSCluster(ctx context.Context, req *proto.Clus
 		return nil, fmt.Errorf("cannot create AKS cluster: %v", err)
 	}
 
+	az.logger.Infow("waiting on the future completion")
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
 		az.logger.Errorw("failed to get the future response", "error", err)
