@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
@@ -43,7 +44,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnetIds)
 	}
 
-	tags := DefaultTags()
+	tags := labels.DefaultTags()
 	tags[constants.ClusterNameLabel] = &clusterName
 	//override with additional labels from request
 	for k, v := range req.Labels {

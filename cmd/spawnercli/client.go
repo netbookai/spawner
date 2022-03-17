@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	clusterName = "us-west-2-netbook-aws-test-2"
-	region      = "us-west-2"
-	provider    = "aws"
+	clusterName = "eastus2-netbook-azure-test-1"
+	region      = "eastus2" //"us-west-2"
+	provider    = "azure"
 	accountName = "netbook-aws"
 	nodeName    = "spwaner-netbook-test-2"
+	instance    = "Standard_A2_v2"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 	defer sugar.Sync()
 
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
-	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
+	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of spawner")
 	method := fs.String("method", "HealthCheck", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
@@ -52,7 +53,7 @@ func main() {
 
 	node := &proto.NodeSpec{
 		Name:     "sandbox-test-nsp-ng-01",
-		Instance: "t3.medium",
+		Instance: instance,
 		DiskSize: 13,
 	}
 	createClusterReq := &proto.ClusterRequest{
@@ -110,8 +111,8 @@ func main() {
 	}
 
 	addNode := &proto.NodeSpec{
-		Name:       nodeName,
-		Instance:   "t2.medium",
+		Name:       "us-east-2-netbook-aws-1645989637-188fed-2",
+		Instance:   instance,
 		DiskSize:   20,
 		GpuEnabled: false,
 		Labels: map[string]string{"cluster-name": clusterName,

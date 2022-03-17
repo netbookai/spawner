@@ -8,6 +8,7 @@ import (
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/service/aws"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/azure"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/rancher"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -40,8 +41,9 @@ type SpawnerService interface {
 
 //spawnerService manage provider and clusters
 type spawnerService struct {
-	awsController Controller
-	logger        *zap.SugaredLogger
+	awsController   Controller
+	azureController Controller
+	logger          *zap.SugaredLogger
 
 	proto.UnimplementedSpawnerServiceServer
 }
@@ -50,8 +52,9 @@ type spawnerService struct {
 func New(logger *zap.SugaredLogger) SpawnerService {
 
 	svc := &spawnerService{
-		awsController: aws.NewAWSController(logger),
-		logger:        logger,
+		awsController:   aws.NewAWSController(logger),
+		azureController: azure.NewController(logger),
+		logger:          logger,
 	}
 	return svc
 }
@@ -60,6 +63,8 @@ func (s *spawnerService) controller(provider string) (Controller, error) {
 	switch provider {
 	case "aws":
 		return s.awsController, nil
+	case "azure":
+		return s.azureController, nil
 	}
 	return nil, fmt.Errorf(ProviderNotFound, provider)
 }

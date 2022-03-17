@@ -30,3 +30,8 @@ const (
 	AzureCloud CloudProvider = "azure"
 	GcpCloud   CloudProvider = "gcp"
 )
+
+const (
+	Active   = "active"
+	Inactive = "inactive"
+)

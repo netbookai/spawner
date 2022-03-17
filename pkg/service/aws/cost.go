@@ -102,6 +102,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 			for _, key := range group.Keys {
 
 				if key != nil {
+					key := key
 					groupKey += *key
 				}
 
