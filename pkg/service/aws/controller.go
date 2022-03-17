@@ -572,8 +572,8 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 		return nil, errors.Wrap(err, "DeleteCluster: cannot get cluster spec")
 	}
 
-	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != ScopeTag() {
-		return nil, fmt.Errorf("cluster doesnt not available in '%s'", ScopeTag())
+	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
+		return nil, fmt.Errorf("cluster doesnt not available in '%s'", labels.ScopeTag())
 	}
 
 	//get node groups attached to clients when force delete is enabled.
@@ -640,9 +640,9 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 		return nil, err
 	}
 
-	if scope, ok := nodeGroup.Nodegroup.Tags[constants.Scope]; !ok || *scope != ScopeTag() {
-		ctrl.logger.Errorw("nodegroup is not available in scope", "scope", ScopeTag())
-		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, ScopeTag())
+	if scope, ok := nodeGroup.Nodegroup.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
+		ctrl.logger.Errorw("nodegroup is not available in scope", "scope", labels.ScopeTag())
+		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, labels.ScopeTag())
 	}
 
 	err = ctrl.deleteNode(ctx, client, clusterName, nodeName)
