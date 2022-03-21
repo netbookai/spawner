@@ -26,7 +26,7 @@ func (a *AzureController) GetCluster(ctx context.Context, req *proto.GetClusterR
 }
 
 func (a *AzureController) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return a.getClusters(ctx, req)
 }
 
 func (a *AzureController) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {

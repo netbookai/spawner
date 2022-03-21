@@ -18,15 +18,6 @@ const testpubkey = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDL67TCv+MyUnT0gHUl2xpJ
 
 func (az *AzureController) createAKSCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 
-	//	_, err := os.Stat(sshPublicKeyPath)
-	//	if err == nil {
-	//		sshBytes, err := ioutil.ReadFile(sshPublicKeyPath)
-	//		if err != nil {
-	//			log.Fatalf("failed to read SSH key data: %v", err)
-	//		}
-	//		sshKeyData = string(sshBytes)
-	//	} else {
-	//	}
 	config := config.Get()
 	clusterName := req.ClusterName
 	groupName := config.AzureResourceGroup
@@ -48,8 +39,8 @@ func (az *AzureController) createAKSCluster(ctx context.Context, req *proto.Clus
 
 	}
 	nodeTags := labels.GetNodeLabel(req.Node)
-	fmt.Println("craeting cluster")
 
+	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/create-or-update
 	future, err := aksClient.CreateOrUpdate(
 		ctx,
 		groupName,
@@ -67,7 +58,7 @@ func (az *AzureController) createAKSCluster(ctx context.Context, req *proto.Clus
 						VMSize:              to.StringPtr(req.Node.Instance),
 						Tags:                nodeTags,
 						Mode:                containerservice.AgentPoolModeSystem,
-						OrchestratorVersion: &constants.KubeVersion,
+						OrchestratorVersion: &constants.AzureKubeVersion,
 					},
 				},
 				ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
@@ -105,16 +96,16 @@ func (az *AzureController) getCluster(ctx context.Context, req *proto.GetCluster
 	}
 
 	az.logger.Infow("fetching cluster information", "cluster", clusterName)
+	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/get
 	clstr, err := aksClient.Get(ctx, groupName, clusterName)
 	if err != nil {
 		az.logger.Errorw("failed to get cluster ", "error", err)
 		return nil, err
 	}
 
-	state := constants.Inactive
-
 	node := (*clstr.AgentPoolProfiles)[0]
 
+	state := constants.Inactive
 	if node.PowerState.Code == containerservice.CodeRunning {
 		state = constants.Active
 	}
@@ -142,6 +133,7 @@ func (az *AzureController) deleteCluster(ctx context.Context, req *proto.Cluster
 	config := config.Get()
 	groupName := config.AzureResourceGroup
 
+	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/delete
 	future, err := aksClient.Delete(ctx, groupName, clusterName)
 
 	if err != nil {
@@ -158,4 +150,61 @@ func (az *AzureController) deleteCluster(ctx context.Context, req *proto.Cluster
 
 	return &proto.ClusterDeleteResponse{}, nil
 
+}
+
+func (a *AzureController) getClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
+
+	aksClient, err := getAKSClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "creaetAKSCluster: cannot to get AKS client")
+	}
+
+	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/list
+	result, err := aksClient.List(ctx)
+
+	if err != nil {
+		a.logger.Errorw("failed to list the cluster ", "error", err)
+		return nil, err
+	}
+
+	clusters := make([]*proto.ClusterSpec, 0, len(result.Values()))
+	for _, cl := range result.Values() {
+		mcapp := cl.AgentPoolProfiles
+		nodes := make([]*proto.NodeSpec, 0, len(*mcapp))
+
+		for _, app := range *mcapp {
+			state := constants.Inactive
+			if app.PowerState.Code == containerservice.CodeRunning {
+				state = constants.Active
+			}
+			zones := ""
+			if app.AvailabilityZones != nil {
+				zones = (*app.AvailabilityZones)[0]
+			}
+			node := &proto.NodeSpec{
+				Name:             *app.Name,
+				Instance:         *app.VMSize,
+				DiskSize:         *app.OsDiskSizeGB,
+				State:            state,
+				IpAddr:           "",
+				Availabilityzone: zones,
+				ClusterId:        *cl.ID,
+				Labels:           aws.StringValueMap(app.Tags),
+				GpuEnabled:       false,
+				//TODO: get health
+				Health: &proto.Health{},
+			}
+			nodes = append(nodes, node)
+		}
+
+		spec := &proto.ClusterSpec{
+			Name:      *cl.Name,
+			ClusterId: *cl.ID,
+			NodeSpec:  nodes,
+		}
+		clusters = append(clusters, spec)
+	}
+
+	return &proto.GetClustersResponse{
+		Clusters: clusters}, nil
 }

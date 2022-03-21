@@ -18,42 +18,45 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 
 	clusterName := req.ClusterName
 	groupName := config.AzureResourceGroup
-	region := req.Region
-
-	clientID := config.AzureClientID
-	clientSecret := config.AzureClientSecret
 
 	aksClient, err := getAKSClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creaetAKSCluster: cannot to get AKS client")
 	}
 
+	a.logger.Infow("fetching cluster information", "cluster", clusterName)
+	clstr, err := aksClient.Get(ctx, groupName, clusterName)
+	if err != nil {
+		a.logger.Errorw("failed to get cluster ", "error", err)
+		return nil, err
+	}
+
+	apc, err := getAgentPoolClient()
+	if err != nil {
+		a.logger.Errorw("failed to get agent pool client", "error", err)
+		return nil, err
+	}
+	nodeName := req.NodeSpec.Name
+
+	a.logger.Infow("cluster found, adding new node", "cluster", clusterName, "node", nodeName)
+
 	nodeTags := labels.GetNodeLabel(req.NodeSpec)
-	future, err := aksClient.CreateOrUpdate(
+
+	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/agent-pools/create-or-update
+	future, err := apc.CreateOrUpdate(
 		ctx,
 		groupName,
-		clusterName,
-		containerservice.ManagedCluster{
-			Name:     &clusterName,
-			Location: &region,
-			ManagedClusterProperties: &containerservice.ManagedClusterProperties{
-				DNSPrefix: &clusterName,
-				AgentPoolProfiles: &[]containerservice.ManagedClusterAgentPoolProfile{
-					{
+		*clstr.Name,
+		nodeName,
+		containerservice.AgentPool{
+			ManagedClusterAgentPoolProfileProperties: &containerservice.ManagedClusterAgentPoolProfileProperties{
 
-						Count:               to.Int32Ptr(1),
-						Name:                to.StringPtr(req.NodeSpec.Name),
-						VMSize:              to.StringPtr(req.NodeSpec.Instance),
-						Tags:                nodeTags,
-						Mode:                containerservice.AgentPoolModeUser,
-						OrchestratorVersion: &constants.KubeVersion,
-						OsDiskSizeGB:        &req.NodeSpec.DiskSize,
-					},
-				},
-				ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{
-					ClientID: to.StringPtr(clientID),
-					Secret:   to.StringPtr(clientSecret),
-				},
+				Count:               to.Int32Ptr(1),
+				VMSize:              to.StringPtr(req.NodeSpec.Instance),
+				Tags:                nodeTags,
+				Mode:                containerservice.AgentPoolModeUser,
+				OrchestratorVersion: &constants.AzureKubeVersion,
+				OsDiskSizeGB:        &req.NodeSpec.DiskSize,
 			},
 		},
 	)
@@ -63,6 +66,7 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 		return nil, errors.Wrapf(err, "failed to add node to the cluster")
 	}
 
+	a.logger.Infow("requested to add new node, waiting on completion")
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
 		a.logger.Errorw("failed to add node", "error", err)

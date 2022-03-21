@@ -18,7 +18,7 @@ const (
 	region      = "eastus2" //"us-west-2"
 	provider    = "azure"
 	accountName = "netbook-aws"
-	nodeName    = "spwaner-netbook-test-2"
+	nodeName    = "spawner1"
 	instance    = "Standard_A2_v2"
 )
 
@@ -111,9 +111,9 @@ func main() {
 	}
 
 	addNode := &proto.NodeSpec{
-		Name:       "us-east-2-netbook-aws-1645989637-188fed-2",
+		Name:       nodeName,
 		Instance:   instance,
-		DiskSize:   20,
+		DiskSize:   30,
 		GpuEnabled: false,
 		Labels: map[string]string{"cluster-name": clusterName,
 			"node-name":   nodeName,

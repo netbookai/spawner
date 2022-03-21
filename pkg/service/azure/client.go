@@ -22,3 +22,17 @@ func getAKSClient() (*containerservice.ManagedClustersClient, error) {
 	aksClient.PollingDuration = time.Hour * 1
 	return &aksClient, nil
 }
+
+func getAgentPoolClient() (*containerservice.AgentPoolsClient, error) {
+	config := config.Get()
+
+	agentClient := containerservice.NewAgentPoolsClient(config.AzureSubscriptionID)
+	auth, err := iam.GetResourceManagementAuthorizer()
+	if err != nil {
+		return nil, err
+	}
+	agentClient.Authorizer = auth
+	agentClient.AddToUserAgent(constants.SpawnerServiceLabel)
+	agentClient.PollingDuration = time.Hour * 1
+	return &agentClient, nil
+}
