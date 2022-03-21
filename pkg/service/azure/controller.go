@@ -42,7 +42,7 @@ func (a *AzureController) AddRoute53Record(ctx context.Context, req *proto.AddRo
 }
 
 func (a *AzureController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return a.clusterStatus(ctx, req)
 }
 
 func (a *AzureController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
