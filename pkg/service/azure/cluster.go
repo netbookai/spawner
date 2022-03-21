@@ -3,6 +3,7 @@ package azure
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -146,6 +147,11 @@ func (a *AzureController) deleteCluster(ctx context.Context, req *proto.ClusterD
 		a.logger.Errorw("failed to get the future response", "error", err)
 		return nil, fmt.Errorf("cannot get the AKS cluster create or update future response: %v", err)
 	}
+
+	if future.Response().StatusCode == http.StatusNoContent {
+		return nil, fmt.Errorf("request resource '%s' not found", clusterName)
+	}
+
 	a.logger.Infow("cluster deleted successfully", "cluster", clusterName, "response", future.Status())
 
 	return &proto.ClusterDeleteResponse{}, nil

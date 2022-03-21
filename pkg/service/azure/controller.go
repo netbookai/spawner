@@ -29,18 +29,6 @@ func (a *AzureController) GetClusters(ctx context.Context, req *proto.GetCluster
 	return a.getClusters(ctx, req)
 }
 
-func (a *AzureController) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
-	panic("not implemented") // TODO: Implement
-}
-
-func (a *AzureController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
-	panic("not implemented") // TODO: Implement
-}
-
-func (a *AzureController) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
-	panic("not implemented") // TODO: Implement
-}
-
 func (a *AzureController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	return a.clusterStatus(ctx, req)
 }
@@ -54,6 +42,18 @@ func (a *AzureController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 }
 
 func (a *AzureController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
+	return a.deleteNode(ctx, req)
+}
+
+func (a *AzureController) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (a *AzureController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
+	panic("not implemented") // TODO: Implement
+}
+
+func (a *AzureController) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 

@@ -2,6 +2,8 @@ package azure
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -74,4 +76,37 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 	}
 
 	return &proto.NodeSpawnResponse{}, nil
+}
+
+func (a *AzureController) deleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
+
+	groupName := config.Get().AzureResourceGroup
+	apc, err := getAgentPoolClient()
+	if err != nil {
+		a.logger.Errorw("failed to get agent pool client", "error", err)
+		return nil, err
+	}
+
+	cluster := req.GetClusterName()
+	node := req.GetNodeGroupName()
+
+	future, err := apc.Delete(ctx, groupName, cluster, node)
+
+	if err != nil {
+		a.logger.Errorw("failed to delete the node pool", "error", err)
+		return nil, err
+	}
+	err = future.WaitForCompletionRef(ctx, apc.Client)
+
+	if err != nil {
+		a.logger.Errorw("failed to delete the node pool", "error", err)
+		return nil, err
+	}
+
+	if future.Response().StatusCode == http.StatusNoContent {
+		return nil, fmt.Errorf("request resource '%s' not found in cluster '%s'", node, cluster)
+	}
+
+	a.logger.Infow("delete node successfully", "status", future.Response().Status)
+	return &proto.NodeDeleteResponse{}, nil
 }

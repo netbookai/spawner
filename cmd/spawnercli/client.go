@@ -140,7 +140,7 @@ func main() {
 
 	deleteNodeReq := &proto.NodeDeleteRequest{
 		ClusterName:   clusterName,
-		NodeGroupName: "ng-04",
+		NodeGroupName: nodeName,
 		Region:        region,
 		Provider:      provider,
 		AccountName:   accountName,
