@@ -1,0 +1,17 @@
+package service
+
+import (
+	"context"
+
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
+)
+
+func (svc *spawnerService) addRoute53Record(ctx context.Context, dnsName, recordName, regionName string) (string, error) {
+	changeId, err := system.AddRoute53Record(ctx, dnsName, recordName, regionName)
+	if err != nil {
+		svc.logger.Errorw("failed to add route53 record", "error", err)
+		return "", err
+	}
+
+	return changeId, nil
+}

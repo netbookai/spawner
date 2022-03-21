@@ -22,7 +22,6 @@ type SpawnerService interface {
 	GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error)
 	AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error)
 	GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error)
-	AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error)
 	ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error)
 	AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error)
 	DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error)
@@ -36,6 +35,7 @@ type SpawnerService interface {
 	RegisterWithRancher(context.Context, *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error)
 	WriteCredential(context.Context, *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error)
 	ReadCredential(context.Context, *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error)
+	AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -114,11 +114,21 @@ func (s *spawnerService) GetToken(ctx context.Context, req *proto.GetTokenReques
 
 //AddRoute53Record
 func (s *spawnerService) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
-	provider, err := s.controller(req.Provider)
+	dnsName := req.GetDnsName()
+	recordName := req.GetRecordName()
+	regionName := req.GetRegion()
+
+	changeId, err := s.addRoute53Record(ctx, dnsName, recordName, regionName)
+	s.logger.Infow("added route 53 record", "change-id", changeId)
 	if err != nil {
-		return nil, err
+		s.logger.Errorw("failed to add route53 record", "error", err)
+		res := &proto.AddRoute53RecordResponse{
+			Status: "Failed",
+			Error:  "",
+		}
+		return res, err
 	}
-	return provider.AddRoute53Record(ctx, req)
+	return &proto.AddRoute53RecordResponse{}, nil
 }
 
 //ClusterStatus get cluster status in given provider
