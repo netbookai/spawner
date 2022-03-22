@@ -50,7 +50,7 @@ func (a *AzureController) AddToken(ctx context.Context, req *proto.AddTokenReque
 }
 
 func (a *AzureController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return a.getToken(ctx, req)
 }
 
 func (a *AzureController) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
