@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	clusterName = "us-west-2-netbook-aws-test-2"
-	region      = "us-west-2"
-	provider    = "aws"
+	clusterName = "eastus2-netbook-azure-test-1"
+	region      = "eastus2" //"us-west-2"
+	provider    = "azure"
 	accountName = "netbook-aws"
-	nodeName    = "spwaner-netbook-test-2"
+	nodeName    = "spawner1"
+	instance    = "Standard_A2_v2"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 	defer sugar.Sync()
 
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
-	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
+	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of spawner")
 	method := fs.String("method", "HealthCheck", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
@@ -52,7 +53,7 @@ func main() {
 
 	node := &proto.NodeSpec{
 		Name:     "sandbox-test-nsp-ng-01",
-		Instance: "t3.medium",
+		Instance: instance,
 		DiskSize: 13,
 	}
 	createClusterReq := &proto.ClusterRequest{
@@ -111,8 +112,8 @@ func main() {
 
 	addNode := &proto.NodeSpec{
 		Name:       nodeName,
-		Instance:   "t2.medium",
-		DiskSize:   20,
+		Instance:   instance,
+		DiskSize:   30,
 		GpuEnabled: false,
 		Labels: map[string]string{"cluster-name": clusterName,
 			"node-name":   nodeName,
@@ -139,14 +140,14 @@ func main() {
 
 	deleteNodeReq := &proto.NodeDeleteRequest{
 		ClusterName:   clusterName,
-		NodeGroupName: "ng-04",
+		NodeGroupName: nodeName,
 		Region:        region,
 		Provider:      provider,
 		AccountName:   accountName,
 	}
 
 	createVolumeReq := &proto.CreateVolumeRequest{
-		Availabilityzone: "us-west-2a",
+		Availabilityzone: region,
 		Volumetype:       "gp2",
 		Size:             1,
 		Snapshotid:       "",
@@ -156,7 +157,7 @@ func main() {
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
-		Volumeid:    "vol-05d7e98ae385b2e29",
+		Volumeid:    "vol-eastus2-1-20220322173627",
 		Region:      region,
 		Provider:    provider,
 		AccountName: accountName,

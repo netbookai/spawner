@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -185,10 +186,10 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 			}
 		}
 
-		state := "inactive"
+		state := constants.Inactive
 		for _, cond := range node.Status.Conditions {
 			if cond.Type == "Ready" {
-				state = "active"
+				state = constants.Active
 			}
 		}
 
@@ -274,7 +275,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 		if !ok {
 			continue
 		}
-		if ScopeTag() != *scope {
+		if labels.ScopeTag() != *scope {
 			//skip clusters which is of not spawner env scope
 			continue
 		}
@@ -411,7 +412,7 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 
 	diskSize := int64(nodeSpec.DiskSize)
 
-	labels := getNodeLabel(nodeSpec)
+	labels := labels.GetNodeLabel(nodeSpec)
 
 	amiType := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
@@ -446,7 +447,7 @@ func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clu
 	diskSize := int64(nodeSpec.DiskSize)
 
 	//add labels from the given spec
-	labels := getNodeLabel(nodeSpec)
+	labels := labels.GetNodeLabel(nodeSpec)
 
 	amiType := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
@@ -571,8 +572,8 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 		return nil, errors.Wrap(err, "DeleteCluster: cannot get cluster spec")
 	}
 
-	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != ScopeTag() {
-		return nil, fmt.Errorf("cluster doesnt not available in '%s'", ScopeTag())
+	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
+		return nil, fmt.Errorf("cluster doesnt not available in '%s'", labels.ScopeTag())
 	}
 
 	//get node groups attached to clients when force delete is enabled.
@@ -639,9 +640,9 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 		return nil, err
 	}
 
-	if scope, ok := nodeGroup.Nodegroup.Tags[constants.Scope]; !ok || *scope != ScopeTag() {
-		ctrl.logger.Errorw("nodegroup is not available in scope", "scope", ScopeTag())
-		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, ScopeTag())
+	if scope, ok := nodeGroup.Nodegroup.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
+		ctrl.logger.Errorw("nodegroup is not available in scope", "scope", labels.ScopeTag())
+		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, labels.ScopeTag())
 	}
 
 	err = ctrl.deleteNode(ctx, client, clusterName, nodeName)
