@@ -58,11 +58,11 @@ func (a *AzureController) AddRoute53Record(ctx context.Context, req *proto.AddRo
 }
 
 func (a *AzureController) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return a.createVolume(ctx, req)
 }
 
 func (a *AzureController) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return a.deleteVolume(ctx, req)
 }
 
 func (a *AzureController) CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {

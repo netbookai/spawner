@@ -3,6 +3,7 @@ package azure
 import (
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/azure/iam"
@@ -20,6 +21,7 @@ func getAKSClient() (*containerservice.ManagedClustersClient, error) {
 	aksClient.Authorizer = auth
 	aksClient.AddToUserAgent(constants.SpawnerServiceLabel)
 	aksClient.PollingDuration = time.Hour * 1
+	aksClient.RetryAttempts = 1
 	return &aksClient, nil
 }
 
@@ -35,4 +37,17 @@ func getAgentPoolClient() (*containerservice.AgentPoolsClient, error) {
 	agentClient.AddToUserAgent(constants.SpawnerServiceLabel)
 	agentClient.PollingDuration = time.Hour * 1
 	return &agentClient, nil
+}
+
+func getDisksClient() (*compute.DisksClient, error) {
+	config := config.Get()
+	disksClient := compute.NewDisksClient(config.AzureSubscriptionID)
+	a, err := iam.GetResourceManagementAuthorizer()
+
+	if err != nil {
+		return nil, err
+	}
+	disksClient.Authorizer = a
+	disksClient.AddToUserAgent(constants.SpawnerServiceLabel)
+	return &disksClient, nil
 }

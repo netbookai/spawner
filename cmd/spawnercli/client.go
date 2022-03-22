@@ -147,7 +147,7 @@ func main() {
 	}
 
 	createVolumeReq := &proto.CreateVolumeRequest{
-		Availabilityzone: "us-west-2a",
+		Availabilityzone: region,
 		Volumetype:       "gp2",
 		Size:             1,
 		Snapshotid:       "",
@@ -157,7 +157,7 @@ func main() {
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
-		Volumeid:    "vol-05d7e98ae385b2e29",
+		Volumeid:    "vol-eastus2-1-20220322173627",
 		Region:      region,
 		Provider:    provider,
 		AccountName: accountName,
