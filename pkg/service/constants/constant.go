@@ -21,7 +21,6 @@ var (
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
 	WorkspaceId              = "workspaceid"
 	KubeVersion              = "1.20"
-	AzureKubeVersion         = "1.20.15"
 )
 
 type CloudProvider string
@@ -30,9 +29,4 @@ const (
 	AwsCloud   CloudProvider = "aws"
 	AzureCloud CloudProvider = "azure"
 	GcpCloud   CloudProvider = "gcp"
-)
-
-const (
-	Active   = "active"
-	Inactive = "inactive"
 )

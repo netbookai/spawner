@@ -6,7 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 
 	"go.uber.org/zap"
@@ -29,13 +28,13 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 	}
 }
 
-func awsTags(label map[string]string) []*ec2.Tag {
-	for k, v := range labels.DefaultTags() {
-		label[k] = *v
+func awsTags(labels map[string]string) []*ec2.Tag {
+	for k, v := range DefaultTags() {
+		labels[k] = *v
 	}
 
 	tags := []*ec2.Tag{}
-	for key, value := range label {
+	for key, value := range labels {
 		tags = append(tags, &ec2.Tag{
 			Key:   aws.String(key),
 			Value: aws.String(value),

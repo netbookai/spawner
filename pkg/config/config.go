@@ -22,15 +22,6 @@ type Config struct {
 	AWSSecretKey           string `mapstructure:"AWS_SECRET_KEY"`
 	AWSToken               string `mapstructure:"AWS_TOKEN"`
 	SecretHostRegion       string `mapstructure:"SECRET_HOST_REGION"`
-	//Azure config
-	//AzureCloudProvider could be one of the following
-	// [ "AZURECHINACLOUD", "AZUREGERMANCLOUD", "AZUREPUBLICCLOUD", "AZUREUSGOVERNMENTCLOUD" ]
-	AzureCloudProvider  string `mapstructure:"AZURE_CLOUD_PROVIDER"`
-	AzureSubscriptionID string `mapstructure:"AZURE_SUBSCRIPTION_ID"`
-	AzureTenantID       string `mapstructure:"AZURE_TENANT_ID"`
-	AzureClientID       string `mapstructure:"AZURE_CLIENT_ID"`
-	AzureClientSecret   string `mapstructure:"AZURE_CLIENT_SECRET"`
-	AzureResourceGroup  string `mapstructure:"AZURE_RESOURCE_GROUP"`
 }
 
 // Load reads configuration from file or environment variables.
