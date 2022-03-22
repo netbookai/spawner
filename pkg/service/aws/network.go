@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 )
 
 type AwsWkspRegionNetworkStack struct {
@@ -74,7 +73,7 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 			},
 			{
 				Name:   tagName(constants.Scope),
-				Values: tagValue( /*aws.*/ labels.ScopeTag()),
+				Values: tagValue( /*aws.*/ ScopeTag()),
 			},
 		},
 	})
@@ -98,7 +97,7 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 			},
 			{
 				Name:   tagName(constants.Scope),
-				Values: tagValue( /*aws.*/ labels.ScopeTag()),
+				Values: tagValue( /*aws.*/ ScopeTag()),
 			},
 		},
 	})
@@ -119,7 +118,7 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 			},
 			{
 				Name:   tagName(constants.Scope),
-				Values: tagValue( /*aws.*/ labels.ScopeTag()),
+				Values: tagValue( /*aws.*/ ScopeTag()),
 			},
 		},
 	})
@@ -138,7 +137,7 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 			},
 			{
 				Name:   tagName(constants.Scope),
-				Values: tagValue( /*aws.*/ labels.ScopeTag()),
+				Values: tagValue( /*aws.*/ ScopeTag()),
 			},
 		},
 	})
@@ -324,7 +323,7 @@ func CreateVPC(client *ec2.EC2, name string, vpcCidr string) (*ec2.Vpc, error) {
 					},
 					{
 						Key:   aws.String(constants.Scope),
-						Value: aws.String( /*(internal)aws.*/ labels.ScopeTag()),
+						Value: aws.String( /*(internal)aws.*/ ScopeTag()),
 					},
 				},
 			},
@@ -362,7 +361,7 @@ func CreateInternetGateway(client *ec2.EC2, name string) (*ec2.InternetGateway, 
 					},
 					{
 						Key:   aws.String(constants.Scope),
-						Value: aws.String( /*(internal)aws.*/ labels.ScopeTag()),
+						Value: aws.String( /*(internal)aws.*/ ScopeTag()),
 					},
 				},
 			},
@@ -410,7 +409,7 @@ func CreateRouteTable(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.RouteTab
 					},
 					{
 						Key:   aws.String(constants.Scope),
-						Value: aws.String( /*(internal)aws.*/ labels.ScopeTag()),
+						Value: aws.String( /*(internal)aws.*/ ScopeTag()),
 					},
 				},
 			},
@@ -465,7 +464,7 @@ func CreateSubnet(client *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, ci
 					},
 					{
 						Key:   aws.String(constants.Scope),
-						Value: aws.String( /*(internal)aws.*/ labels.ScopeTag()),
+						Value: aws.String( /*(internal)aws.*/ ScopeTag()),
 					},
 				},
 			},
