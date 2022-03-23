@@ -297,7 +297,12 @@ message GetWorkspacesCostRequest {
   string endDate = 5;
   string granularity = 6;
   string costType = 7;
-  string groupBy = 8;
+  GroupBy groupBy = 8;
+}
+
+message GroupBy {
+  string type = 1;
+  string key = 2;
 }
 
 message GetWorkspacesCostResponse {

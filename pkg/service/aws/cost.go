@@ -71,8 +71,8 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 		Granularity: aws.String(req.GetGranularity()),
 		GroupBy: []*costexplorer.GroupDefinition{
 			{
-				Type: aws.String("DIMENSION"),
-				Key:  aws.String(req.GroupBy),
+				Type: aws.String(req.GroupBy.Type),
+				Key:  aws.String(req.GroupBy.Key),
 			},
 		},
 		Metrics: aws.StringSlice([]string{req.GetCostType()}),
