@@ -1,18 +1,10 @@
 #!/usr/bin/env sh
 
-# Install proto3 from source
-#  git clone https://github.com/google/protobuf
-#  ./autogen.sh ; ./configure ; make ; make install
-#
-# Install proto
-# Update protoc Go bindings via
-#  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-#  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-#
-# See also
-#  https://github.com/grpc/grpc-go/tree/master/examples
+# find all proto files in proto directory
+ALL_PROTO_FILES=$(find ./proto -type f  -name '*.proto')
 
-PROTO_DIR="./proto/netbookdevs/spawnerservice"
+for proto in $ALL_PROTO_FILES; do
+    protoc $proto --go_out=. --go_opt=paths=source_relative
+    protoc $proto --go-grpc_out=. --go-grpc_opt=paths=source_relative
+done 
 
-protoc $PROTO_DIR/spawner.proto --go_out=. --go_opt=paths=source_relative
-protoc $PROTO_DIR/spawner.proto --go-grpc_out=. --go-grpc_opt=paths=source_relative

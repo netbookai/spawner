@@ -4,6 +4,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var config Config
+
 // Config stores all configuration of the application.
 // The values are read by viper from a config file or environment variable.
 type Config struct {
@@ -19,21 +21,26 @@ type Config struct {
 	AWSAccessID            string `mapstructure:"AWS_ACCESS_ID"`
 	AWSSecretKey           string `mapstructure:"AWS_SECRET_KEY"`
 	AWSToken               string `mapstructure:"AWS_TOKEN"`
+	SecretHostRegion       string `mapstructure:"SECRET_HOST_REGION"`
 }
 
 // Load reads configuration from file or environment variables.
-func Load(path string) (config Config, err error) {
+func Load(path string) error {
 	viper.AddConfigPath(path)
 	viper.SetConfigName("config")
 	viper.SetConfigType("env")
 
 	viper.AutomaticEnv()
 
-	err = viper.ReadInConfig()
+	err := viper.ReadInConfig()
 	if err != nil {
-		return
+		return err
 	}
-
 	err = viper.Unmarshal(&config)
-	return
+
+	return err
+}
+
+func Get() Config {
+	return config
 }

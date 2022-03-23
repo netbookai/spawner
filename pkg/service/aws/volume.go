@@ -6,8 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"gitlab.com/netbook-devs/spawner-service/pkg/maps"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 
 	"go.uber.org/zap"
@@ -30,16 +28,13 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 	}
 }
 
-func addAWSTags(labels map[string]string) []*ec2.Tag {
-
-	tagsMap := maps.SimpleReplaceMerge(
-		map[string]string{
-			constants.CreatorLabel:     constants.SpawnerServiceLabel,
-			constants.ProvisionerLabel: constants.AwsLabel},
-		labels)
+func awsTags(labels map[string]string) []*ec2.Tag {
+	for k, v := range DefaultTags() {
+		labels[k] = *v
+	}
 
 	tags := []*ec2.Tag{}
-	for key, value := range tagsMap {
+	for key, value := range labels {
 		tags = append(tags, &ec2.Tag{
 			Key:   aws.String(key),
 			Value: aws.String(value),
@@ -58,7 +53,13 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	size := req.GetSize()
 	snapshotId := req.GetSnapshotid()
 	region := req.Region
-	tags := addAWSTags(req.GetLabels())
+	labels := req.GetLabels()
+
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	tags := awsTags(labels)
 
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
@@ -74,7 +75,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -118,7 +119,7 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *proto.DeleteVolu
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -156,7 +157,14 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 
 	volumeid := req.GetVolumeid()
 	region := req.Region
-	tags := addAWSTags(req.GetLabels())
+
+	labels := req.GetLabels()
+
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	tags := awsTags(labels)
 
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
@@ -169,7 +177,7 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)
@@ -207,7 +215,14 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 
 	volumeid := req.GetVolumeid()
 	region := req.Region
-	tags := addAWSTags(req.GetLabels())
+
+	labels := req.GetLabels()
+
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	tags := awsTags(labels)
 
 	inputSnapshot := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
@@ -220,7 +235,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 	}
 
 	//creating session
-	session, err := NewSession(svc.config, region, req.AccountName)
+	session, err := NewSession(ctx, region, req.AccountName)
 
 	if err != nil {
 		logger.Errorw("Can't start AWS session", "error", err)

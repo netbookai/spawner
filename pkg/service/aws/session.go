@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"context"
 	"encoding/base64"
 	"log"
 
@@ -12,8 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/system"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -26,18 +28,21 @@ type Session struct {
 	TeamId     string
 }
 
-func NewSession(conf *config.Config, region string, accountName string) (*Session, error) {
+func NewSession(ctx context.Context, region string, accountName string) (*Session, error) {
 
 	var (
 		awsCreds *credentials.Credentials
 		err      error
 	)
 
+	conf := config.Get()
 	if conf.Env == "local" {
 		log.Println("running in dev mode, using ", conf.AWSAccessID)
 		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
 	} else {
-		awsCreds, err = system.GetAwsCredentials(region, accountName)
+		//secret manager is hosted in particular region, all writes happen to the same region
+		secretHostRegion := config.Get().SecretHostRegion
+		awsCreds, err = system.GetAwsCredentials(ctx, secretHostRegion, accountName)
 		if err != nil {
 			return nil, err
 		}
@@ -110,6 +115,10 @@ func (ses *Session) getEC2Client() *ec2.EC2 {
 
 func (ses *Session) getCostExplorerClient() *costexplorer.CostExplorer {
 	return costexplorer.New(ses.AwsSession)
+}
+
+func (ses *Session) getSTSClient() *sts.STS {
+	return sts.New(ses.AwsSession)
 }
 
 func (ses *Session) getK8sClient(cluster *eks.Cluster) (*kubernetes.Clientset, error) {
