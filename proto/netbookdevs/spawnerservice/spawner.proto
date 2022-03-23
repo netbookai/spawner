@@ -4,274 +4,333 @@ option go_package = "/spawnerservice";
 
 package spawnerservice;
 
-// The Spawner service definition 
+// The Spawner service definition
 service SpawnerService {
-    // Spawn required cluster
-    rpc CreateCluster (ClusterRequest) returns (ClusterResponse) {}
+  rpc HealthCheck(Empty) returns (Empty) {}
 
-    //Create add token to secret manager
-    rpc AddToken (AddTokenRequest) returns (AddTokenResponse) {}
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
 
-    //Create get token to secret manager
-    rpc GetToken (GetTokenRequest) returns (GetTokenResponse) {}   
+  // Spawn required cluster
+  rpc CreateCluster(ClusterRequest) returns (ClusterResponse) {}
 
-    // Add Route53 record for Caddy
-    rpc AddRoute53Record (AddRoute53RecordRequest) returns (AddRoute53RecordResponse) {}
+  // Create add token to secret manager
+  rpc AddToken(AddTokenRequest) returns (AddTokenResponse) {}
 
-    // Get Cluster
-    rpc GetCluster (GetClusterRequest) returns (ClusterSpec) {}
+  // Create get token to secret manager
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse) {}
 
-    // Get Clusters
-    rpc GetClusters (GetClustersRequest) returns (GetClustersResponse) {}
+  // Add Route53 record for Caddy
+  rpc AddRoute53Record(AddRoute53RecordRequest)
+      returns (AddRoute53RecordResponse) {}
 
-    // Spawn required instance
-    rpc AddNode (NodeSpawnRequest) returns (NodeSpawnResponse) {}
+  // Get Cluster
+  rpc GetCluster(GetClusterRequest) returns (ClusterSpec) {}
 
-    // Status of cluster
-    rpc ClusterStatus (ClusterStatusRequest) returns (ClusterStatusResponse) {}
+  // Get Clusters
+  rpc GetClusters(GetClustersRequest) returns (GetClustersResponse) {}
 
-    // Delete Cluster
-    rpc DeleteCluster (ClusterDeleteRequest) returns (ClusterDeleteResponse) {}
+  // Spawn required instance
+  rpc AddNode(NodeSpawnRequest) returns (NodeSpawnResponse) {}
 
-    // Delete Node
-    rpc DeleteNode (NodeDeleteRequest) returns (NodeDeleteResponse) {}
+  // Status of cluster
+  rpc ClusterStatus(ClusterStatusRequest) returns (ClusterStatusResponse) {}
 
-    //Create Volume
-    rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse) {}
+  // Delete Cluster
+  rpc DeleteCluster(ClusterDeleteRequest) returns (ClusterDeleteResponse) {}
 
-    //Delete Vol
-    rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse) {}
+  // Delete Node
+  rpc DeleteNode(NodeDeleteRequest) returns (NodeDeleteResponse) {}
 
-    rpc CreateSnapshot( CreateSnapshotRequest) returns (CreateSnapshotResponse) {}
+  // Create Volume
+  rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse) {}
 
-    rpc CreateSnapshotAndDelete(CreateSnapshotAndDeleteRequest) returns (CreateSnapshotAndDeleteResponse) {}
+  // Delete Vol
+  rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse) {}
 
-    rpc RegisterWithRancher(RancherRegistrationRequest) returns (RancherRegistrationResponse) {}
+  rpc CreateSnapshot(CreateSnapshotRequest) returns (CreateSnapshotResponse) {}
 
-    rpc GetWorkspaceCost(GetWorkspaceCostRequest) returns (GetWorkspaceCostResponse) {}
+  rpc CreateSnapshotAndDelete(CreateSnapshotAndDeleteRequest)
+      returns (CreateSnapshotAndDeleteResponse) {}
+
+  rpc RegisterWithRancher(RancherRegistrationRequest)
+      returns (RancherRegistrationResponse) {}
+
+  rpc GetWorkspacesCost(GetWorkspacesCostRequest)
+      returns (GetWorkspacesCostResponse) {}
+
+  rpc WriteCredential(WriteCredentialRequest)
+      returns (WriteCredentialResponse) {}
+
+  rpc ReadCredential(ReadCredentialRequest) returns (ReadCredentialResponse) {}
+}
+
+message Empty {}
+
+message EchoRequest {
+  string msg = 1;
+}
+message EchoResponse {
+  string msg = 1;
 }
 
 message NodeSpec {
-    string name = 1;
-    string instance = 2;
-    int32 diskSize = 3;
-    string hostName = 4;
-    string state = 5;
-    string uuid = 6;
-    string ipAddr = 7;
-    string availabilityzone = 8;
-    string clusterId = 9;
-    map<string, string> labels = 10;
-    bool gpu_enabled = 11;
+  string name = 1;
+  string instance = 2;
+  int32 diskSize = 3;
+  string hostName = 4;
+  string state = 5;
+  string uuid = 6;
+  string ipAddr = 7;
+  string availabilityzone = 8;
+  string clusterId = 9;
+  map<string, string> labels = 10;
+  bool gpu_enabled = 11;
+  Health health = 12;
+}
+
+message Issue {
+  string code = 1;
+  string description = 2;
+  repeated string resourceIds = 3;
+}
+
+message Health {
+  repeated Issue issue = 1;
 }
 
 message ClusterRequest {
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string clusterName = 4;
-    NodeSpec node = 5;
-    map<string, string> labels = 6;
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+  NodeSpec node = 5;
+  map<string, string> labels = 6;
 }
 
 message GetClusterRequest {
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string clusterName = 4;
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
 }
 
 message GetClustersRequest {
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
 }
 
 message ClusterSpec {
-    string name = 1;
-    string clusterId = 2;
-    repeated NodeSpec nodeSpec = 3;
+  string name = 1;
+  string clusterId = 2;
+  repeated NodeSpec nodeSpec = 3;
 }
 
 message GetClustersResponse {
-    repeated ClusterSpec clusters = 1;
+  repeated ClusterSpec clusters = 1;
 }
 
 message ClusterResponse {
-    string clusterName = 1;
-    string nodeGroupName = 2;
-    string error = 3;
+  string clusterName = 1;
+  string nodeGroupName = 2;
+  string error = 3;
 }
 
 message ClusterStatusRequest {
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string clusterName = 4;
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
 }
 
 message ClusterStatusResponse {
-    string status = 1;
-    string error = 2;
+  string status = 1;
+  string error = 2;
 }
 
-message AddTokenRequest{
-    string provider = 1;
-    string region = 2;
-    string clusterName = 3;
+message AddTokenRequest {
+  string provider = 1;
+  string region = 2;
+  string clusterName = 3;
 }
 
-message AddTokenResponse{
-    string status = 1;
-    string error =2;
+message AddTokenResponse {
+  string status = 1;
+  string error = 2;
 }
 
-message GetTokenRequest{
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string clusterName = 4;
+message GetTokenRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
 }
 
-message GetTokenResponse{
-    string token = 1;
-    string endpoint = 2;
-    string status = 3;
-    string error = 4;
-    string ca_data = 5;
+message GetTokenResponse {
+  string token = 1;
+  string endpoint = 2;
+  string status = 3;
+  string error = 4;
+  string ca_data = 5;
 }
 
-message AddRoute53RecordRequest{
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string dnsName = 4;
-    string recordName = 5;
+message AddRoute53RecordRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string dnsName = 4;
+  string recordName = 5;
 }
 
-message AddRoute53RecordResponse{
-    string status = 1;
-    string error =2;
+message AddRoute53RecordResponse {
+  string status = 1;
+  string error = 2;
 }
 
 message NodeSpawnRequest {
-    string provider = 1;
-    string region =2;
-    string accountName = 3;
-    string clusterName = 4;
-    NodeSpec nodeSpec = 5;
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+  NodeSpec nodeSpec = 5;
 }
 
 message NodeSpawnResponse {
-    string error = 2;
+  string error = 2;
 }
 
 message ClusterDeleteRequest {
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string clusterName = 4;
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+  bool forceDelete = 5;
 }
 
 message ClusterDeleteResponse {
-    string error = 1;
+  string error = 1;
 }
 
 message NodeDeleteRequest {
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string clusterName = 4;
-    string nodeGroupName = 5;
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+  string nodeGroupName = 5;
 }
 
 message NodeDeleteResponse {
-    string error = 1;
+  string error = 1;
 }
 
-message CreateVolumeRequest{
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string availabilityzone = 4;
-    string volumetype = 5;
-    int64 size = 6;
-    string snapshotid = 7; 
-    map<string, string> labels = 8;
+message CreateVolumeRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string availabilityzone = 4;
+  string volumetype = 5;
+  int64 size = 6;
+  string snapshotid = 7;
+  map<string, string> labels = 8;
 }
 
-message CreateVolumeResponse{
-    string volumeid=1;
-    string error=2;
+message CreateVolumeResponse {
+  string volumeid = 1;
+  string error = 2;
 }
 
-message DeleteVolumeRequest{
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string volumeid = 4;
+message DeleteVolumeRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string volumeid = 4;
 }
 
-message DeleteVolumeResponse{
-    bool deleted=1;
-    string error=2;
+message DeleteVolumeResponse {
+  bool deleted = 1;
+  string error = 2;
 }
 
-message CreateSnapshotRequest{
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string volumeid = 4;
-    map<string, string> labels = 5;
+message CreateSnapshotRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string volumeid = 4;
+  map<string, string> labels = 5;
 }
 
-message CreateSnapshotResponse{
-    string snapshotid=1;
-    string error=2;
+message CreateSnapshotResponse {
+  string snapshotid = 1;
+  string error = 2;
 }
 
-message CreateSnapshotAndDeleteRequest{
-    string provider = 1;
-    string region = 2;
-    string accountName = 3;
-    string volumeid = 4;
-    map<string, string> labels = 5;
+message CreateSnapshotAndDeleteRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string volumeid = 4;
+  map<string, string> labels = 5;
 }
 
-message CreateSnapshotAndDeleteResponse{
-    string snapshotid = 1;
-    bool deleted = 2;
-    string error = 3;
+message CreateSnapshotAndDeleteResponse {
+  string snapshotid = 1;
+  bool deleted = 2;
+  string error = 3;
 }
 
 message RancherRegistrationRequest {
-    string clusterName = 1;
+  string clusterName = 1;
 }
 
 message RancherRegistrationResponse {
-    string error = 1;
-    string clusterName = 2;
-    string clusterID = 3;
-    string manifestURL = 4;
+  string error = 1;
+  string clusterName = 2;
+  string clusterID = 3;
+  string manifestURL = 4;
 }
 
-message GetWorkspaceCostRequest {
-    string workspaceId = 1;
-    string provider    = 2;
-    string accountName = 3;
-    string startDate   = 4;
-    string endDate     = 5;
-    string granularity = 6;
-    string costType    = 7;
-    string groupBy     = 8;
+message GetWorkspacesCostRequest {
+  repeated string workspaceIds = 1;
+  string provider = 2;
+  string accountName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string granularity = 6;
+  string costType = 7;
+  GroupBy groupBy = 8;
 }
 
-message GetWorkspaceCostResponse {
-    double totalCost = 1;
-    repeated GetWorkspaceCostGroupResponse groupedCost = 2;
+message GroupBy {
+  string type = 1;
+  string key = 2;
 }
 
-message GetWorkspaceCostGroupResponse {
-    string group = 1;
-    double cost = 2;
+message GetWorkspacesCostResponse {
+  double totalCost = 1;
+  repeated GetWorkspacesCostGroupResponse groupedCost = 2;
+}
+
+message GetWorkspacesCostGroupResponse {
+  string group = 1;
+  double cost = 2;
+}
+
+message WriteCredentialRequest {
+  string account = 1;
+  string accessKeyID = 2;
+  string secretAccessKey = 3;
+}
+
+message WriteCredentialResponse {
+  string error = 1;
+}
+
+message ReadCredentialRequest {
+  string account = 1;
+}
+
+message ReadCredentialResponse {
+  string account = 1;
+  string accessKeyID = 2;
+  string secretAccessKey = 3;
 }

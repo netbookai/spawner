@@ -1,6 +1,9 @@
 package system
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -11,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 )
 
 //manages system level secrets,
@@ -67,15 +71,26 @@ func getSystemCredential() (*sts.Credentials, error) {
 
 //createSession create new application session
 func createSession(region string) (*session.Session, error) {
-	stsCreds, stserr := getSystemCredential()
+	conf := config.Get()
 
-	if stserr != nil {
-		return nil, stserr
+	var cred *credentials.Credentials
+
+	if conf.Env == "local" {
+		log.Println("running in dev mode, using ", conf.AWSAccessID)
+		cred = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+
+	} else {
+		stsCreds, stserr := getSystemCredential()
+
+		if stserr != nil {
+			return nil, stserr
+		}
+		cred = credentials.NewStaticCredentials(*stsCreds.AccessKeyId, *stsCreds.SecretAccessKey, *stsCreds.SessionToken)
 	}
 
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(*stsCreds.AccessKeyId, *stsCreds.SecretAccessKey, *stsCreds.SessionToken),
+		Credentials: cred,
 	})
 
 	return sess, err
@@ -94,17 +109,27 @@ func parseCredentials(blob string) (*credentials.Credentials, error) {
 	return creds, nil
 }
 
-//GetAwsCredentials Retrieve user credentials from the secret manager
-func GetAwsCredentials(region, accountName string) (*credentials.Credentials, error) {
+func encodeCredentials(id, key string) string {
+	return fmt.Sprintf("%s,%s", id, key)
+}
+
+func getSecretManager(region string) (*secretsmanager.SecretsManager, error) {
+
 	sess, err := createSession(region)
 	if err != nil {
 		return nil, err
 	}
 
-	awsSecSvc := secretsmanager.New(sess)
+	secretManager := secretsmanager.New(sess)
 
+	return secretManager, nil
+}
+
+//GetAwsCredentials Retrieve user credentials from the secret manager
+func GetAwsCredentials(ctx context.Context, region, accountName string) (*credentials.Credentials, error) {
+	secret, err := getSecretManager(region)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "GetAwsCredentials: failed to get secretsmanager")
 	}
 
 	input := &secretsmanager.GetSecretValueInput{
@@ -112,11 +137,59 @@ func GetAwsCredentials(region, accountName string) (*credentials.Credentials, er
 		VersionStage: aws.String("AWSCURRENT"),
 	}
 
-	result, err := awsSecSvc.GetSecretValue(input)
+	result, err := secret.GetSecretValueWithContext(ctx, input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
-			return nil, aerr
+			return nil, errors.Wrapf(aerr, "GetAwsCredentials: failed to fetch user credentials")
 		}
 	}
 	return parseCredentials(*result.SecretString)
+}
+
+//WriteOrUpdateCredential Creates a new secrets in AWS, updates the existing if key already present
+// update will be set to true when key Update operation is perfromed,
+// false on new secret creation
+func WriteOrUpdateCredential(ctx context.Context, region, account, id, key string) (update bool, err error) {
+
+	secret, err := getSecretManager(region)
+	if err != nil {
+		return false, err
+	}
+
+	value := encodeCredentials(id, key)
+	input := &secretsmanager.GetSecretValueInput{
+		SecretId:     &account,
+		VersionStage: aws.String("AWSCURRENT"),
+	}
+
+	exist := true
+	result, err := secret.GetSecretValueWithContext(ctx, input)
+	if err != nil {
+		//check if key exist
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == secretsmanager.ErrCodeResourceNotFoundException {
+				exist = false
+			}
+		}
+		//we will ignore any other might have accured, which is most lilkey to get caugh next,
+		//handling error here becomes tedius,
+	}
+
+	if !exist {
+
+		_, err = secret.CreateSecretWithContext(ctx, &secretsmanager.CreateSecretInput{
+			Name:         &account,
+			SecretString: &value,
+		})
+		update = false
+	} else {
+		_, err = secret.UpdateSecretWithContext(ctx, &secretsmanager.UpdateSecretInput{
+
+			SecretId:     result.Name,
+			SecretString: &value,
+		})
+		update = true
+	}
+	return
+
 }

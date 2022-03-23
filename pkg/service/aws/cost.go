@@ -6,12 +6,32 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/costexplorer"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/common"
-	"gitlab.com/netbook-devs/spawner-service/pkg/spawnerservice/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
-func (svc AWSController) GetWorkspaceCost(ctx context.Context, req *proto.GetWorkspaceCostRequest) (*proto.GetWorkspaceCostResponse, error) {
+func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
+
+	session, err := NewSession(ctx, "", req.GetAccountName())
+
+	if err != nil {
+		svc.logger.Errorw("can't start AWS session", "error", err)
+		return nil, err
+	}
+
+	stsClient := session.getSTSClient()
+
+	callerIdentity, err := stsClient.GetCallerIdentity(nil)
+
+	if err != nil {
+		svc.logger.Errorw("failed to get identity", "error", err)
+		return nil, err
+	}
+
+	accound_id := callerIdentity.Account
+
+	svc.logger.Debugw("fetched accountId", "id", accound_id)
 
 	filter := &costexplorer.Expression{
 		And: []*costexplorer.Expression{
@@ -19,13 +39,13 @@ func (svc AWSController) GetWorkspaceCost(ctx context.Context, req *proto.GetWor
 			{
 				Dimensions: &costexplorer.DimensionValues{
 					Key:    aws.String("LINKED_ACCOUNT"),
-					Values: aws.StringSlice([]string{req.GetAccountName()}),
+					Values: aws.StringSlice([]string{*accound_id}),
 				},
 			},
 			{
 				Tags: &costexplorer.TagValues{
 					Key:    aws.String(constants.WorkspaceId),
-					Values: aws.StringSlice([]string{req.GetWorkspaceId()}),
+					Values: aws.StringSlice(req.GetWorkspaceIds()),
 				},
 			},
 
@@ -51,19 +71,12 @@ func (svc AWSController) GetWorkspaceCost(ctx context.Context, req *proto.GetWor
 		Granularity: aws.String(req.GetGranularity()),
 		GroupBy: []*costexplorer.GroupDefinition{
 			{
-				Type: aws.String("DIMENSION"),
-				Key:  aws.String(req.GroupBy),
+				Type: aws.String(req.GroupBy.Type),
+				Key:  aws.String(req.GroupBy.Key),
 			},
 		},
 		Metrics: aws.StringSlice([]string{req.GetCostType()}),
 		Filter:  filter,
-	}
-
-	session, err := NewSession(svc.config, "", req.GetAccountName())
-
-	if err != nil {
-		svc.logger.Errorw("can't start AWS session", "error", err)
-		return nil, err
 	}
 
 	client := session.getCostExplorerClient()
@@ -75,7 +88,7 @@ func (svc AWSController) GetWorkspaceCost(ctx context.Context, req *proto.GetWor
 		return nil, err
 	}
 
-	costResponse := &proto.GetWorkspaceCostResponse{}
+	costResponse := &proto.GetWorkspacesCostResponse{}
 
 	costMap := make(map[string]float64)
 
@@ -120,7 +133,7 @@ func (svc AWSController) GetWorkspaceCost(ctx context.Context, req *proto.GetWor
 	costResponse.TotalCost = totalCost
 
 	for k, v := range costMap {
-		costResponse.GroupedCost = append(costResponse.GroupedCost, &proto.GetWorkspaceCostGroupResponse{
+		costResponse.GroupedCost = append(costResponse.GroupedCost, &proto.GetWorkspacesCostGroupResponse{
 			Group: k,
 			Cost:  v,
 		})

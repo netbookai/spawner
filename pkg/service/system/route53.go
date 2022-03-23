@@ -1,4 +1,4 @@
-package aws
+package system
 
 import (
 	"context"
@@ -8,17 +8,21 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/google/uuid"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 )
 
-func (svc AWSController) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
-	logger := svc.logger
-	session, err := NewSession(svc.config, req.Region, req.AccountName)
-
+func getRoute53Sess(region string) (*route53.Route53, error) {
+	sess, err := createSession(region)
 	if err != nil {
 		return nil, err
 	}
 
+	route53Sess := route53.New(sess)
+
+	return route53Sess, nil
+}
+
+func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName string) (string, error) {
 	regionClassicLoadBalancerHostedID := map[string]string{
 		"us-east-2":      "Z3AADJGX6KTTL2",
 		"us-east-1":      "Z35SXDOTRQ7X7K",
@@ -47,27 +51,21 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *proto.AddRou
 		"us-gov-east-1":  "Z166TLBEWOO7G0",
 		"us-gov-west-1":  "Z33AYJ8TM3BH4J",
 	}
-	dnsName := req.GetDnsName()
-	recordName := req.GetRecordName()
-	regionName := req.GetRegion()
+
 	id, iderr := uuid.NewRandom()
 
 	if iderr != nil {
-		LogError("Failed creating random UUID", logger, iderr)
-		return &proto.AddRoute53RecordResponse{}, iderr
+		// LogError("Failed creating random UUID", logger, iderr)
+		return "", iderr
 	}
 
 	_, ok := regionClassicLoadBalancerHostedID[regionName]
 	if !ok {
-		logger.Errorw("Region does not have matching ELB HostedZoneId")
-		res := &proto.AddRoute53RecordResponse{
-			Status: "Failed",
-			Error:  "",
-		}
-		return res, errors.New("Region does not have matching ELB HostedZoneId")
+		// logger.Errorw("Region does not have matching ELB HostedZoneId")
+		return "", errors.New("Region does not have matching ELB HostedZoneId")
 	}
 
-	hostedZoenId := svc.config.AwsRoute53HostedZoneID
+	hostedZoenId := config.Get().AwsRoute53HostedZoneID
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{
@@ -93,32 +91,33 @@ func (svc AWSController) AddRoute53Record(ctx context.Context, req *proto.AddRou
 		HostedZoneId: aws.String(hostedZoenId), //Z08929991BJOO3WMC7L0Q
 	}
 	// Creating AWS Route53 session
-	route53Client := session.getRoute53Client()
+	route53Client, err := getRoute53Sess(regionName)
+	if err != nil {
+		return "", err
+	}
 
 	if err != nil {
-		logger.Errorw("Can't start AWS session", "error", err)
-		return nil, err
+		// logger.Errorw("Can't start AWS session", "error", err)
+		return "", err
 	}
 
 	result, err := route53Client.ChangeResourceRecordSets(input)
 
 	if err != nil {
-		LogError("AddAwsRoute53Record", logger, err)
-		return &proto.AddRoute53RecordResponse{}, err
+		// LogError("AddAwsRoute53Record", logger, err)
+		return "", err
 	}
+
+	// logger.Infow("added route53 record set " + recordName)
 
 	err = route53Client.WaitUntilResourceRecordSetsChanged(&route53.GetChangeInput{
 		Id: *&result.ChangeInfo.Id,
 	})
 
 	if err != nil {
-		LogError("WaitAddAwsRoute53Record", logger, err)
-		return &proto.AddRoute53RecordResponse{}, err
+		// LogError("WaitAddAwsRoute53Record", logger, err)
+		return "", err
 	}
 
-	res := &proto.AddRoute53RecordResponse{
-		Status: *result.ChangeInfo.Id,
-	}
-
-	return res, nil
+	return *result.ChangeInfo.Id, nil
 }

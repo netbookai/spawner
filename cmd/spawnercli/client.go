@@ -14,9 +14,11 @@ import (
 )
 
 const (
-	clusterName = "test-nsp-cluster-05"
+	clusterName = "us-west-2-netbook-aws-test-2"
 	region      = "us-west-2"
 	provider    = "aws"
+	accountName = "netbook-aws"
+	nodeName    = "spwaner-netbook-test-2"
 )
 
 func main() {
@@ -27,7 +29,7 @@ func main() {
 
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
 	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
-	method := fs.String("method", "ClusterStatus", "ClusterStatus")
+	method := fs.String("method", "HealthCheck", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
 
@@ -62,6 +64,7 @@ func main() {
 			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
 		},
 		ClusterName: clusterName,
+		AccountName: accountName,
 	}
 
 	addTokenReq := &proto.AddTokenRequest{
@@ -74,13 +77,15 @@ func main() {
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	addRoute53RecordReq := &proto.AddRoute53RecordRequest{
-		DnsName:    "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
-		RecordName: "*.mani.app.netbook.ai",
-		Region:     region,
-		Provider:   provider,
+		DnsName:     "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
+		RecordName:  "*.mani.app.netbook.ai",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 		// RegionIdentifier: "Oregon region",
 	}
 
@@ -88,24 +93,32 @@ func main() {
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	getClustersReq := &proto.GetClustersRequest{
-		Region:   region,
-		Provider: provider,
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	getClusterReq := &proto.GetClusterRequest{
 		ClusterName: clusterName,
 		Provider:    provider,
 		Region:      region,
+		AccountName: accountName,
 	}
 
 	addNode := &proto.NodeSpec{
-		Name:       "sandbox-node-ng-gpu-01",
+		Name:       nodeName,
 		Instance:   "t2.medium",
 		DiskSize:   20,
-		GpuEnabled: true,
+		GpuEnabled: false,
+		Labels: map[string]string{"cluster-name": clusterName,
+			"node-name":   nodeName,
+			"user":        "98fe250a-7d98-4604-8317-1fbadda737ea",
+			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
+		},
 	}
 
 	addNodeReq := &proto.NodeSpawnRequest{
@@ -113,12 +126,15 @@ func main() {
 		Region:      region,
 		Provider:    provider,
 		NodeSpec:    addNode,
+		AccountName: accountName,
 	}
 
 	deleteClusterReq := &proto.ClusterDeleteRequest{
 		ClusterName: clusterName,
 		Region:      region,
 		Provider:    provider,
+		AccountName: accountName,
+		ForceDelete: true,
 	}
 
 	deleteNodeReq := &proto.NodeDeleteRequest{
@@ -126,6 +142,7 @@ func main() {
 		NodeGroupName: "ng-04",
 		Region:        region,
 		Provider:      provider,
+		AccountName:   accountName,
 	}
 
 	createVolumeReq := &proto.CreateVolumeRequest{
@@ -135,37 +152,62 @@ func main() {
 		Snapshotid:       "",
 		Region:           region,
 		Provider:         provider,
+		AccountName:      accountName,
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
-		Volumeid: "vol-05d7e98ae385b2e29",
-		Region:   region,
-		Provider: provider,
+		Volumeid:    "vol-05d7e98ae385b2e29",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	createSnapshotReq := &proto.CreateSnapshotRequest{
-		Volumeid: "vol-07ccb258225e0e213",
-		Region:   region,
-		Provider: provider,
+		Volumeid:    "vol-07ccb258225e0e213",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 	createSnapshotAndDeleteReq := &proto.CreateSnapshotAndDeleteRequest{
-		Volumeid: "vol-0f220de036ebea748",
-		Region:   region,
-		Provider: provider,
+		Volumeid:    "vol-0f220de036ebea748",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 
-	getWorkspaceCost := &proto.GetWorkspaceCostRequest{
-		WorkspaceId: "test",
-		Provider:    "aws",
-		AccountName: "965734315247",
-		StartDate:   "2021-08-01",
-		EndDate:     "2022-02-01",
-		Granularity: "MONTHLY",
-		CostType:    "BlendedCost",
-		GroupBy:     "SERVICE",
+	getWorkspacesCost := &proto.GetWorkspacesCostRequest{
+		WorkspaceIds: []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
+		Provider:     "aws",
+		AccountName:  "netbook-aws",
+		StartDate:    "2021-08-01",
+		EndDate:      "2022-03-01",
+		Granularity:  "MONTHLY",
+		CostType:     "BlendedCost",
+		GroupBy: &proto.GroupBy{
+			Type: "TAG",
+			Key:  "workspaceid",
+		},
 	}
 
 	switch *method {
+	case "Echo":
+		v, err := client.Echo(context.Background(), &proto.EchoRequest{Msg: "hello spawner"})
+
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("Echo", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Echo", "response", v)
+
+	case "HealthCheck":
+		v, err := client.HealthCheck(context.Background(), &proto.Empty{})
+
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("HealthCheck", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("HealthCheck", "response", v)
+
 	case "CreateCluster":
 		v, err := client.CreateCluster(context.Background(), createClusterReq)
 		if err != nil && err.Error() != "" {
@@ -278,13 +320,32 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("RegisterWithRancher method", "response", v)
-	case "GetWorkspaceCost":
-		v, err := client.GetWorkspaceCost(context.Background(), getWorkspaceCost)
+	case "GetWorkspacesCost":
+		v, err := client.GetWorkspacesCost(context.Background(), getWorkspacesCost)
 		if err != nil && err.Error() != "" {
 			sugar.Errorw("error registering cluster with rancher", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
+
+	case "ReadCredential":
+		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
+			Account: "alex",
+		})
+		if err != nil {
+			sugar.Errorw("error reading credentials", "error", err)
+		}
+		sugar.Infow("ReadCredential", "response", v)
+
+	case "WriteCredential":
+		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
+			Account:         "alex",
+			AccessKeyID:     "access_id",
+			SecretAccessKey: "access_key"})
+		if err != nil {
+			sugar.Errorw("error writing credentials", "error", err)
+		}
+		sugar.Infow("WriteCredential", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
