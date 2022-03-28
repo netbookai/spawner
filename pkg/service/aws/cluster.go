@@ -102,8 +102,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 
 //isExist check if the given cluster exist in EKS
 //
-// Function currently uses non paginated version of ListClusters, safe tyo assume that we would not
-// have clusters more than 100 in single account.
+// This function currently uses non paginated version of ListClusters, safe to assume that we would not have clusters more than 100 in single account.
 func isExist(ctx context.Context, client *eks.EKS, name string) (bool, error) {
 
 	res, err := client.ListClustersWithContext(ctx, &eks.ListClustersInput{})
@@ -119,7 +118,7 @@ func isExist(ctx context.Context, client *eks.EKS, name string) (bool, error) {
 	return false, nil
 }
 
-//CreateCluster Create new cluster with given specification, no op if cluste already exist
+//CreateCluster Create new cluster with given specification, no op if cluster already exist
 func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 
 	var clusterName string
