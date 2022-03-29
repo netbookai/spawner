@@ -2,8 +2,10 @@ package aws
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
@@ -96,4 +98,65 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 
 	return createClusterOutput.Cluster, nil
 
+}
+
+//isExist check if the given cluster exist in EKS
+//
+// This function currently uses non paginated version of ListClusters, safe to assume that we would not have clusters more than 100 in single account.
+func isExist(ctx context.Context, client *eks.EKS, name string) (bool, error) {
+
+	res, err := client.ListClustersWithContext(ctx, &eks.ListClustersInput{})
+	if err != nil {
+		return false, err
+	}
+
+	for _, cluster := range res.Clusters {
+		if name == *cluster {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+//CreateCluster Create new cluster with given specification, no op if cluster already exist
+func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
+
+	var clusterName string
+	if clusterName = req.ClusterName; len(clusterName) == 0 {
+		clusterName = fmt.Sprintf("%s-%s", req.Provider, req.Region)
+	}
+
+	region := req.Region
+	accountName := req.AccountName
+	session, err := NewSession(ctx, region, accountName)
+
+	if err != nil {
+		return nil, err
+	}
+	eksClient := session.getEksClient()
+
+	ctrl.logger.Debugf("checking cluster status for '%s', region '%s'", clusterName, region)
+	exist, err := isExist(ctx, eksClient, clusterName)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateCluster failed")
+	}
+
+	if exist {
+		ctrl.logger.Infof("cluster '%s', already exist", clusterName)
+		return nil, errors.New("cluster already exist")
+	}
+
+	ctrl.logger.Debugf("cluster '%s' does not exist, creating ...", clusterName)
+	cluster, err := ctrl.createClusterInternal(ctx, session, clusterName, req)
+	if err != nil {
+		ctrl.logger.Errorw("failed to create cluster ", "cluster", clusterName, "error", err)
+		return nil, err
+	}
+
+	ctrl.logger.Infow("cluster is in creating state, it might take some time, please check AWS console for status", "cluster", clusterName)
+
+	return &proto.ClusterResponse{
+		ClusterName: *cluster.Name,
+	}, nil
 }
