@@ -75,7 +75,7 @@ func createSession(region string) (*session.Session, error) {
 
 	var cred *credentials.Credentials
 
-	if conf.Env == "local" || conf.Env == "dev" {
+	if conf.Env == "local" {
 		log.Println("running in dev mode, using ", conf.AWSAccessID)
 		cred = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
 
