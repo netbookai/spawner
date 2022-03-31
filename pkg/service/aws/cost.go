@@ -132,12 +132,9 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	costResponse.TotalCost = totalCost
 
-	for k, v := range costMap {
-		costResponse.GroupedCost = append(costResponse.GroupedCost, &proto.GetWorkspacesCostGroupResponse{
-			Group: k,
-			Cost:  v,
-		})
-	}
+	costResponse.GroupedCost = append(costResponse.GroupedCost, &proto.GetWorkspacesCostGroupResponse{
+		GroupCost: costMap,
+	})
 
 	return costResponse, nil
 }
