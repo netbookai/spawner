@@ -311,8 +311,7 @@ message GetWorkspacesCostResponse {
 }
 
 message GetWorkspacesCostGroupResponse {
-  string group = 1;
-  double cost = 2;
+  map<string, double> groupCost = 1;
 }
 
 message WriteCredentialRequest {
