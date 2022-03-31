@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
@@ -53,52 +52,6 @@ func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.Clu
 	}
 	resp, err := client.DescribeClusterWithContext(ctx, &input)
 	return resp.Cluster, err
-}
-
-//CreateCluster Create new cluster with given specification, no op if cluste already exist
-func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
-
-	var clusterName string
-	if clusterName = req.ClusterName; len(clusterName) == 0 {
-		clusterName = fmt.Sprintf("%s-%s", req.Provider, req.Region)
-	}
-
-	region := req.Region
-	accountName := req.AccountName
-	session, err := NewSession(ctx, region, accountName)
-
-	if err != nil {
-		return nil, err
-	}
-	eksClient := session.getEksClient()
-
-	ctrl.logger.Debugf("checking cluster status for '%s', region '%s'", clusterName, region)
-
-	cluster, err := getClusterSpec(ctx, eksClient, clusterName)
-	fmt.Println(cluster, " \n ", err)
-
-	if err != nil {
-		if err.(awserr.Error).Code() == eks.ErrCodeResourceNotFoundException {
-
-			ctrl.logger.Debugf("cluster '%s' does not exist, creating ...", clusterName)
-			cluster, err = ctrl.createClusterInternal(ctx, session, clusterName, req)
-			if err != nil {
-				ctrl.logger.Error("failed to create clsuter '%s' %s", clusterName, err.Error())
-				return nil, err
-			}
-
-			ctrl.logger.Info("cluster '%s' is creating state, it might take some time, please check AWS console for status", clusterName)
-		} else {
-			ctrl.logger.Errorw("failed to check if cluster exist", "error", err)
-			return nil, err
-		}
-	} else {
-		ctrl.logger.Infof("cluster '%s', already exist", clusterName)
-	}
-
-	return &proto.ClusterResponse{
-		ClusterName: *cluster.Name,
-	}, nil
 }
 
 func (ctrl AWSController) getNodeHealth(ctx context.Context, client *eks.EKS, cluster, nodeName string) (*eks.NodegroupHealth, error) {
