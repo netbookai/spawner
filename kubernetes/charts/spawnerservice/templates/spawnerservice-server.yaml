@@ -37,6 +37,8 @@ spec:
           value: {{ .Values.secret_host_region }}
         - name: AWS_ROUTE53_HOSTEDZONEID
           value: {{ .Values.route53_hostedzone_id }}
+        - name: NODE_DELETION_TIME_IN_SECONDS
+          value: {{ .Values.node_deletion_timeout_in_seconds }}
 
         ports:
           - containerPort: {{ .Values.port }} 

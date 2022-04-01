@@ -3,9 +3,12 @@ package aws
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
@@ -498,10 +501,79 @@ func (ctrl AWSController) deleteAllNodegroups(ctx context.Context, client *eks.E
 	for _, nodeGroupName := range nodeGroupList.Nodegroups {
 		//drop em
 		if err = ctrl.deleteNode(ctx, client, clusterName, *nodeGroupName); err != nil {
+			ctrl.logger.Errorw("error when deleting nodegroup", "nodegroup", nodeGroupName)
 			return err
 		}
 	}
-	ctrl.logger.Infow("all attached nodegroups are being deleted")
+	ctrl.logger.Infow("all attached nodegroups are being deleted", "cluster", clusterName)
+	return nil
+}
+
+func (ctrl AWSController) waitForAllNodegroupsDeletion(ctx context.Context, client *eks.EKS, clusterName string) error {
+	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
+	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
+	if err != nil {
+		return errors.Wrap(err, "waitForAllNodegroupsDeletion")
+	}
+
+	if len(nodeGroupList.Nodegroups) == 0 {
+		return nil
+	}
+
+	//+1 to give some room for worst case, all delete returned error and context timeout.
+	errChan := make(chan error, len(nodeGroupList.Nodegroups)+1)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*time.Duration(config.Get().NodeDeletionTimeout))
+	defer cancel()
+
+	wg := &sync.WaitGroup{}
+	done := make(chan struct{})
+
+	for _, nodeGroupName := range nodeGroupList.Nodegroups {
+
+		wg.Add(1)
+		go func(nodeGroupName string, errChan chan<- error) {
+			waitErr := client.WaitUntilNodegroupDeletedWithContext(ctx, &eks.DescribeNodegroupInput{
+				ClusterName:   &clusterName,
+				NodegroupName: &nodeGroupName,
+			})
+
+			//we will ignore context cancelled error to avoid duplicate
+			if waitErr != nil && errors.Is(waitErr, context.Canceled) {
+				errChan <- waitErr
+			}
+			wg.Done()
+
+		}(*nodeGroupName, errChan)
+	}
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-ctx.Done():
+		//any error send it over err chan and will deal with it at the end.
+		errChan <- ctx.Err()
+		break
+		// waiting for all nodegroup delete done
+	case <-done:
+		break
+	}
+
+	close(errChan)
+	var aggErr error
+	for e := range errChan {
+		//Wrap will return err when the err is nil and it will never be set.
+		if aggErr == nil {
+			aggErr = e
+		} else {
+			aggErr = errors.Wrap(aggErr, e.Error())
+		}
+	}
+	if aggErr != nil {
+		return errors.Wrap(aggErr, "waitForAllNodegroupsDeletion: couldn't wait on all node deletion")
+	}
 	return nil
 }
 
@@ -531,15 +603,22 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 	//get node groups attached to clients when force delete is enabled.
 	//if available delete all attached node groups and proceed to deleting cluster
 	if forceDelete {
+		ctrl.logger.Infow("force deleting all nodegroups of cluster", "cluster", clusterName)
 		err = ctrl.deleteAllNodegroups(ctx, client, clusterName)
 		if err != nil {
 			ctrl.logger.Errorw("failed to delete attached nodegroups", "error", err)
 			return nil, err
 		}
 
+		ctrl.logger.Infow("waiting for all nodegroups deletion", "cluster", clusterName)
+		err = ctrl.waitForAllNodegroupsDeletion(ctx, client, clusterName)
+		if err != nil {
+			ctrl.logger.Errorw("failed waiting for deletion of attached nodegroups", "error", err)
+			return nil, err
+		}
+		ctrl.logger.Infow("done waiting for all nodegroups to delete", "cluster", clusterName)
 	}
 
-	//FIXME : cannot delete the cluster untill all nodes are dropped.
 	deleteOut, err := client.DeleteClusterWithContext(ctx, &eks.DeleteClusterInput{
 		Name: &clusterName,
 	})

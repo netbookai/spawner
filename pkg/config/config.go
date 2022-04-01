@@ -22,6 +22,7 @@ type Config struct {
 	AWSSecretKey           string `mapstructure:"AWS_SECRET_KEY"`
 	AWSToken               string `mapstructure:"AWS_TOKEN"`
 	SecretHostRegion       string `mapstructure:"SECRET_HOST_REGION"`
+	NodeDeletionTimeout    int32  `mapstructure:"NODE_DELETION_TIME_IN_SECONDS"`
 }
 
 // Load reads configuration from file or environment variables.
