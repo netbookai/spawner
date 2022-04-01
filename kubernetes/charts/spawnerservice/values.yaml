@@ -40,3 +40,4 @@ rancher:
   aws_cred_name: aws_cred_name
 secret_host_region: secret_host_region
 docker: docker
+node_deletion_timeout_in_seconds: node_deletion_timeout_in_seconds
