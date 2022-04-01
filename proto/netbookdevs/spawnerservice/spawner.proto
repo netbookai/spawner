@@ -307,11 +307,7 @@ message GroupBy {
 
 message GetWorkspacesCostResponse {
   double totalCost = 1;
-  repeated GetWorkspacesCostGroupResponse groupedCost = 2;
-}
-
-message GetWorkspacesCostGroupResponse {
-  map<string, double> groupCost = 1;
+  map<string, double> groupedCost = 2;
 }
 
 message WriteCredentialRequest {
