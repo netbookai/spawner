@@ -39,6 +39,8 @@ spec:
           value: {{ .Values.route53_hostedzone_id }}
         - name: NODE_DELETION_TIME_IN_SECONDS
           value: {{ .Values.node_deletion_timeout_in_seconds }}
+        - name: AZURE_CLOUD_PROVIDER
+          value: {{ .Values.azure_cloud_provider }}
 
         ports:
           - containerPort: {{ .Values.port }} 

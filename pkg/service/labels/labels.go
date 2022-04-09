@@ -1,4 +1,4 @@
-package aws
+package labels
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func merge(maps ...map[string]*string) map[string]*string {
 	return m
 }
 
-func getNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
+func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	labels := map[string]*string{
 		constants.NodeNameLabel:          &nodeSpec.Name,
 		constants.InstanceLabel:          &nodeSpec.Instance,

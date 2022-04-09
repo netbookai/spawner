@@ -41,3 +41,6 @@ rancher:
 secret_host_region: secret_host_region
 docker: docker
 node_deletion_timeout_in_seconds: node_deletion_timeout_in_seconds
+
+# azure config
+azure_cloud_provider: azure_cloud_provider

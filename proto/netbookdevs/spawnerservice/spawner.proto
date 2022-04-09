@@ -73,6 +73,15 @@ message EchoResponse {
   string msg = 1;
 }
 
+enum MIGProfile {
+    UNKNOWN = 0;
+    MIG1g =1;
+    MIG2g =2;
+    MIG3g =3;
+    MIG4g =4;
+    MIG7g =5;
+}
+
 message NodeSpec {
   string name = 1;
   string instance = 2;
@@ -86,6 +95,7 @@ message NodeSpec {
   map<string, string> labels = 10;
   bool gpu_enabled = 11;
   Health health = 12;
+  MIGProfile migProfile = 13;
 }
 
 message Issue {
@@ -235,8 +245,10 @@ message CreateVolumeRequest {
 }
 
 message CreateVolumeResponse {
+  // volume id is name
   string volumeid = 1;
   string error = 2;
+  string resource_uri = 3;
 }
 
 message DeleteVolumeRequest {
@@ -310,10 +322,27 @@ message GetWorkspacesCostResponse {
   map<string, double> groupedCost = 2;
 }
 
+message AwsCredentials {
+  string accessKeyID = 1;
+  string secretAccessKey = 2;
+  string token = 3;
+}
+
+message AzureCredentials {
+  string subscriptionID = 1;
+  string tenantID = 2;
+  string clientID = 3;
+  string clientSecret = 4;
+  string resourceGroup = 5;
+}
+
 message WriteCredentialRequest {
   string account = 1;
-  string accessKeyID = 2;
-  string secretAccessKey = 3;
+  string provider = 2;
+  oneof cred {
+    AwsCredentials awsCred = 3;
+    AzureCredentials azureCred = 4;
+  }
 }
 
 message WriteCredentialResponse {
@@ -322,10 +351,14 @@ message WriteCredentialResponse {
 
 message ReadCredentialRequest {
   string account = 1;
+  string provider = 2;
 }
 
 message ReadCredentialResponse {
   string account = 1;
-  string accessKeyID = 2;
-  string secretAccessKey = 3;
+  string provider = 2;
+  oneof cred {
+    AwsCredentials awsCred = 3;
+    AzureCredentials azureCred = 4;
+  }
 }

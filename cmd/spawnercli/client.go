@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	clusterName = "us-west-2-netbook-aws-test-2"
-	region      = "us-west-2"
-	provider    = "aws"
+	clusterName = "eastus2-netbook-azure-dev-1649331046"
+	region      = "eastus2" //"us-west-2"
+	provider    = "azure"
 	accountName = "netbook-aws"
-	nodeName    = "spwaner-netbook-test-2"
+	nodeName    = "node1"
+	instance    = "Standard_NC12" //"Standard_A2_v2"
+	volumeName  = "vol-20-20220404123522"
 )
 
 func main() {
@@ -28,7 +30,7 @@ func main() {
 	defer sugar.Sync()
 
 	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
-	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of addsvc")
+	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of spawner")
 	method := fs.String("method", "HealthCheck", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
@@ -52,7 +54,7 @@ func main() {
 
 	node := &proto.NodeSpec{
 		Name:     "sandbox-test-nsp-ng-01",
-		Instance: "t3.medium",
+		Instance: instance,
 		DiskSize: 13,
 	}
 	createClusterReq := &proto.ClusterRequest{
@@ -60,8 +62,7 @@ func main() {
 		Region:   region,
 		Node:     node,
 		Labels: map[string]string{
-			"user":        "98fe250a-7d98-4604-8317-1fbadda737ea",
-			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
+			"user": "dev-tester",
 		},
 		ClusterName: clusterName,
 		AccountName: accountName,
@@ -81,9 +82,9 @@ func main() {
 	}
 
 	addRoute53RecordReq := &proto.AddRoute53RecordRequest{
-		DnsName:     "af196cc69b2644f6480ddf353a8508d2-1819137011.us-west-1.elb.amazonaws.com",
-		RecordName:  "*.mani.app.netbook.ai",
-		Region:      region,
+		DnsName:    "20.85.85.202",
+		RecordName: "*.1117907260.eastus2.azure.app.dev.netbook.ai",
+		// Region:      region,
 		Provider:    provider,
 		AccountName: accountName,
 		// RegionIdentifier: "Oregon region",
@@ -111,13 +112,14 @@ func main() {
 
 	addNode := &proto.NodeSpec{
 		Name:       nodeName,
-		Instance:   "t2.medium",
-		DiskSize:   20,
-		GpuEnabled: false,
+		Instance:   instance,
+		DiskSize:   30,
+		GpuEnabled: true,
+		MigProfile: proto.MIGProfile_MIG3g,
 		Labels: map[string]string{"cluster-name": clusterName,
 			"node-name":   nodeName,
-			"user":        "98fe250a-7d98-4604-8317-1fbadda737ea",
-			"workspaceid": "18638c97-7352-426e-a79e-241956188fed",
+			"user":        "dev-tester",
+			"workspaceid": "dev-tester",
 		},
 	}
 
@@ -139,16 +141,16 @@ func main() {
 
 	deleteNodeReq := &proto.NodeDeleteRequest{
 		ClusterName:   clusterName,
-		NodeGroupName: "ng-04",
+		NodeGroupName: nodeName,
 		Region:        region,
 		Provider:      provider,
 		AccountName:   accountName,
 	}
 
 	createVolumeReq := &proto.CreateVolumeRequest{
-		Availabilityzone: "us-west-2a",
+		Availabilityzone: region,
 		Volumetype:       "gp2",
-		Size:             1,
+		Size:             20,
 		Snapshotid:       "",
 		Region:           region,
 		Provider:         provider,
@@ -156,20 +158,21 @@ func main() {
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
-		Volumeid:    "vol-05d7e98ae385b2e29",
+		//		Volumeid:    "vol-eastus2-1-20220323121600",
+		Volumeid:    volumeName,
 		Region:      region,
 		Provider:    provider,
 		AccountName: accountName,
 	}
 
 	createSnapshotReq := &proto.CreateSnapshotRequest{
-		Volumeid:    "vol-07ccb258225e0e213",
+		Volumeid:    volumeName,
 		Region:      region,
 		Provider:    provider,
 		AccountName: accountName,
 	}
 	createSnapshotAndDeleteReq := &proto.CreateSnapshotAndDeleteRequest{
-		Volumeid:    "vol-0f220de036ebea748",
+		Volumeid:    volumeName,
 		Region:      region,
 		Provider:    provider,
 		AccountName: accountName,
@@ -328,24 +331,60 @@ func main() {
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
 
-	case "ReadCredential":
+	case "ReadCredentialAws":
 		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
-			Account: "alex",
+			Account:  "alexis",
+			Provider: "aws",
 		})
 		if err != nil {
 			sugar.Errorw("error reading credentials", "error", err)
 		}
 		sugar.Infow("ReadCredential", "response", v)
 
-	case "WriteCredential":
+	case "WriteCredentialAws":
 		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
-			Account:         "alex",
-			AccessKeyID:     "access_id",
-			SecretAccessKey: "access_key"})
+			Account:  "alexis",
+			Provider: "aws",
+			Cred: &proto.WriteCredentialRequest_AwsCred{
+				AwsCred: &proto.AwsCredentials{
+					AccessKeyID:     "access_id",
+					SecretAccessKey: "secret_key",
+					Token:           "token",
+				},
+			},
+		})
 		if err != nil {
 			sugar.Errorw("error writing credentials", "error", err)
 		}
-		sugar.Infow("WriteCredential", "response", v)
+		sugar.Infow("WriteCredentialAws", "response", v)
+	case "ReadCredentialAzure":
+		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
+			Account:  "alex",
+			Provider: "azure",
+		})
+		if err != nil {
+			sugar.Errorw("error reading credentials", "error", err)
+		}
+		sugar.Infow("ReadCredential", "response", v)
+
+	case "WriteCredentialAzure":
+		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
+			Account:  "alex",
+			Provider: "azure",
+			Cred: &proto.WriteCredentialRequest_AzureCred{
+				AzureCred: &proto.AzureCredentials{
+					SubscriptionID: "subscription",
+					TenantID:       "tenant_id",
+					ClientID:       "client_id",
+					ClientSecret:   "client_secret",
+					ResourceGroup:  "resource_group",
+				},
+			},
+		})
+		if err != nil {
+			sugar.Errorw("error writing credentials", "error", err)
+		}
+		sugar.Infow("WriteCredentialAws", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
