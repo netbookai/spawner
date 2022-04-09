@@ -1,4 +1,4 @@
-package aws
+package labels
 
 //func TestScopeTag(t *testing.T) {
 //	config.Set(config.Config{Env: "dev"})
