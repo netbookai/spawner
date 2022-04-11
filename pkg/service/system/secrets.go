@@ -114,7 +114,7 @@ func GetAwsCredentials(ctx context.Context, region, accountName string) (*creden
 	if err != nil {
 		return nil, err
 	}
-	return credentials.NewStaticCredentials(c.GetAws().Id, c.GetAws().Secret, c.GetAws().Secret), nil
+	return credentials.NewStaticCredentials(c.GetAws().Id, c.GetAws().Secret, c.GetAws().Token), nil
 }
 
 func sid(provider, name string) string {
