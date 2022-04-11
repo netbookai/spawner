@@ -119,27 +119,6 @@ func (s *spawnerService) GetToken(ctx context.Context, req *proto.GetTokenReques
 	return provider.GetToken(ctx, req)
 }
 
-//AddRoute53Record
-func (s *spawnerService) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
-	dnsName := req.GetDnsName()
-	recordName := req.GetRecordName()
-	regionName := req.GetRegion()
-
-	isAwsResource := req.Provider == string(constants.AwsCloud)
-
-	changeId, err := s.addRoute53Record(ctx, dnsName, recordName, regionName, isAwsResource)
-	s.logger.Infow("added route 53 record", "change-id", changeId)
-	if err != nil {
-		s.logger.Errorw("failed to add route53 record", "error", err)
-		res := &proto.AddRoute53RecordResponse{
-			Status: "Failed",
-			Error:  "",
-		}
-		return res, err
-	}
-	return &proto.AddRoute53RecordResponse{}, nil
-}
-
 //ClusterStatus get cluster status in given provider
 func (s *spawnerService) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	provider, err := s.controller(req.Provider)
@@ -369,4 +348,21 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 
 	s.logger.Debugw("credentials found", "account", account, "provider", provider)
 	return p, nil
+}
+
+//AddRoute53Record
+func (s *spawnerService) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
+	dnsName := req.GetDnsName()
+	recordName := req.GetRecordName()
+	regionName := req.GetRegion()
+
+	isAwsResource := req.Provider == string(constants.AwsCloud)
+
+	changeId, err := s.addRoute53Record(ctx, dnsName, recordName, regionName, isAwsResource)
+	if err != nil {
+		s.logger.Errorw("failed to add route53 record", "error", err)
+		return nil, err
+	}
+	s.logger.Infow("added route 53 record", "change-id", changeId)
+	return &proto.AddRoute53RecordResponse{}, nil
 }

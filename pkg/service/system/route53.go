@@ -2,11 +2,11 @@ package system
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 )
@@ -43,8 +43,7 @@ var regionClassicLoadBalancerHostedID = map[string]string{
 func getLbHosterID(regionName string) (string, error) {
 	id, ok := regionClassicLoadBalancerHostedID[regionName]
 	if !ok {
-		// logger.Errorw("Region does not have matching ELB HostedZoneId")
-		return "", errors.New("region does not have matching ELB HostedZoneId")
+		return "", errors.Errorf("region '%s' does not have matching ELB HostedZoneId", regionName)
 	}
 
 	return id, nil
@@ -57,16 +56,14 @@ func getRoute53Sess(region string) (*route53.Route53, error) {
 	}
 
 	route53Sess := route53.New(sess)
-
 	return route53Sess, nil
 }
 
 func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName string, isAwsResource bool) (string, error) {
-	id, iderr := uuid.NewRandom()
+	id, err := uuid.NewRandom()
 
-	if iderr != nil {
-		// LogError("Failed creating random UUID", logger, iderr)
-		return "", iderr
+	if err != nil {
+		return "", errors.Wrap(err, "AddRoute53Record: failed to get uuid ")
 	}
 
 	hostedZoenId := config.Get().AwsRoute53HostedZoneID
@@ -92,7 +89,7 @@ func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 		// This is currently only for ELB urls
 		classicLbHostedID, err := getLbHosterID(regionName)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "AddRoute53Record")
 		}
 		input.ChangeBatch.Changes[0].ResourceRecordSet.Region = aws.String(regionName)
 		input.ChangeBatch.Changes[0].ResourceRecordSet.AliasTarget = &route53.AliasTarget{
@@ -112,30 +109,22 @@ func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 	// Creating AWS Route53 session
 	route53Client, err := getRoute53Sess(regionName)
 	if err != nil {
-		return "", err
-	}
-
-	if err != nil {
-		// logger.Errorw("Can't start AWS session", "error", err)
-		return "", err
+		return "", errors.Wrap(err, "AddRoute53Record: failed to create route53 session")
 	}
 
 	result, err := route53Client.ChangeResourceRecordSets(input)
 
 	if err != nil {
-		// LogError("AddAwsRoute53Record", logger, err)
-		return "", err
+		return "", errors.Wrap(err, "AddAwsRoute53Record: ChangeResourceRecordSets returned error")
 	}
 
 	// logger.Infow("added route53 record set " + recordName)
-
 	err = route53Client.WaitUntilResourceRecordSetsChanged(&route53.GetChangeInput{
 		Id: *&result.ChangeInfo.Id,
 	})
 
 	if err != nil {
-		// LogError("WaitAddAwsRoute53Record", logger, err)
-		return "", err
+		return "", errors.Wrap(err, "AddAwsRoute53Record: WaitUntilResourceRecordSetsChanged returned error")
 	}
 
 	return *result.ChangeInfo.Id, nil
