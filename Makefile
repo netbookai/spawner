@@ -27,3 +27,6 @@ lint:
 
 fmt-proto:
 	clang-format --style=Chromium -i $(ALL_PROTO_FILES)
+
+build-client:
+	go build -o spawner-cli ./cmd/client/main.go 

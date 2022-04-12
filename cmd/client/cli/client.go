@@ -10,9 +10,9 @@ import (
 )
 
 var rootCommand = &cobra.Command{
-	Use:   "spawner",
-	Short: "spawner cli",
-	Long:  "self hosted cli for cloud infrastructure management",
+	Use:   "spawner-cli",
+	Short: "spawner-cli",
+	Long:  "cli to interact with slef hosted spawner service",
 }
 
 func getSpawnerConn(addr string) (*grpc.ClientConn, error) {

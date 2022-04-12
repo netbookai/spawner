@@ -593,7 +593,8 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 	cluster, err := getClusterSpec(ctx, client, clusterName)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "DeleteCluster: cannot get cluster spec")
+		err := errors.New(err.(awserr.Error).Message())
+		return nil, errors.Wrap(err, "DeleteCluster: ")
 	}
 
 	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {

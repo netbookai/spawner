@@ -73,3 +73,88 @@
     kubectl exec -it spawner-cli -- /bin/sh
     ./spawnercli -grpc-addr=spawnerservice-service:80 -method=ClusterStatus
     ```
+
+
+
+# spawner-cli
+
+## build and install
+
+### build
+
+```
+make build-client
+```
+
+### install
+
+The above command will generate the client binary named `spawner-cli` in the current working directory. Copy that to your path or use it with relative execution path `./spawner-cli` as per your convenience.
+
+## Usage
+
+For all the commands you need to pass spawner host address, default value is set to `localhost:8083`, if you need to change that, pass in using `--addr` or `-a`.
+
+Example:
+
+```
+spawner-cli cluster-status clustername --addr=192.168.1.78:8080 --provider=aws --region=us-west-2
+```
+
+### Create a new cluster
+
+To create a cluster we need more information on the cluster and node specification which can be passed to command as a file by specifying `--request` or `-r`
+
+```
+spawner-cli create-cluster clustername -r request.json
+```
+
+request.json should contain the following
+
+```
+{
+  "provider": "aws",
+  "region": "us-east-1",
+  "labels": {
+    "fugiat8f": "laboris magna Duis amet"
+  },
+  "node": {
+    "name": "proident",
+    "diskSize": 10,
+    "labels": {
+      "laboris48": "velit aute in eiusmod",
+      "in_0": "in incididunt do nostrud",
+    },
+    "instance": "standard_A2_V2",
+    "gpuEnabled": false
+  }
+}
+
+```
+
+> Note : This wil create a cluster and attach new node to it as per spec, the time taken by this operation completely depends on how fast provider responds.
+
+---
+
+### Cluster status
+
+Get the cluster status such as CREATING, ACTIVE, DELETING
+
+```
+spawner-cli cluster-status clustername --provider "aws" -r=region
+```
+----
+
+### Delete Cluster 
+
+Delete the existing cluster
+```
+spawner-cli delete-cluster clustername --provider "aws" -r=region
+```
+
+If the cluster has the nodes attached to it, this operation will fail, you can force delete the cluster which deletes attached node and then deletes the cluster.
+
+To force delete set the `--force` or `-f`
+
+```
+spawner-cli delete-cluster clustername --provider "aws" -r=region --force
+```
