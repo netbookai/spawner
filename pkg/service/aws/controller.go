@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -290,14 +291,12 @@ func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterS
 
 	if err != nil {
 		ctrl.logger.Errorw("failed to fetch cluster status", "error", err, "cluster", clusterName, "region", region)
-		return &proto.ClusterStatusResponse{
-			Error: err.Error(),
-		}, err
+		return nil, errors.New(err.(awserr.Error).Message())
 	}
 
 	return &proto.ClusterStatusResponse{
 		Status: *cluster.Status,
-	}, err
+	}, nil
 }
 
 //getDefaultNode Get any existing node from the cluster as default node
