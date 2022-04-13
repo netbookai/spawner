@@ -24,6 +24,7 @@ func setupCommands() {
 	rootCommand.AddCommand(clusteStatus())
 	rootCommand.AddCommand(deleteCluster())
 	rootCommand.AddCommand(nodepool())
+	rootCommand.AddCommand(kubeConfig())
 }
 
 func Execute() error {

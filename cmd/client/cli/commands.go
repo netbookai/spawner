@@ -3,11 +3,13 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func createCluster() *cobra.Command {
@@ -333,5 +335,76 @@ func nodepool() *cobra.Command {
 	}
 	c.AddCommand(addNodePool())
 	c.AddCommand(deleteNodePool())
+	return c
+}
+
+func kubeConfig() *cobra.Command {
+	name := ""
+	addr := ""
+	provider := ""
+	region := ""
+
+	c := &cobra.Command{
+
+		Use:     "kubeconfig",
+		Short:   "get kubeconfig for the cluster",
+		Long:    "get kubeconfig for the cluster",
+		Example: "kubeconfig clustername",
+		Args: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+		Version:   "0.0.1",
+		ValidArgs: []string{"name"},
+		Run: func(cmd *cobra.Command, args []string) {
+			if name == "" && len(args) < 1 {
+				log.Fatal("cluster name must be provided as first argument or passed in as flags")
+			}
+			if len(args) == 1 {
+				name = args[0]
+			}
+			req := &proto.GetTokenRequest{}
+
+			req.ClusterName = name
+			req.Provider = provider
+			req.Region = region
+
+			conn, err := getSpawnerConn(addr)
+			if err != nil {
+				log.Fatal("failed to connect to spawner ", addr)
+			}
+			defer conn.Close()
+			client := proto.NewSpawnerServiceClient(conn)
+			log.Println("getting token for the cluster")
+			res, err := client.GetToken(context.Background(), req)
+			if err != nil {
+				log.Fatalf("failed to get token : %s\n", err.Error())
+				return
+			}
+
+			log.Printf(" got token with endpoint : %s\n", res.Endpoint)
+
+			home, err := os.UserHomeDir()
+			if err != nil {
+				log.Fatalf("failed to read user home directory : %s\n", err.Error())
+				return
+			}
+			kubefile := fmt.Sprintf("%s/.kube/config", home)
+			log.Printf("reading kube config : %s\n", kubefile)
+			kc, err := clientcmd.LoadFromFile(kubefile)
+			if err != nil {
+				log.Fatalf("failed to read kube config : %s\n", err.Error())
+				return
+			}
+
+			_ = kc
+		},
+	}
+
+	c.Flags().StringVarP(&name, "name", "n", "", "cluster name")
+	c.Flags().StringVarP(&addr, "addr", "a", "localhost:8083", "spanwner service hoost address 'ip:port'")
+
+	c.Flags().StringVarP(&provider, "provider", "p", "", "cloud provider, one of ['aws', 'azure']")
+	c.Flags().StringVarP(&region, "region", "r", "", "cluster hosted region")
+
 	return c
 }
