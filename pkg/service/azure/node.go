@@ -63,9 +63,14 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 
 	nodeTags := labels.GetNodeLabel(req.NodeSpec)
 
+	count := int32(1)
+
+	if req.NodeSpec.Count != 0 {
+		count = int32(req.NodeSpec.Count)
+	}
 	mcappp := containerservice.ManagedClusterAgentPoolProfileProperties{
 
-		Count:               to.Int32Ptr(1),
+		Count:               &count,
 		VMSize:              to.StringPtr(req.NodeSpec.Instance),
 		NodeLabels:          nodeTags,
 		Tags:                nodeTags,

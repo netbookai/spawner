@@ -48,6 +48,10 @@ func (a *AzureController) createAKSCluster(ctx context.Context, req *proto.Clust
 
 	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/create-or-update
 
+	count := int32(1)
+	if req.Node.Count != 0 {
+		count = int32(req.Node.Count)
+	}
 	mc := containerservice.ManagedCluster{
 		Tags:     tags,
 		Name:     &clusterName,
@@ -56,7 +60,7 @@ func (a *AzureController) createAKSCluster(ctx context.Context, req *proto.Clust
 			DNSPrefix: &clusterName,
 			AgentPoolProfiles: &[]containerservice.ManagedClusterAgentPoolProfile{
 				{
-					Count:               to.Int32Ptr(1),
+					Count:               &count,
 					Name:                to.StringPtr(req.Node.Name),
 					VMSize:              to.StringPtr(req.Node.Instance),
 					OsDiskSizeGB:        to.Int32Ptr(req.Node.DiskSize),

@@ -96,6 +96,7 @@ message NodeSpec {
   bool gpu_enabled = 11;
   Health health = 12;
   MIGProfile migProfile = 13;
+  int64 count = 14;
 }
 
 message Issue {

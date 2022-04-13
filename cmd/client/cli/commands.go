@@ -56,11 +56,34 @@ func createCluster() *cobra.Command {
 			log.Printf("creating cluster '%s'\n", name)
 			_, err = client.CreateCluster(context.Background(), req)
 
-			//TODO: add new node as per cluster node spec
 			if err != nil {
 				log.Fatal("create cluster failed: ", err.Error())
 			}
-			log.Printf("cluster '%s' created\n", name)
+
+			if req.Provider == "aws" {
+				stat := waitUntilClusterReady(client, req)
+				if stat != "ACTIVE" {
+					log.Panic("failed to wait on cluster activation, please check provider portal")
+
+				}
+
+				//add default node
+				nsr := &proto.NodeSpawnRequest{}
+				nsr.Provider = req.Provider
+				nsr.Region = req.Region
+				nsr.NodeSpec = req.Node
+				nsr.ClusterName = req.ClusterName
+				log.Printf("cluster '%s' is active, adding node '%s'\n", name, req.Node.Name)
+				_, err := client.AddNode(context.Background(), nsr)
+				if err != nil {
+					log.Fatalf("failed to attach node to cluster '%s', can retry 'nodepool add' %s\n", name, err.Error())
+					return
+				}
+				log.Println("nodepool attached to cluster")
+			} else {
+
+				log.Printf("cluster '%s' created\n", name)
+			}
 		},
 	}
 	c.Flags().StringVarP(&name, "name", "n", "", "cluster name")

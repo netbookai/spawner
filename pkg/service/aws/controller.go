@@ -378,6 +378,10 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 		amiType = "AL2_x86_64"
 	}
 
+	count := int64(1)
+	if nodeSpec.Count != 0 {
+		count = nodeSpec.Count
+	}
 	return &eks.CreateNodegroupInput{
 		AmiType:       &amiType,
 		CapacityType:  common.StrPtr("ON_DEMAND"),
@@ -389,9 +393,9 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 		Labels:        labels,
 		Subnets:       cluster.ResourcesVpcConfig.SubnetIds,
 		ScalingConfig: &eks.NodegroupScalingConfig{
-			DesiredSize: common.Int64Ptr(1),
-			MinSize:     common.Int64Ptr(1),
-			MaxSize:     common.Int64Ptr(1),
+			DesiredSize: &count,
+			MinSize:     &count,
+			MaxSize:     &count,
 		},
 		Tags: labels,
 	}, nil
@@ -413,6 +417,12 @@ func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clu
 		amiType = "AL2_x86_64"
 	}
 
+	count := int64(1)
+
+	if nodeSpec.Count != 0 {
+		count = nodeSpec.Count
+	}
+
 	return &eks.CreateNodegroupInput{
 		AmiType:        &amiType,
 		CapacityType:   defaultNode.CapacityType,
@@ -425,9 +435,9 @@ func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clu
 		Labels:         labels,
 		Subnets:        defaultNode.Subnets,
 		ScalingConfig: &eks.NodegroupScalingConfig{
-			DesiredSize: common.Int64Ptr(1),
-			MinSize:     common.Int64Ptr(1),
-			MaxSize:     common.Int64Ptr(1),
+			DesiredSize: &count,
+			MinSize:     &count,
+			MaxSize:     &count,
 		},
 		Tags: labels,
 	}
