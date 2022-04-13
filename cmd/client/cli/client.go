@@ -23,6 +23,7 @@ func setupCommands() {
 	rootCommand.AddCommand(createCluster())
 	rootCommand.AddCommand(clusteStatus())
 	rootCommand.AddCommand(deleteCluster())
+	rootCommand.AddCommand(nodepool())
 }
 
 func Execute() error {
