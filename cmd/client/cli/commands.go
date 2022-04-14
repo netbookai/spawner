@@ -362,7 +362,7 @@ func kubeConfig() *cobra.Command {
 			if len(args) == 1 {
 				name = args[0]
 			}
-			req := &proto.GetTokenRequest{}
+			req := &proto.GetKubeConfigRequest{}
 
 			req.ClusterName = name
 			req.Provider = provider
@@ -374,14 +374,14 @@ func kubeConfig() *cobra.Command {
 			}
 			defer conn.Close()
 			client := proto.NewSpawnerServiceClient(conn)
-			log.Println("getting token for the cluster")
-			res, err := client.GetToken(context.Background(), req)
+			log.Println("getting kube config for the cluster")
+			res, err := client.GetKubeConfig(context.Background(), req)
 			if err != nil {
 				log.Fatalf("failed to get token : %s\n", err.Error())
 				return
 			}
 
-			log.Printf(" got token with endpoint : %s\n", res.Endpoint)
+			log.Printf(" got token for : %s\n", res.ClusterName)
 
 			home, err := os.UserHomeDir()
 			if err != nil {
@@ -389,8 +389,23 @@ func kubeConfig() *cobra.Command {
 				return
 			}
 			kubefile := fmt.Sprintf("%s/.kube/config", home)
-			log.Printf("reading kube config : %s\n", kubefile)
+			log.Printf("reading existing kube config : %s\n", kubefile)
 			kc, err := clientcmd.LoadFromFile(kubefile)
+
+			newConfig, err := clientcmd.Load(res.GetConfig())
+			newConfig.CurrentContext = res.ClusterName
+			if err != nil {
+				log.Fatalf("failed to get the kube config : %s\n", err.Error())
+				return
+			}
+
+			log.Println("writing kubeconfig to ", kubefile)
+			err = clientcmd.WriteToFile(*newConfig, kubefile)
+			if err != nil {
+				log.Fatalf("failed to write kube config : %s\n", err.Error())
+				return
+			}
+
 			if err != nil {
 				log.Fatalf("failed to read kube config : %s\n", err.Error())
 				return

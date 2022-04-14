@@ -699,33 +699,3 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 func (ctrl AWSController) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
 	return &proto.AddTokenResponse{}, nil
 }
-
-func (ctrl AWSController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
-
-	region := req.Region
-	clusterName := req.ClusterName
-
-	session, err := NewSession(ctx, region, req.AccountName)
-	if err != nil {
-		return nil, err
-	}
-	client := session.getEksClient()
-	ctrl.logger.Debugw("fetching cluster status", "cluster", clusterName, "region", region)
-
-	cluster, err := getClusterSpec(ctx, client, clusterName)
-	if err != nil {
-		ctrl.logger.Errorw("failed to get cluster spec", "error", err, "cluster", clusterName, "region", region)
-		return nil, err
-	}
-
-	kubeConfig, err := session.getKubeConfig(cluster)
-	if err != nil {
-		ctrl.logger.Errorw("failed to get k8s config", "error", err, "cluster", clusterName, "region", region)
-		return nil, err
-	}
-	return &proto.GetTokenResponse{
-		Token:    kubeConfig.BearerToken,
-		CaData:   string(kubeConfig.CAData),
-		Endpoint: kubeConfig.Host,
-	}, nil
-}

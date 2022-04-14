@@ -54,6 +54,7 @@ type SpawnerServiceClient interface {
 	GetWorkspacesCost(ctx context.Context, in *GetWorkspacesCostRequest, opts ...grpc.CallOption) (*GetWorkspacesCostResponse, error)
 	WriteCredential(ctx context.Context, in *WriteCredentialRequest, opts ...grpc.CallOption) (*WriteCredentialResponse, error)
 	ReadCredential(ctx context.Context, in *ReadCredentialRequest, opts ...grpc.CallOption) (*ReadCredentialResponse, error)
+	GetKubeConfig(ctx context.Context, in *GetKubeConfigRequest, opts ...grpc.CallOption) (*GetKubeConfigResponse, error)
 }
 
 type spawnerServiceClient struct {
@@ -244,6 +245,15 @@ func (c *spawnerServiceClient) ReadCredential(ctx context.Context, in *ReadCrede
 	return out, nil
 }
 
+func (c *spawnerServiceClient) GetKubeConfig(ctx context.Context, in *GetKubeConfigRequest, opts ...grpc.CallOption) (*GetKubeConfigResponse, error) {
+	out := new(GetKubeConfigResponse)
+	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/GetKubeConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SpawnerServiceServer is the server API for SpawnerService service.
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
@@ -280,6 +290,7 @@ type SpawnerServiceServer interface {
 	GetWorkspacesCost(context.Context, *GetWorkspacesCostRequest) (*GetWorkspacesCostResponse, error)
 	WriteCredential(context.Context, *WriteCredentialRequest) (*WriteCredentialResponse, error)
 	ReadCredential(context.Context, *ReadCredentialRequest) (*ReadCredentialResponse, error)
+	GetKubeConfig(context.Context, *GetKubeConfigRequest) (*GetKubeConfigResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -346,6 +357,9 @@ func (UnimplementedSpawnerServiceServer) WriteCredential(context.Context, *Write
 }
 func (UnimplementedSpawnerServiceServer) ReadCredential(context.Context, *ReadCredentialRequest) (*ReadCredentialResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReadCredential not implemented")
+}
+func (UnimplementedSpawnerServiceServer) GetKubeConfig(context.Context, *GetKubeConfigRequest) (*GetKubeConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetKubeConfig not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
@@ -720,6 +734,24 @@ func _SpawnerService_ReadCredential_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SpawnerService_GetKubeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetKubeConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).GetKubeConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/spawnerservice.SpawnerService/GetKubeConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).GetKubeConfig(ctx, req.(*GetKubeConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SpawnerService_ServiceDesc is the grpc.ServiceDesc for SpawnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -806,6 +838,10 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReadCredential",
 			Handler:    _SpawnerService_ReadCredential_Handler,
+		},
+		{
+			MethodName: "GetKubeConfig",
+			Handler:    _SpawnerService_GetKubeConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

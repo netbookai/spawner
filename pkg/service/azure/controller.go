@@ -76,3 +76,7 @@ func (a *AzureController) CreateSnapshotAndDelete(ctx context.Context, req *prot
 func (a *AzureController) GetWorkspacesCost(_ context.Context, _ *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
+
+func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
+	return a.getKubeConfig(ctx, req)
+}
