@@ -7,9 +7,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func createCluster() *cobra.Command {
@@ -377,32 +379,22 @@ func kubeConfig() *cobra.Command {
 			log.Println("getting kube config for the cluster")
 			res, err := client.GetKubeConfig(context.Background(), req)
 			if err != nil {
-				log.Fatalf("failed to get token : %s\n", err.Error())
+				log.Fatalf("failed to get kube config: %s\n", err.Error())
 				return
 			}
 
-			log.Printf(" got token for : %s\n", res.ClusterName)
-
 			home, err := os.UserHomeDir()
 			if err != nil {
-				log.Fatalf("failed to read user home directory : %s\n", err.Error())
+				log.Fatalf("failed to read user home directory: %s\n", err.Error())
 				return
 			}
 			kubefile := fmt.Sprintf("%s/.kube/config", home)
 			log.Printf("reading existing kube config : %s\n", kubefile)
-			kc, err := clientcmd.LoadFromFile(kubefile)
+			currentKC, err := clientcmd.LoadFromFile(kubefile)
 
 			newConfig, err := clientcmd.Load(res.GetConfig())
-			newConfig.CurrentContext = res.ClusterName
 			if err != nil {
 				log.Fatalf("failed to get the kube config : %s\n", err.Error())
-				return
-			}
-
-			log.Println("writing kubeconfig to ", kubefile)
-			err = clientcmd.WriteToFile(*newConfig, kubefile)
-			if err != nil {
-				log.Fatalf("failed to write kube config : %s\n", err.Error())
 				return
 			}
 
@@ -411,7 +403,18 @@ func kubeConfig() *cobra.Command {
 				return
 			}
 
-			_ = kc
+			kubeConfg := clientcmdapi.NewConfig()
+			//set the current cluster context as new context
+			newConfig.CurrentContext = res.ClusterName
+			mergo.Merge(kubeConfg, currentKC, mergo.WithOverride)
+			mergo.Merge(kubeConfg, newConfig, mergo.WithOverride)
+
+			err = clientcmd.WriteToFile(*kubeConfg, kubefile)
+			if err != nil {
+				log.Fatalf("failed to write kube config : %s\n", err.Error())
+				return
+			}
+			log.Printf("KubeConfig updated in '%s'\n", kubefile)
 		},
 	}
 
