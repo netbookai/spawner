@@ -14,6 +14,13 @@
     ```
 
 
+# Releases
+ ### binary release - coming soon
+ ### source release -clone repo
+ ```
+ git clone git@gitlab.com:netbook-devs/spawner-service.git
+ ```
+
 
 # Development
 
@@ -25,21 +32,17 @@
     ```
     export AWS_ROLE_ARN=arn:aws:iam::965734315247:role/sandboxClusterSecretManagerRole
     ```
-3. cd into cmd/spawnersvc and run the spawnersvc.go to start the server
+3. run the server using
     ```
     make run
     ```
     This starts a gRPC server running on port 8083 and binds the service to it
-4. cd cmd/spawnercli and run the spawnercli.go to use the client to call the service
-    ```
-    go run spawncli.go -grpc-addr=:8083 -method=ClusterStatus
-    ```
-    This calls the ClusterStatus method on the gRPC service on port 8083
-5. To update modules,
+
+4. To update modules,
     ```
     make tidy
     ```
-6. Run formatter before committing or set your editor to FORMAT ON SAVE with goimports.
+5. Run formatter before committing or set your editor to FORMAT ON SAVE with goimports.
     ```
     make fmt
     ```
@@ -68,15 +71,9 @@
     ```
     Service will be running at `spawnerservice-service:80` inside k8s cluster
 
-2. Test server deployment
-    ```
-    kubectl exec -it spawner-cli -- /bin/sh
-    ./spawnercli -grpc-addr=spawnerservice-service:80 -method=ClusterStatus
-    ```
 
 
-
-# spawner-cli
+# spawner command line tool
 
 ## build and install
 
@@ -88,7 +85,7 @@ make build-client
 
 ### install
 
-The above command will generate the client binary named `spawner-cli` in the current working directory. Copy that to your path or use it with relative execution path `./spawner-cli` as per your convenience.
+The above command will generate the client binary named `spawner` in the current working directory. Copy that to your path or use it with relative execution path `./spawner` as per your convenience.
 
 ## Usage
 
@@ -97,7 +94,7 @@ For all the commands you need to pass spawner host address, default value is set
 Example:
 
 ```
-spawner-cli cluster-status clustername --addr=192.168.1.78:8080 --provider=aws --region=us-west-2
+spawner cluster-status clustername --addr=192.168.1.78:8080 --provider=aws --region=us-west-2
 ```
 
 ### Create a new cluster
@@ -105,7 +102,7 @@ spawner-cli cluster-status clustername --addr=192.168.1.78:8080 --provider=aws -
 To create a cluster we need more information on the cluster and node specification which can be passed to command as a file by specifying `--request` or `-r`
 
 ```
-spawner-cli create-cluster clustername -r request.json
+spawner create-cluster clustername -r request.json
 ```
 
 request.json should contain the following
@@ -140,7 +137,7 @@ request.json should contain the following
 Get the cluster status such as CREATING, ACTIVE, DELETING
 
 ```
-spawner-cli cluster-status clustername --provider "aws" -r=region
+spawner cluster-status clustername --provider "aws" -r=region
 ```
 ----
 
@@ -148,7 +145,7 @@ spawner-cli cluster-status clustername --provider "aws" -r=region
 
 Delete the existing cluster
 ```
-spawner-cli delete-cluster clustername --provider "aws" -r=region
+spawner delete-cluster clustername --provider "aws" -r=region
 ```
 
 If the cluster has the nodes attached to it, this operation will fail, you can force delete the cluster which deletes attached node and then deletes the cluster.
@@ -156,5 +153,49 @@ If the cluster has the nodes attached to it, this operation will fail, you can f
 To force delete set the `--force` or `-f`
 
 ```
-spawner-cli delete-cluster clustername --provider "aws" -r=region --force
+spawner delete-cluster clustername --provider "aws" -r=region --force
 ```
+
+### Add new nodepool
+Create new nodepool in a given cluster
+
+```
+spawner nodepool add clustername --request request.json
+```
+
+request.json will contain the nodespec for the new nodepool,
+
+```
+@request.json
+
+{
+  "nodeSpec": {
+    "diskSize": 31,
+    "name": "prosint",
+    "count": 3,
+    "instance": "Standard_A2_V2",
+    "labels": {
+      "created_by": "cli"
+    }
+  },
+  "region": "eastus2",
+  "clusterName": "my-cluster",
+  "provider": "azure"
+}
+```
+---
+
+### Delete nodepool
+
+```
+spawner nodepool delete clustername --provider "aws" -r=region --nodepool nodepoolname
+```
+
+---
+
+### Get kubeconfg for the cluster
+```
+spawner kubeconfig clustername --provider "aws" -r=region
+```
+
+this will read existing kube config from `~/.kube/config` and merges new cluster config to it, sets the current context as the requested cluster
