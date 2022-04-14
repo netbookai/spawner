@@ -1,93 +1,61 @@
 # spawner-service
 
-# Prerequisites
+Mulit-Cloud infrastructure orchestrator for kubernetes first. development. One tool rule them all. No need to use aws, azure or any other vendor specific cli to manage cluster and get kuebconfig.
+
+
+
+## Prerequisites
 1. Go needs to be installed on the system version 1.17 or above (tested on 1.17)
-2. protoc needs to be installed
-    ```
-    apt install -y protobuf-compiler
-    ```
-3. protoc-gen-go and protoc-gen-go-grpc plugins to protoc needs to be installed to generate Go and gRPC code
-    ```
-    go install google.golang.org/protobuf/cmd/protoc-gen-go
-    
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
-    ```
 
 
-# Releases
- ### binary release - coming soon
- ### source release -clone repo
- ```
- git clone git@gitlab.com:netbook-devs/spawner-service.git
- ```
+## Releases
+
+### binary release - coming soon
+
+### source release - clone repo
+ 
+```
+git clone git@gitlab.com:netbook-devs/spawner-service.git
+```
+
+## Usage 
+
+Spawner comes with following two packages
+
+* spawner-service - gRPC service to manage cloud provider infra
+* spawner  - command line interface to interact with service
+
+### run service
+  
+-  update config.env with the provider credentials, gRPC ports.
+
+- run the service
+  
+  Spawner is a gRPC service, so spin up a terminal and run the following command
+  ```
+  make run
+  ```
+
+  this will start the service in the specified ports in config.env
+
+---
 
 
-# Development
+## spawner command line tool
 
-1. Run make proto to generate rpc and protobuf go files
-    ```
-    make proto
-    ```
-2. setup AWS_ROLE_ARN environment variable
-    ```
-    export AWS_ROLE_ARN=arn:aws:iam::965734315247:role/sandboxClusterSecretManagerRole
-    ```
-3. run the server using
-    ```
-    make run
-    ```
-    This starts a gRPC server running on port 8083 and binds the service to it
+### Build
 
-4. To update modules,
-    ```
-    make tidy
-    ```
-5. Run formatter before committing or set your editor to FORMAT ON SAVE with goimports.
-    ```
-    make fmt
-    ```
-
-# Creating a docker image
-
-1. Build docker image from projet root directory
-    ```
-    docker login registry.gitlab.com
-    docker build -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:0.0.1 .
-    docker push registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:0.0.1
-    ```
-
-# Running the app using helm
-
-1. (Optional) Create  a new docker registry secret from docker config file
-    ```
-    # base64 encode username and password
-    echo -n <username>:<password> | base64
-    # base64 encode ~/.docker/config.json file
-    cat ~/.docker/config.json | base64
-    ```
-1. Install the helm chart
-    ```
-    helm install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml
-    ```
-    Service will be running at `spawnerservice-service:80` inside k8s cluster
-
-
-
-# spawner command line tool
-
-## build and install
-
-### build
+spin up another terminal/tab and run the following in spawner-service repo directory
 
 ```
 make build-client
 ```
 
-### install
+### Install
 
-The above command will generate the client binary named `spawner` in the current working directory. Copy that to your path or use it with relative execution path `./spawner` as per your convenience.
+The above command will generate the client binary named `spawner` in the current working directory. Copy that to your PATH or use it with relative execution path `./spawner` as per your convenience.
 
-## Usage
+### Usage
 
 For all the commands you need to pass spawner host address, default value is set to `localhost:8083`, if you need to change that, pass in using `--addr` or `-a`.
 
@@ -118,8 +86,8 @@ request.json should contain the following
     "name": "proident",
     "diskSize": 10,
     "labels": {
-      "laboris48": "velit aute in eiusmod",
-      "in_0": "in incididunt do nostrud",
+      "created_by": "alex",
+     
     },
     "instance": "standard_A2_V2",
     "gpuEnabled": false
