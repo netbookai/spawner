@@ -14,13 +14,13 @@ import (
 )
 
 const (
-	clusterName = "eastus2-netbook-azure-dev-1649331046"
-	region      = "eastus2" //"us-west-2"
-	provider    = "azure"
+	clusterName = "us-west-2-netbook-aws-test-2"
+	region      = "us-west-2"
+	provider    = "aws"
 	accountName = "netbook-aws"
-	nodeName    = "node1"
 	instance    = "Standard_NC12" //"Standard_A2_v2"
 	volumeName  = "vol-20-20220404123522"
+	nodeName    = "spwaner-netbook-test-on-demand"
 )
 
 func main() {
@@ -111,11 +111,13 @@ func main() {
 	}
 
 	addNode := &proto.NodeSpec{
-		Name:       nodeName,
-		Instance:   instance,
-		DiskSize:   30,
-		GpuEnabled: true,
-		MigProfile: proto.MIGProfile_MIG3g,
+		Name:          nodeName,
+		Instance:      instance,
+		MigProfile:    proto.MIGProfile_MIG3g,
+		CapacityType:  proto.CapacityType_ONDEMAND,
+		SpotInstances: []string{"t2.small", "t3.small"},
+		DiskSize:      20,
+		GpuEnabled:    false,
 		Labels: map[string]string{"cluster-name": clusterName,
 			"node-name":   nodeName,
 			"user":        "dev-tester",

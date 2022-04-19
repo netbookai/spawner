@@ -14,7 +14,6 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -89,215 +88,6 @@ func healthProto(health *eks.NodegroupHealth) *proto.Health {
 	}
 	pr.Issue = issues
 	return pr
-}
-
-//GetCluster Describe cluster with the given name and region
-func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
-
-	response := &proto.ClusterSpec{}
-	region := req.Region
-	clusterName := req.ClusterName
-	accountName := req.AccountName
-	session, err := NewSession(ctx, region, accountName)
-
-	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
-	if err != nil {
-		return nil, err
-	}
-	client := session.getEksClient()
-
-	cluster, err := getClusterSpec(ctx, client, clusterName)
-
-	if err != nil {
-		ctrl.logger.Error("failed to fetch cluster status", err)
-		return nil, err
-	}
-
-	k8sClient, err := session.getK8sClient(cluster)
-	if err != nil {
-		ctrl.logger.Error(" Failed to create kube client ", err)
-		return nil, err
-	}
-	nodeList, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-	response.Name = clusterName
-
-	if err != nil {
-		ctrl.logger.Error(" Failed to query node list ", err)
-		return nil, err
-	}
-
-	var nodeSpecList []*proto.NodeSpec
-	for _, node := range nodeList.Items {
-		nodeGroupName := node.Labels[constants.NodeNameLabel]
-		addresses := node.Status.Addresses
-		ipAddr := ""
-		hostName := node.Name
-		for _, address := range addresses {
-			switch address.Type {
-
-			case "InternalIP":
-				ipAddr = address.Address
-			case "HostName":
-				hostName = address.Address
-			}
-		}
-
-		state := constants.Inactive
-		for _, cond := range node.Status.Conditions {
-			if cond.Type == "Ready" {
-				state = constants.Active
-			}
-		}
-
-		ephemeralStorage := node.Status.Capacity.StorageEphemeral()
-
-		//get node health
-		var nodeHealth *proto.Health
-		health, err := ctrl.getNodeHealth(ctx, client, clusterName, nodeGroupName)
-		if err != nil {
-			ctrl.logger.Errorw("failed to get the health check", "error", err)
-		} else {
-			nodeHealth = healthProto(health)
-		}
-
-		//we will use MB for the disk size, int32 is too small for bytes
-		diskSize := ephemeralStorage.Value() / 1024 / 1024
-		nodeSpecList = append(nodeSpecList, &proto.NodeSpec{
-			Name: nodeGroupName,
-			//ClusterId:        node.ClusterID,
-			Instance:         node.Labels["node.kubernetes.io/instance-type"],
-			DiskSize:         int32(diskSize),
-			HostName:         hostName,
-			State:            state,
-			Uuid:             string(node.ObjectMeta.UID),
-			IpAddr:           ipAddr,
-			Labels:           node.Labels,
-			Availabilityzone: node.Labels["topology.kubernetes.io/zone"],
-			Health:           nodeHealth,
-		})
-
-	}
-
-	response.NodeSpec = nodeSpecList
-
-	return response, nil
-}
-
-//GetClusters return active, spawner created clusters
-func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
-
-	//get all clusters in given region
-	region := req.Region
-	accountName := req.AccountName
-	session, err := NewSession(ctx, region, accountName)
-	if err != nil {
-		return nil, err
-	}
-
-	client := session.getEksClient()
-
-	//list cluster allows paginated query,
-	listClusterInput := &eks.ListClustersInput{}
-	listClusterOut, err := client.ListClustersWithContext(ctx, listClusterInput)
-	if err != nil {
-		ctrl.logger.Error("failed to list clusters", err)
-		return &proto.GetClustersResponse{}, err
-	}
-
-	resp := proto.GetClustersResponse{
-		Clusters: [](*proto.ClusterSpec){},
-	}
-
-	for _, cluster := range listClusterOut.Clusters {
-
-		clusterSpec, err := getClusterSpec(ctx, client, *cluster)
-
-		if err != nil {
-			ctrl.logger.Errorw("failed to get cluster details", "cluster", *cluster, "error", err)
-			continue
-
-		}
-		creator, ok := clusterSpec.Tags[constants.CreatorLabel]
-		if !ok {
-			//unknown creator
-			continue
-		}
-
-		if *clusterSpec.Status != "ACTIVE" || *creator != constants.SpawnerServiceLabel {
-			continue
-		}
-
-		scope, ok := clusterSpec.Tags[constants.Scope]
-		if !ok {
-			continue
-		}
-		if labels.ScopeTag() != *scope {
-			//skip clusters which is of not spawner env scope
-			continue
-		}
-
-		input := &eks.ListNodegroupsInput{ClusterName: cluster}
-		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
-		if err != nil {
-			ctrl.logger.Errorf("failed to fetch nodegroups %s", err.Error())
-		}
-
-		nodes := []*proto.NodeSpec{}
-		for _, cNodeGroup := range nodeGroupList.Nodegroups {
-			input := &eks.DescribeNodegroupInput{
-				NodegroupName: cNodeGroup,
-				ClusterName:   cluster}
-			nodeGroupDetails, err := client.DescribeNodegroupWithContext(ctx, input)
-
-			if err != nil {
-				ctrl.logger.Error("failed to fetch nodegroups details ", *cNodeGroup)
-				continue
-			}
-
-			node := &proto.NodeSpec{Name: *cNodeGroup}
-
-			if nodeGroupDetails.Nodegroup.InstanceTypes != nil {
-				node.Instance = *nodeGroupDetails.Nodegroup.InstanceTypes[0]
-			}
-			if nodeGroupDetails.Nodegroup.DiskSize != nil {
-				node.DiskSize = int32(*nodeGroupDetails.Nodegroup.DiskSize)
-			}
-
-			node.Health = healthProto(nodeGroupDetails.Nodegroup.Health)
-			nodes = append(nodes, node)
-		}
-
-		resp.Clusters = append(resp.Clusters, &proto.ClusterSpec{
-			Name:     *cluster,
-			NodeSpec: nodes,
-		})
-	}
-	return &resp, nil
-}
-
-func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
-	region := req.Region
-	clusterName := req.ClusterName
-	session, err := NewSession(ctx, region, req.AccountName)
-
-	if err != nil {
-		return nil, err
-	}
-	client := session.getEksClient()
-
-	ctrl.logger.Debugw("fetching cluster status", "cluster-name", clusterName, "region", region)
-	cluster, err := getClusterSpec(ctx, client, clusterName)
-
-	if err != nil {
-		ctrl.logger.Errorw("failed to fetch cluster status", "error", err, "cluster", clusterName, "region", region)
-		return &proto.ClusterStatusResponse{
-			Error: err.Error(),
-		}, err
-	}
-
-	return &proto.ClusterStatusResponse{
-		Status: *cluster.Status,
-	}, err
 }
 
 //getDefaultNode Get any existing node from the cluster as default node
@@ -379,11 +169,24 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 		amiType = "AL2_x86_64"
 	}
 
+	capacityType := eks.CapacityTypesOnDemand
+	instanceTypes := []*string{}
+
+	if nodeSpec.CapacityType == proto.CapacityType_SPOT {
+		capacityType = eks.CapacityTypesSpot
+		for _, i := range nodeSpec.SpotInstances {
+			instanceTypes = append(instanceTypes, &i)
+		}
+		ctrl.logger.Infow("creating a spot instances", "instances", instanceTypes)
+	} else {
+		instanceTypes = append(instanceTypes, &nodeSpec.Instance)
+	}
+
 	return &eks.CreateNodegroupInput{
 		AmiType:       &amiType,
-		CapacityType:  common.StrPtr("ON_DEMAND"),
+		CapacityType:  &capacityType,
 		NodeRole:      nodeRole.Arn,
-		InstanceTypes: []*string{&nodeSpec.Instance},
+		InstanceTypes: instanceTypes,
 		ClusterName:   cluster.Name,
 		DiskSize:      &diskSize,
 		NodegroupName: &nodeSpec.Name,
@@ -414,11 +217,26 @@ func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clu
 		amiType = "AL2_x86_64"
 	}
 
+	capacityType := eks.CapacityTypesOnDemand
+	instanceTypes := []*string{}
+
+	if nodeSpec.CapacityType == proto.CapacityType_SPOT {
+		capacityType = eks.CapacityTypesSpot
+		for _, i := range nodeSpec.SpotInstances {
+			instanceTypes = append(instanceTypes, &i)
+		}
+		ctrl.logger.Infow("creating a spot instances", "instances", instanceTypes)
+	} else {
+		instanceTypes = append(instanceTypes, &nodeSpec.Instance)
+	}
+
+	ctrl.logger.Infow("requesting for nodegroup", "capacity_type", capacityType, "instances", instanceTypes)
+
 	return &eks.CreateNodegroupInput{
 		AmiType:        &amiType,
-		CapacityType:   defaultNode.CapacityType,
+		CapacityType:   &capacityType,
 		NodeRole:       defaultNode.NodeRole,
-		InstanceTypes:  []*string{&nodeSpec.Instance},
+		InstanceTypes:  instanceTypes,
 		ClusterName:    &clusterName,
 		DiskSize:       &diskSize,
 		NodegroupName:  &nodeSpec.Name,
