@@ -1,0 +1,14 @@
+{
+    "nodeSpec": {
+        "diskSize": 31,
+        "name": "prosint",
+        "count": 3,
+        "instance": "Standard_E2bds_v5",
+        "labels": {
+            "created_by": "cli"
+        }
+    },
+    "region": "eastus2",
+    "clusterName": "my-cluster",
+    "provider": "azure"
+}

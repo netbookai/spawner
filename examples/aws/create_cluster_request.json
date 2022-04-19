@@ -1,0 +1,16 @@
+{
+    "provider": "aws",
+    "region": "us-west-2",
+    "labels": {
+        "fugiat8f": "laboris magna Duis amet"
+    },
+    "node": {
+        "name": "proident",
+        "diskSize": 10,
+        "labels": {
+            "created_by": "alex"
+        },
+        "instance": "m5.xlarge",
+        "gpuEnabled": false
+    }
+}
