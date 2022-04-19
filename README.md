@@ -1,12 +1,11 @@
 # spawner-service
 
-Mulit-Cloud infrastructure orchestrator for kubernetes first. development. One tool rule them all. No need to use aws, azure or any other vendor specific cli to manage cluster and get kuebconfig.
+Mulit-Cloud infrastructure orchestrator for kubernetes first development. One tool to rule them all. No need to use aws, azure or any other vendor specific cli to manage cluster and get kubeconfig.
 
 
 
 ## Prerequisites
-1. Go needs to be installed on the system version 1.17 or above (tested on 1.17)
-
+1. Golnag v1.17 or later.
 
 ## Releases
 
@@ -27,7 +26,7 @@ Spawner comes with following two packages
 
 ### run service
   
--  update config.env with the provider credentials, gRPC ports.
+-  update config.env with the cloud provider credentials, gRPC ports.
 
 - run the service
   
@@ -53,7 +52,7 @@ make build-client
 
 ### Install
 
-The above command will generate the client binary named `spawner` in the current working directory. Copy that to your PATH or use it with relative execution path `./spawner` as per your convenience.
+The previous build will generate the client binary named `spawner` in the current working directory. Copy that to your PATH or use it with relative execution path `./spawner` as per your convenience.
 
 ### Usage
 
@@ -80,7 +79,7 @@ request.json should contain the following
   "provider": "aws",
   "region": "us-east-1",
   "labels": {
-    "fugiat8f": "laboris magna Duis amet"
+    "created_at": "morning"
   },
   "node": {
     "name": "proident",
