@@ -39,6 +39,8 @@ type SpawnerService interface {
 	WriteCredential(context.Context, *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error)
 	ReadCredential(context.Context, *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error)
 	AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error)
+
+	GetKubeConfig(ctx context.Context, in *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -365,4 +367,12 @@ func (s *spawnerService) AddRoute53Record(ctx context.Context, req *proto.AddRou
 	}
 	s.logger.Infow("added route 53 record", "change-id", changeId)
 	return &proto.AddRoute53RecordResponse{}, nil
+}
+
+func (s *spawnerService) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.GetKubeConfig(ctx, req)
 }

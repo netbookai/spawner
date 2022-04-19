@@ -115,3 +115,7 @@ func (g *gateway) WriteCredential(ctx context.Context, req *proto.WriteCredentia
 func (g *gateway) ReadCredential(ctx context.Context, req *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error) {
 	return g.service.ReadCredential(ctx, req)
 }
+
+func (g *gateway) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
+	return g.service.GetKubeConfig(ctx, req)
+}

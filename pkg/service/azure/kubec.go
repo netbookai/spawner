@@ -11,7 +11,7 @@ import (
 	"k8s.io/kops/pkg/kubeconfig"
 )
 
-func (a *AzureController) getToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
+func (a *AzureController) kubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) ([]byte, error) {
 
 	account := req.AccountName
 
@@ -39,12 +39,29 @@ func (a *AzureController) getToken(ctx context.Context, req *proto.GetTokenReque
 	if len(*res.Kubeconfigs) > 1 {
 		a.logger.Warnw("got kube config", len(*res.Kubeconfigs))
 	}
-	kc := (*res.Kubeconfigs)[0]
-	var kconf kubeconfig.KubectlConfig
+	return *(*res.Kubeconfigs)[0].Value, nil
+}
 
-	err = yaml.NewYAMLOrJSONDecoder(bytes.NewReader(*kc.Value), 2048).Decode(&kconf)
+func (a *AzureController) getToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
+
+	kc, err := a.kubeConfig(ctx, &proto.GetKubeConfigRequest{
+		Provider:    req.Provider,
+		Region:      req.Region,
+		AccountName: req.AccountName,
+		ClusterName: req.ClusterName,
+	})
+
+	if err != nil {
+		a.logger.Errorw("failed to get kube config", "error", err)
+		return nil, errors.Wrap(err, "getToken: failed to get kube config")
+	}
+
+	//parse into kubeconfig struct
+	var kconf kubeconfig.KubectlConfig
+	err = yaml.NewYAMLToJSONDecoder(bytes.NewReader(kc)).Decode(&kconf)
 	if err != nil {
 		a.logger.Errorw("failed to unmarshall kube file", "error", err)
+		return nil, errors.Wrap(err, "getToken: ")
 	}
 
 	//TODO: verify that multiple users wont be present when we make kube config query
@@ -54,5 +71,18 @@ func (a *AzureController) getToken(ctx context.Context, req *proto.GetTokenReque
 		Endpoint: kconf.Clusters[0].Cluster.Server,
 		Status:   "",
 		CaData:   string(kconf.Clusters[0].Cluster.CertificateAuthorityData),
+	}, nil
+}
+
+func (a *AzureController) getKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
+	kc, err := a.kubeConfig(ctx, req)
+	if err != nil {
+		a.logger.Errorw("failed to get kube config", "error", err)
+		return nil, errors.Wrap(err, "getKubeConfig: failed to get kube config")
+	}
+
+	return &proto.GetKubeConfigResponse{
+		ClusterName: req.ClusterName,
+		Config:      kc,
 	}, nil
 }
