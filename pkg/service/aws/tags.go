@@ -34,7 +34,7 @@ func asTags(label map[string]string) []*ec2.Tag {
 	return tags
 }
 
-func (a *AWSController) addTag(ctx context.Context, region, clusterName, accountName string, label map[string]string) error {
+func (a *AWSController) addTag(ctx context.Context, region, clusterName, accountName, nodegroup string, label map[string]string) error {
 	session, err := NewSession(ctx, region, accountName)
 
 	a.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
@@ -70,7 +70,11 @@ func (a *AWSController) addTag(ctx context.Context, region, clusterName, account
 			if *t.Key == "eks:cluster-name" && *t.Value != clusterName {
 				skip = true
 			}
-			//Note : can pick nodes if we want node level granularity too
+
+			if *t.Key == "eks:nodegroup-name" && *t.Value != nodegroup {
+				skip = true
+			}
+
 		}
 		if skip {
 			continue
@@ -101,7 +105,7 @@ func (a *AWSController) addTag(ctx context.Context, region, clusterName, account
 }
 
 func (a *AWSController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
-	err := a.addTag(ctx, req.Region, req.ClusterName, req.AccountName, req.Labels)
+	err := a.addTag(ctx, req.Region, req.ClusterName, req.AccountName, req.NodeGroup, req.Labels)
 	if err != nil {
 		a.logger.Errorw("failed to add tag to node instances in a cluster ", "error", err, "clustere", req.ClusterName)
 		return nil, err

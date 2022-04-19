@@ -54,12 +54,8 @@ type SpawnerServiceClient interface {
 	GetWorkspacesCost(ctx context.Context, in *GetWorkspacesCostRequest, opts ...grpc.CallOption) (*GetWorkspacesCostResponse, error)
 	WriteCredential(ctx context.Context, in *WriteCredentialRequest, opts ...grpc.CallOption) (*WriteCredentialResponse, error)
 	ReadCredential(ctx context.Context, in *ReadCredentialRequest, opts ...grpc.CallOption) (*ReadCredentialResponse, error)
-<<<<<<< HEAD
 	GetKubeConfig(ctx context.Context, in *GetKubeConfigRequest, opts ...grpc.CallOption) (*GetKubeConfigResponse, error)
-||||||| parent of 9175cfc (add TagNodeInstances rpc call)
-=======
 	TagNodeInstance(ctx context.Context, in *TagNodeInstanceRequest, opts ...grpc.CallOption) (*TagNodeInstanceResponse, error)
->>>>>>> 9175cfc (add TagNodeInstances rpc call)
 }
 
 type spawnerServiceClient struct {
@@ -250,7 +246,6 @@ func (c *spawnerServiceClient) ReadCredential(ctx context.Context, in *ReadCrede
 	return out, nil
 }
 
-<<<<<<< HEAD
 func (c *spawnerServiceClient) GetKubeConfig(ctx context.Context, in *GetKubeConfigRequest, opts ...grpc.CallOption) (*GetKubeConfigResponse, error) {
 	out := new(GetKubeConfigResponse)
 	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/GetKubeConfig", in, out, opts...)
@@ -260,8 +255,6 @@ func (c *spawnerServiceClient) GetKubeConfig(ctx context.Context, in *GetKubeCon
 	return out, nil
 }
 
-||||||| parent of 9175cfc (add TagNodeInstances rpc call)
-=======
 func (c *spawnerServiceClient) TagNodeInstance(ctx context.Context, in *TagNodeInstanceRequest, opts ...grpc.CallOption) (*TagNodeInstanceResponse, error) {
 	out := new(TagNodeInstanceResponse)
 	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/TagNodeInstance", in, out, opts...)
@@ -271,7 +264,6 @@ func (c *spawnerServiceClient) TagNodeInstance(ctx context.Context, in *TagNodeI
 	return out, nil
 }
 
->>>>>>> 9175cfc (add TagNodeInstances rpc call)
 // SpawnerServiceServer is the server API for SpawnerService service.
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
@@ -308,12 +300,8 @@ type SpawnerServiceServer interface {
 	GetWorkspacesCost(context.Context, *GetWorkspacesCostRequest) (*GetWorkspacesCostResponse, error)
 	WriteCredential(context.Context, *WriteCredentialRequest) (*WriteCredentialResponse, error)
 	ReadCredential(context.Context, *ReadCredentialRequest) (*ReadCredentialResponse, error)
-<<<<<<< HEAD
 	GetKubeConfig(context.Context, *GetKubeConfigRequest) (*GetKubeConfigResponse, error)
-||||||| parent of 9175cfc (add TagNodeInstances rpc call)
-=======
 	TagNodeInstance(context.Context, *TagNodeInstanceRequest) (*TagNodeInstanceResponse, error)
->>>>>>> 9175cfc (add TagNodeInstances rpc call)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -381,16 +369,12 @@ func (UnimplementedSpawnerServiceServer) WriteCredential(context.Context, *Write
 func (UnimplementedSpawnerServiceServer) ReadCredential(context.Context, *ReadCredentialRequest) (*ReadCredentialResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReadCredential not implemented")
 }
-<<<<<<< HEAD
 func (UnimplementedSpawnerServiceServer) GetKubeConfig(context.Context, *GetKubeConfigRequest) (*GetKubeConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetKubeConfig not implemented")
 }
-||||||| parent of 9175cfc (add TagNodeInstances rpc call)
-=======
 func (UnimplementedSpawnerServiceServer) TagNodeInstance(context.Context, *TagNodeInstanceRequest) (*TagNodeInstanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TagNodeInstance not implemented")
 }
->>>>>>> 9175cfc (add TagNodeInstances rpc call)
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
 // UnsafeSpawnerServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -764,7 +748,6 @@ func _SpawnerService_ReadCredential_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-<<<<<<< HEAD
 func _SpawnerService_GetKubeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetKubeConfigRequest)
 	if err := dec(in); err != nil {
@@ -783,8 +766,6 @@ func _SpawnerService_GetKubeConfig_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-||||||| parent of 9175cfc (add TagNodeInstances rpc call)
-=======
 func _SpawnerService_TagNodeInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TagNodeInstanceRequest)
 	if err := dec(in); err != nil {
@@ -803,7 +784,6 @@ func _SpawnerService_TagNodeInstance_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
->>>>>>> 9175cfc (add TagNodeInstances rpc call)
 // SpawnerService_ServiceDesc is the grpc.ServiceDesc for SpawnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -891,18 +871,14 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ReadCredential",
 			Handler:    _SpawnerService_ReadCredential_Handler,
 		},
-<<<<<<< HEAD
 		{
 			MethodName: "GetKubeConfig",
 			Handler:    _SpawnerService_GetKubeConfig_Handler,
 		},
-||||||| parent of 9175cfc (add TagNodeInstances rpc call)
-=======
 		{
 			MethodName: "TagNodeInstance",
 			Handler:    _SpawnerService_TagNodeInstance_Handler,
 		},
->>>>>>> 9175cfc (add TagNodeInstances rpc call)
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/netbookdevs/spawnerservice/spawner.proto",

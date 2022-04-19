@@ -62,16 +62,10 @@ service SpawnerService {
       returns (WriteCredentialResponse) {}
 
   rpc ReadCredential(ReadCredentialRequest) returns (ReadCredentialResponse) {}
-<<<<<<< HEAD
-
 
   rpc GetKubeConfig(GetKubeConfigRequest) returns (GetKubeConfigResponse) {}
-||||||| parent of 9175cfc (add TagNodeInstances rpc call)
-=======
-
   rpc TagNodeInstance(TagNodeInstanceRequest)
       returns (TagNodeInstanceResponse) {}
->>>>>>> 9175cfc (add TagNodeInstances rpc call)
 }
 
 message Empty {}
@@ -400,5 +394,6 @@ message TagNodeInstanceRequest {
   string region = 2;
   string accountName = 3;
   string clusterName = 4;
-  map<string, string> labels = 5;
+  string nodeGroup = 5;
+  map<string, string> labels = 6;
 }
