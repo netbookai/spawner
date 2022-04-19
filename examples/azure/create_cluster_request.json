@@ -1,0 +1,16 @@
+{
+    "provider": "azure",
+    "region": "eastus2",
+    "labels": {
+        "fugiat8f": "laboris magna Duis amet"
+    },
+    "node": {
+        "name": "proident",
+        "diskSize": 30,
+        "labels": {
+            "created_by": "alex"
+        },
+        "instance": "Standard_E2bds_v5",
+        "gpuEnabled": false
+    }
+}

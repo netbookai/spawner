@@ -86,10 +86,10 @@ request.json should contain the following
     "name": "proident",
     "diskSize": 10,
     "labels": {
-      "created_by": "alex",
+      "created_by": "alex"
      
     },
-    "instance": "standard_A2_V2",
+    "instance": "m5.xlarge",
     "gpuEnabled": false
   }
 }
