@@ -5,7 +5,7 @@ Mulit-Cloud infrastructure orchestrator for kubernetes first development. One to
 
 
 ## Prerequisites
-1. Golnag v1.17 or later.
+1. Golang v1.17 or later.
 
 ## Releases
 
