@@ -51,7 +51,19 @@ func (a *AWSController) addTag(ctx context.Context, region, clusterName, account
 
 	ec := session.getEC2Client()
 
-	res, err := ec.DescribeInstances(&ec2.DescribeInstancesInput{})
+	clusterKey := "tag:eks:cluster-name"
+	nodeKey := "tag:eks:nodegroup-name"
+	res, err := ec.DescribeInstances(&ec2.DescribeInstancesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   &clusterKey,
+				Values: []*string{&clusterName},
+			},
+			{
+				Name:   &nodeKey,
+				Values: []*string{&nodegroup},
+			},
+		}})
 
 	if err != nil {
 		a.logger.Errorw("get instance", "error", err)
@@ -65,20 +77,6 @@ func (a *AWSController) addTag(ctx context.Context, region, clusterName, account
 
 	rids := []*string{}
 	for _, r := range res.Reservations[0].Instances {
-		skip := false
-		for _, t := range r.Tags {
-			if *t.Key == "eks:cluster-name" && *t.Value != clusterName {
-				skip = true
-			}
-
-			if *t.Key == "eks:nodegroup-name" && *t.Value != nodegroup {
-				skip = true
-			}
-
-		}
-		if skip {
-			continue
-		}
 
 		id := *r.InstanceId
 		rids = append(rids, &id)
