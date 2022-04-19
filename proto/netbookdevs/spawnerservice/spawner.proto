@@ -85,6 +85,12 @@ enum MIGProfile {
     MIG7g =5;
 }
 
+enum CapacityType {
+  TypeUKNOWN = 0;
+  ONDEMAND = 1;
+  SPOT = 2;
+}
+
 message NodeSpec {
   string name = 1;
   string instance = 2;
@@ -100,6 +106,8 @@ message NodeSpec {
   Health health = 12;
   MIGProfile migProfile = 13;
   int64 count = 14;
+  CapacityType capacityType = 15;
+  repeated string spotInstances = 16;
 }
 
 message Issue {

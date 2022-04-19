@@ -124,23 +124,30 @@ func (a *AzureController) getCluster(ctx context.Context, req *proto.GetClusterR
 		return nil, err
 	}
 
-	node := (*clstr.AgentPoolProfiles)[0]
-
-	state := constants.Inactive
-	if clstr.PowerState.Code == containerservice.CodeRunning {
-		state = constants.Active
-	}
-
-	return &proto.ClusterSpec{
+	response := &proto.ClusterSpec{
 		Name: clusterName,
-		NodeSpec: []*proto.NodeSpec{{
+	}
+	var nodeSpecList []*proto.NodeSpec
+
+	for _, node := range *clstr.AgentPoolProfiles {
+		state := constants.Inactive
+		if node.PowerState.Code == containerservice.CodeRunning {
+			state = constants.Active
+		}
+
+		nodeSpec := proto.NodeSpec{
 			Name:     *node.Name,
 			Instance: *node.VMSize,
 			Labels:   aws.StringValueMap(node.NodeLabels),
 			DiskSize: *node.OsDiskSizeGB,
 			State:    state,
-		}},
-	}, nil
+		}
+		nodeSpecList = append(nodeSpecList, &nodeSpec)
+	}
+
+	response.NodeSpec = nodeSpecList
+
+	return response, nil
 }
 
 func (a *AzureController) deleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
@@ -207,6 +214,10 @@ func (a *AzureController) getClusters(ctx context.Context, req *proto.GetCluster
 
 	clusters := make([]*proto.ClusterSpec, 0, len(result.Values()))
 	for _, cl := range result.Values() {
+		if cl.PowerState.Code != containerservice.CodeRunning {
+			continue
+		}
+
 		mcapp := cl.AgentPoolProfiles
 		nodes := make([]*proto.NodeSpec, 0, len(*mcapp))
 
