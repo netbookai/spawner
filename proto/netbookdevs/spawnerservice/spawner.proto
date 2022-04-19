@@ -82,6 +82,12 @@ enum MIGProfile {
     MIG7g =5;
 }
 
+enum CapacityType {
+  TypeUKNOWN = 0;
+  ONDEMAND = 1;
+  SPOT = 2;
+}
+
 message NodeSpec {
   string name = 1;
   string instance = 2;
@@ -96,6 +102,8 @@ message NodeSpec {
   bool gpu_enabled = 11;
   Health health = 12;
   MIGProfile migProfile = 13;
+  CapacityType capacityType = 14;
+  repeated string spotInstances = 15;
 }
 
 message Issue {
