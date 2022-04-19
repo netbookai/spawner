@@ -70,6 +70,8 @@ func (a *AWSController) addTag(ctx context.Context, region, clusterName, account
 		return err
 	}
 
+	//NOTE: keep an eye out on this field, dono why this is a list.
+
 	if len(res.Reservations) == 0 {
 		a.logger.Infow("no instances in cluster to tag")
 		return errors.New("no instances in cluster to tag")
