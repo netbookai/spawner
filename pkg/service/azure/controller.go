@@ -80,3 +80,7 @@ func (a *AzureController) GetWorkspacesCost(_ context.Context, _ *proto.GetWorks
 func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
 	return a.getKubeConfig(ctx, req)
 }
+
+func (a *AzureController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
+	panic("not implemented")
+}
