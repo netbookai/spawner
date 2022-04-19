@@ -119,3 +119,7 @@ func (g *gateway) ReadCredential(ctx context.Context, req *proto.ReadCredentialR
 func (g *gateway) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
 	return g.service.GetKubeConfig(ctx, req)
 }
+
+func (g *gateway) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
+	return g.service.TagNodeInstance(ctx, req)
+}

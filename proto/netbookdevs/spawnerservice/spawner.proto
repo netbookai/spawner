@@ -63,8 +63,9 @@ service SpawnerService {
 
   rpc ReadCredential(ReadCredentialRequest) returns (ReadCredentialResponse) {}
 
-
   rpc GetKubeConfig(GetKubeConfigRequest) returns (GetKubeConfigResponse) {}
+  rpc TagNodeInstance(TagNodeInstanceRequest)
+      returns (TagNodeInstanceResponse) {}
 }
 
 message Empty {}
@@ -77,12 +78,12 @@ message EchoResponse {
 }
 
 enum MIGProfile {
-    UNKNOWN = 0;
-    MIG1g =1;
-    MIG2g =2;
-    MIG3g =3;
-    MIG4g =4;
-    MIG7g =5;
+  UNKNOWN = 0;
+  MIG1g = 1;
+  MIG2g = 2;
+  MIG3g = 3;
+  MIG4g = 4;
+  MIG7g = 5;
 }
 
 enum CapacityType {
@@ -386,3 +387,13 @@ message GetKubeConfigResponse {
   bytes config = 2;
 }
 
+message TagNodeInstanceResponse {}
+
+message TagNodeInstanceRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+  string nodeGroup = 5;
+  map<string, string> labels = 6;
+}

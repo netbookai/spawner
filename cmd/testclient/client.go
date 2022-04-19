@@ -14,13 +14,13 @@ import (
 )
 
 const (
-	clusterName = "us-west-2-netbook-aws-test-2"
-	region      = "us-west-2"
+	clusterName = "us-east-2-test-tags-2"
+	region      = "us-east-2" //"us-west-2"
 	provider    = "aws"
 	accountName = "netbook-aws"
-	instance    = "Standard_NC12" //"Standard_A2_v2"
+	nodeName    = "node1"
+	instance    = "t3.nano" //"Standard_A2_v2"
 	volumeName  = "vol-20-20220404123522"
-	nodeName    = "spwaner-netbook-test-on-demand"
 )
 
 func main() {
@@ -387,6 +387,22 @@ func main() {
 			sugar.Errorw("error writing credentials", "error", err)
 		}
 		sugar.Infow("WriteCredentialAws", "response", v)
+
+	case "AddTag":
+		v, err := client.TagNodeInstance(context.Background(), &proto.TagNodeInstanceRequest{
+			Provider:    provider,
+			Region:      region,
+			AccountName: accountName,
+			ClusterName: clusterName,
+			Labels: map[string]string{
+				"label1": "valuelabel1",
+			},
+		})
+
+		if err != nil {
+			sugar.Errorw("error adding tags to node", "error", err)
+		}
+		sugar.Infow("TagNodeInstane", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
