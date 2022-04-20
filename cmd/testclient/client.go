@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	clusterName = "us-east-2-test-tags-2"
-	region      = "us-east-2" //"us-west-2"
-	provider    = "aws"
+	clusterName = "clusterversion-test"
+	region      = "eastus2" //"us-west-2"
+	provider    = "azure"
 	accountName = "netbook-aws"
-	nodeName    = "node1"
-	instance    = "t3.nano" //"Standard_A2_v2"
+	nodeName    = "rootnode"
+	instance    = "Standard_A2_v2"
 	volumeName  = "vol-20-20220404123522"
 )
 
@@ -53,9 +53,9 @@ func main() {
 	}
 
 	node := &proto.NodeSpec{
-		Name:     "sandbox-test-nsp-ng-01",
+		Name:     nodeName,
 		Instance: instance,
-		DiskSize: 13,
+		DiskSize: 30,
 	}
 	createClusterReq := &proto.ClusterRequest{
 		Provider: provider,

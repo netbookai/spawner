@@ -20,8 +20,6 @@ var (
 	NBTypeTagkey             = "nb-type"
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
 	WorkspaceId              = "workspaceid"
-	KubeVersion              = "1.20"
-	AzureKubeVersion         = "1.20.15"
 	AzureLabel               = "azure"
 )
 

@@ -60,14 +60,14 @@ func (a *AzureController) createAKSCluster(ctx context.Context, req *proto.Clust
 			DNSPrefix: &clusterName,
 			AgentPoolProfiles: &[]containerservice.ManagedClusterAgentPoolProfile{
 				{
-					Count:               &count,
-					Name:                to.StringPtr(req.Node.Name),
-					VMSize:              to.StringPtr(req.Node.Instance),
-					OsDiskSizeGB:        to.Int32Ptr(req.Node.DiskSize),
-					NodeLabels:          nodeTags,
-					Tags:                nodeTags,
-					Mode:                containerservice.AgentPoolModeSystem,
-					OrchestratorVersion: &constants.AzureKubeVersion,
+					Count:        &count,
+					Name:         to.StringPtr(req.Node.Name),
+					VMSize:       to.StringPtr(req.Node.Instance),
+					OsDiskSizeGB: to.Int32Ptr(req.Node.DiskSize),
+					NodeLabels:   nodeTags,
+					Tags:         nodeTags,
+					Mode:         containerservice.AgentPoolModeSystem,
+					//					OrchestratorVersion: &constants.AzureKubeVersion,
 				},
 			},
 			ServicePrincipalProfile: &containerservice.ManagedClusterServicePrincipalProfile{

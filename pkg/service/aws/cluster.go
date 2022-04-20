@@ -96,8 +96,8 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 			EndpointPublicAccess:  aws.Bool(true),
 			EndpointPrivateAccess: aws.Bool(false),
 		},
-		Tags:    tags,
-		Version: &constants.KubeVersion,
+		Tags: tags,
+		//		Version: &constants.KubeVersion,
 		RoleArn: eksRole.Arn,
 	}
 
