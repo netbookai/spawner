@@ -10,29 +10,9 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 )
 
-var (
-	armAuthorizer autorest.Authorizer
-)
-
 // GetResourceManagementAuthorizer gets an OAuthTokenAuthorizer for Azure Resource Manager
 func GetResourceManagementAuthorizer(cred *system.AzureCredential) (autorest.Authorizer, error) {
-	if armAuthorizer != nil {
-		return armAuthorizer, nil
-	}
-
-	var a autorest.Authorizer
-	var err error
-
-	a, err = getAuthorizerForResource(cred)
-
-	if err == nil {
-		// cache
-		armAuthorizer = a
-	} else {
-		// clear cache
-		armAuthorizer = nil
-	}
-	return armAuthorizer, err
+	return getAuthorizerForResource(cred)
 }
 
 func getAuthorizerForResource(cred *system.AzureCredential) (autorest.Authorizer, error) {
@@ -44,8 +24,7 @@ func getAuthorizerForResource(cred *system.AzureCredential) (autorest.Authorizer
 		return nil, errors.Wrapf(err, "invalid azure cloud provider '%s'", config.Get().AzureCloudProvider)
 	}
 
-	oauthConfig, err := adal.NewOAuthConfig(
-		environments.ActiveDirectoryEndpoint, cred.TenantID)
+	oauthConfig, err := adal.NewOAuthConfig(environments.ActiveDirectoryEndpoint, cred.TenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +33,11 @@ func getAuthorizerForResource(cred *system.AzureCredential) (autorest.Authorizer
 		cred.ClientID,
 		cred.ClientSecret,
 		environments.ResourceManagerEndpoint)
+
 	if err != nil {
 		return nil, err
 	}
-	a = autorest.NewBearerAuthorizer(token)
 
-	return a, err
+	a = autorest.NewBearerAuthorizer(token)
+	return a, nil
 }
