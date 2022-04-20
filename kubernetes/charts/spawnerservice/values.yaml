@@ -30,9 +30,9 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
   #
 
-env: development
-port: 8083
-debug_port: 8080
+env: dev
+grpc_port: 8083
+http_port: 8080
 rancher:
   address: address
   username: username

@@ -11,8 +11,8 @@ var config Config
 type Config struct {
 	//Env value can be 'dev', 'prod' or local
 	Env       string `mapstructure:"ENV"`
-	Port      int    `mapstructure:"PORT"`
-	DebugPort int    `mapstructure:"DEBUG_PORT"`
+	Port      int    `mapstructure:"GRPC_PORT"`
+	DebugPort int    `mapstructure:"HTTP_PORT"`
 	//Rancher optional, requires to register cluster with rancher
 
 	RancherUsername string `mapstructure:"RANCHER_USERNAME"`
