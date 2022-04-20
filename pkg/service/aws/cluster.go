@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
@@ -93,8 +93,8 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 		Name: &clusterName,
 		ResourcesVpcConfig: &eks.VpcConfigRequest{
 			SubnetIds:             subnetIds,
-			EndpointPublicAccess:  common.BoolPtr(true),
-			EndpointPrivateAccess: common.BoolPtr(false),
+			EndpointPublicAccess:  aws.Bool(true),
+			EndpointPrivateAccess: aws.Bool(false),
 		},
 		Tags:    tags,
 		Version: &constants.KubeVersion,

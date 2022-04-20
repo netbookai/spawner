@@ -5,7 +5,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
@@ -26,7 +25,7 @@ func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 		constants.NodeNameLabel:          &nodeSpec.Name,
 		constants.InstanceLabel:          &nodeSpec.Instance,
 		constants.NodeLabelSelectorLabel: &nodeSpec.Name,
-		"type":                           common.StrPtr("nodegroup")}
+		"type":                           aws.String("nodegroup")}
 
 	return merge(DefaultTags(), labels, aws.StringMap(nodeSpec.Labels))
 }
