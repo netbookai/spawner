@@ -9,11 +9,12 @@ import (
 )
 
 //waitUntilClusterReady Wait until the give cluster return "ACTIVE" status
-// This will run for about 15min, with multiuple iteration of sleeps.
+//
+// This will run for about 12min, with multiuple iteration of sleeps.
 // Starting with 6min, then 4min, 2min.
-//Cluster can become fully active in any one of sleep cycle, as soon as we see status is ACTIVE, we return it.
-//When sleep counter reaches 0, we return FAILED status, 15min is too long for cluster to become active
-func waitUntilClusterReady(c proto.SpawnerServiceClient, req *proto.ClusterRequest) string {
+// Cluster can become fully active in any one of sleep cycle, as soon as we see status is ACTIVE, we return it.
+// When sleep counter reaches 0, we return FAILED status, 15min is too long for cluster to become active
+func waitUntilClusterReady(ctx context.Context, c proto.SpawnerServiceClient, req *proto.ClusterRequest) string {
 	clusterStatus := &proto.ClusterStatusRequest{
 		Provider:    req.Provider,
 		Region:      req.Region,
@@ -27,7 +28,7 @@ func waitUntilClusterReady(c proto.SpawnerServiceClient, req *proto.ClusterReque
 		time.Sleep(time.Duration(waitfor) * time.Minute)
 
 		//check cluster status and if active return
-		stat, err := c.ClusterStatus(context.Background(), clusterStatus)
+		stat, err := c.ClusterStatus(ctx, clusterStatus)
 		if err != nil {
 			log.Println("failed to fetch cluster stat")
 		}

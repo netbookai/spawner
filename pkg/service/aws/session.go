@@ -28,6 +28,8 @@ type Session struct {
 	TeamId     string
 }
 
+//NewSession create a session for given user account by fetching user credentials from the secret stores.
+// if running locally and env set to local, it will use credentials from the config
 func NewSession(ctx context.Context, region string, accountName string) (*Session, error) {
 
 	var (

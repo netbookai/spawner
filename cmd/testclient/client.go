@@ -29,7 +29,7 @@ func main() {
 	var sugar = logger.Sugar()
 	defer sugar.Sync()
 
-	fs := flag.NewFlagSet("spawncli", flag.ExitOnError)
+	fs := flag.NewFlagSet("testclient", flag.ExitOnError)
 	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of spawner")
 	method := fs.String("method", "HealthCheck", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
@@ -361,7 +361,7 @@ func main() {
 		sugar.Infow("WriteCredentialAws", "response", v)
 	case "ReadCredentialAzure":
 		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
-			Account:  "alex",
+			Account:  "netbook-azure-dev",
 			Provider: "azure",
 		})
 		if err != nil {

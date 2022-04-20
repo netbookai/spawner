@@ -104,6 +104,7 @@ func (a *AWSController) addTagToNodeInstances(ctx context.Context, region, clust
 
 }
 
+//TagNodeInstance tag underlying ec2 instances of a cluster node
 func (a *AWSController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
 	err := a.addTagToNodeInstances(ctx, req.Region, req.ClusterName, req.AccountName, req.NodeGroup, req.Labels)
 	if err != nil {

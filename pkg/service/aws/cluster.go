@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
@@ -12,6 +13,15 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+//getClusterSpec Get the cluster spec of given name
+func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.Cluster, error) {
+	input := eks.DescribeClusterInput{
+		Name: &name,
+	}
+	resp, err := client.DescribeClusterWithContext(ctx, &input)
+	return resp.Cluster, err
+}
 
 func (svc AWSController) createClusterInternal(ctx context.Context, session *Session, clusterName string, req *proto.ClusterRequest) (*eks.Cluster, error) {
 
@@ -339,11 +349,8 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 			Availabilityzone: node.Labels["topology.kubernetes.io/zone"],
 			Health:           nodeHealth,
 		})
-
 	}
-
 	response.NodeSpec = nodeSpecList
-
 	return response, nil
 }
 
@@ -371,4 +378,63 @@ func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterS
 	return &proto.ClusterStatusResponse{
 		Status: *cluster.Status,
 	}, err
+}
+
+//DeleteCluster delete empty cluster, cluster should not have any nodegroup attached.
+func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
+
+	clusterName := req.ClusterName
+	region := req.Region
+	forceDelete := req.ForceDelete
+
+	session, err := NewSession(ctx, region, req.AccountName)
+	if err != nil {
+		return nil, err
+	}
+	client := session.getEksClient()
+
+	cluster, err := getClusterSpec(ctx, client, clusterName)
+
+	if err != nil {
+		err := errors.New(err.(awserr.Error).Message())
+		return nil, errors.Wrap(err, "DeleteCluster: ")
+	}
+
+	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
+		return nil, fmt.Errorf("cluster doesnt not available in '%s'", labels.ScopeTag())
+	}
+
+	//get node groups attached to clients when force delete is enabled.
+	//if available delete all attached node groups and proceed to deleting cluster
+	if forceDelete {
+		ctrl.logger.Infow("force deleting all nodegroups of cluster", "cluster", clusterName)
+		err = ctrl.deleteAllNodegroups(ctx, client, clusterName)
+		if err != nil {
+			ctrl.logger.Errorw("failed to delete attached nodegroups", "error", err)
+			return nil, err
+		}
+
+		ctrl.logger.Infow("waiting for all nodegroups deletion", "cluster", clusterName)
+		err = ctrl.waitForAllNodegroupsDeletion(ctx, client, clusterName)
+		if err != nil {
+			ctrl.logger.Errorw("failed waiting for deletion of attached nodegroups", "error", err)
+			return nil, err
+		}
+		ctrl.logger.Infow("done waiting for all nodegroups to delete", "cluster", clusterName)
+	}
+
+	deleteOut, err := client.DeleteClusterWithContext(ctx, &eks.DeleteClusterInput{
+		Name: &clusterName,
+	})
+
+	if err != nil {
+		ctrl.logger.Errorf("failed to delete cluster '%s': %s", clusterName, err.Error())
+		return &proto.ClusterDeleteResponse{
+			Error: err.Error(),
+		}, err
+	}
+
+	ctrl.logger.Infof("requested cluster '%s' to be deleted, Status :%s. It might take some time, check AWS console for more.", clusterName, *deleteOut.Cluster.Status)
+
+	return &proto.ClusterDeleteResponse{}, nil
 }
