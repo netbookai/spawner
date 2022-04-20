@@ -1,0 +1,16 @@
+{
+    "provider": "aws",
+    "region": "us-west-2",
+    "labels": {
+        "env": "dev"
+    },
+    "node": {
+        "name": "proident",
+        "diskSize": 10,
+        "labels": {
+            "created_by": "alex"
+        },
+        "instance": "m5.xlarge",
+        "gpuEnabled": false
+    }
+}

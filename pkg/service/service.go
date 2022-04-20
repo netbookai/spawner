@@ -8,13 +8,16 @@ import (
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/service/aws"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/azure"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/rancher"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
-const ProviderNotFound = "provider not found, must be one of ['aws'], got %s"
+const ProviderNotFound = "provider not found, must be one of ['aws', 'azure'], got %s"
 
 type SpawnerService interface {
 	CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error)
@@ -31,6 +34,8 @@ type SpawnerService interface {
 	CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error)
 	GetWorkspacesCost(context.Context, *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error)
+	GetKubeConfig(ctx context.Context, in *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error)
+	TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error)
 
 	RegisterWithRancher(context.Context, *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error)
 	WriteCredential(context.Context, *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error)
@@ -40,8 +45,9 @@ type SpawnerService interface {
 
 //spawnerService manage provider and clusters
 type spawnerService struct {
-	awsController Controller
-	logger        *zap.SugaredLogger
+	awsController   Controller
+	azureController Controller
+	logger          *zap.SugaredLogger
 
 	proto.UnimplementedSpawnerServiceServer
 }
@@ -50,8 +56,9 @@ type spawnerService struct {
 func New(logger *zap.SugaredLogger) SpawnerService {
 
 	svc := &spawnerService{
-		awsController: aws.NewAWSController(logger),
-		logger:        logger,
+		awsController:   aws.NewAWSController(logger),
+		azureController: azure.NewController(logger),
+		logger:          logger,
 	}
 	return svc
 }
@@ -60,6 +67,8 @@ func (s *spawnerService) controller(provider string) (Controller, error) {
 	switch provider {
 	case "aws":
 		return s.awsController, nil
+	case "azure":
+		return s.azureController, nil
 	}
 	return nil, fmt.Errorf(ProviderNotFound, provider)
 }
@@ -110,25 +119,6 @@ func (s *spawnerService) GetToken(ctx context.Context, req *proto.GetTokenReques
 		return nil, err
 	}
 	return provider.GetToken(ctx, req)
-}
-
-//AddRoute53Record
-func (s *spawnerService) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
-	dnsName := req.GetDnsName()
-	recordName := req.GetRecordName()
-	regionName := req.GetRegion()
-
-	changeId, err := s.addRoute53Record(ctx, dnsName, recordName, regionName)
-	s.logger.Infow("added route 53 record", "change-id", changeId)
-	if err != nil {
-		s.logger.Errorw("failed to add route53 record", "error", err)
-		res := &proto.AddRoute53RecordResponse{
-			Status: "Failed",
-			Error:  "",
-		}
-		return res, err
-	}
-	return &proto.AddRoute53RecordResponse{}, nil
 }
 
 //ClusterStatus get cluster status in given provider
@@ -266,12 +256,50 @@ func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ran
 //WriteCredential
 func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
 
-	region := config.Get().SecretHostRegion
-	id := req.GetAccessKeyID()
-	key := req.GetSecretAccessKey()
 	account := req.GetAccount()
+	region := config.Get().SecretHostRegion
 
-	err := s.writeCredentials(ctx, region, account, id, key)
+	provider := req.GetProvider()
+
+	var cred system.Credentials
+	cred_type := "unknown"
+
+	switch provider {
+
+	case constants.AwsLabel:
+
+		cred_type = "AwsCredential"
+		if c := req.GetAwsCred(); c != nil {
+			cred = &system.AwsCredential{
+				Name:   account,
+				Id:     c.GetAccessKeyID(),
+				Secret: c.GetSecretAccessKey(),
+				Token:  c.GetToken(),
+			}
+		}
+
+	case constants.AzureLabel:
+		cred_type = "AzureCredential"
+		if c := req.GetAzureCred(); c != nil {
+			cred = &system.AzureCredential{
+				SubscriptionID: c.GetSubscriptionID(),
+				TenantID:       c.GetTenantID(),
+				ClientID:       c.GetClientID(),
+				ClientSecret:   c.GetClientSecret(),
+				ResourceGroup:  c.GetResourceGroup(),
+				Name:           account,
+			}
+		}
+	default:
+		return nil, fmt.Errorf("invalid provider '%s'", provider)
+	}
+
+	if cred == nil {
+		return nil, fmt.Errorf(" %s credentials must be set for provider %s", cred_type, provider)
+
+	}
+
+	err := s.writeCredentials(ctx, region, account, provider, cred)
 	if err != nil {
 		s.logger.Errorw("failed to save credentials", "error", err, "account", account)
 		return nil, err
@@ -285,16 +313,74 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 
 	region := config.Get().SecretHostRegion
 	account := req.GetAccount()
+	provider := req.GetProvider()
 
-	creds, err := s.getCredentials(ctx, region, account)
+	creds, err := s.getCredentials(ctx, region, account, provider)
 	if err != nil {
 		s.logger.Errorw("failed to get the credentials", "account", account)
 		return nil, err
 	}
-	s.logger.Debugw("credentials found", "account", account, "accessKeyID", creds.AccessKeyID)
-	return &proto.ReadCredentialResponse{
-		Account:         account,
-		AccessKeyID:     creds.AccessKeyID,
-		SecretAccessKey: creds.SecretAccessKey,
-	}, nil
+	p := &proto.ReadCredentialResponse{
+		Account: account,
+	}
+
+	switch provider {
+	case constants.AwsLabel:
+
+		c := creds.GetAws()
+		p.Cred = &proto.ReadCredentialResponse_AwsCred{
+			AwsCred: &proto.AwsCredentials{
+				AccessKeyID:     c.Id,
+				SecretAccessKey: c.Secret,
+				Token:           c.Token,
+			},
+		}
+	case constants.AzureLabel:
+		c := creds.GetAzure()
+		p.Cred = &proto.ReadCredentialResponse_AzureCred{
+			AzureCred: &proto.AzureCredentials{
+				SubscriptionID: c.SubscriptionID,
+				TenantID:       c.TenantID,
+				ClientID:       c.ClientID,
+				ClientSecret:   c.ClientSecret,
+				ResourceGroup:  c.ResourceGroup,
+			},
+		}
+	}
+
+	s.logger.Debugw("credentials found", "account", account, "provider", provider)
+	return p, nil
+}
+
+//AddRoute53Record
+func (s *spawnerService) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
+	dnsName := req.GetDnsName()
+	recordName := req.GetRecordName()
+	regionName := req.GetRegion()
+
+	isAwsResource := req.Provider == string(constants.AwsCloud)
+
+	changeId, err := s.addRoute53Record(ctx, dnsName, recordName, regionName, isAwsResource)
+	if err != nil {
+		s.logger.Errorw("failed to add route53 record", "error", err)
+		return nil, err
+	}
+	s.logger.Infow("added route 53 record", "change-id", changeId)
+	return &proto.AddRoute53RecordResponse{}, nil
+}
+
+func (s *spawnerService) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.GetKubeConfig(ctx, req)
+}
+
+func (s *spawnerService) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.TagNodeInstance(ctx, req)
 }

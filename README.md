@@ -1,75 +1,168 @@
 # spawner-service
 
-# Prerequisites
-1. Go needs to be installed on the system version 1.17 or above (tested on 1.17)
-2. protoc needs to be installed
-    ```
-    apt install -y protobuf-compiler
-    ```
-3. protoc-gen-go and protoc-gen-go-grpc plugins to protoc needs to be installed to generate Go and gRPC code
-    ```
-    go install google.golang.org/protobuf/cmd/protoc-gen-go
-    
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
-    ```
+Mulit-Cloud infrastructure orchestrator for kubernetes first development. One tool to rule them all. No need to use aws, azure or any other vendor specific cli to manage cluster and get kubeconfig.
 
 
 
-# Development
+## Prerequisites
+1. Golang v1.17 or later.
 
-1. Run make proto to generate rpc and protobuf go files
-    ```
-    make proto
-    ```
-2. setup AWS_ROLE_ARN environment variable
-    ```
-    export AWS_ROLE_ARN=arn:aws:iam::965734315247:role/sandboxClusterSecretManagerRole
-    ```
-3. cd into cmd/spawnersvc and run the spawnersvc.go to start the server
-    ```
-    make run
-    ```
-    This starts a gRPC server running on port 8083 and binds the service to it
-4. cd cmd/spawnercli and run the spawnercli.go to use the client to call the service
-    ```
-    go run spawncli.go -grpc-addr=:8083 -method=ClusterStatus
-    ```
-    This calls the ClusterStatus method on the gRPC service on port 8083
-5. To update modules,
-    ```
-    make tidy
-    ```
-6. Run formatter before committing or set your editor to FORMAT ON SAVE with goimports.
-    ```
-    make fmt
-    ```
+## Releases
 
-# Creating a docker image
+### binary release - coming soon
 
-1. Build docker image from projet root directory
-    ```
-    docker login registry.gitlab.com
-    docker build -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:0.0.1 .
-    docker push registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:0.0.1
-    ```
+### source release - clone repo
+ 
+```
+git clone git@gitlab.com:netbook-devs/spawner-service.git
+```
 
-# Running the app using helm
+## Usage 
 
-1. (Optional) Create  a new docker registry secret from docker config file
-    ```
-    # base64 encode username and password
-    echo -n <username>:<password> | base64
-    # base64 encode ~/.docker/config.json file
-    cat ~/.docker/config.json | base64
-    ```
-1. Install the helm chart
-    ```
-    helm install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml
-    ```
-    Service will be running at `spawnerservice-service:80` inside k8s cluster
+Spawner comes with following two packages
 
-2. Test server deployment
-    ```
-    kubectl exec -it spawner-cli -- /bin/sh
-    ./spawnercli -grpc-addr=spawnerservice-service:80 -method=ClusterStatus
-    ```
+* spawner-service - gRPC service to manage cloud provider infra
+* spawner  - command line interface to interact with service
+
+### run service
+  
+-  update config.env with the cloud provider credentials, gRPC ports.
+
+- run the service
+  
+  Spawner is a gRPC service, so spin up a terminal and run the following command
+  ```
+  make run
+  ```
+
+  this will start the service in the specified ports in config.env
+
+---
+
+
+## spawner command line tool
+
+### Build
+
+spin up another terminal/tab and run the following in spawner-service repo directory
+
+```
+make build-client
+```
+
+### Install
+
+The previous build will generate the client binary named `spawner` in the current working directory. Copy that to your PATH or use it with relative execution path `./spawner` as per your convenience.
+
+### Usage
+
+For all the commands you need to pass spawner host address, default value is set to `localhost:8083`, if you need to change that, pass in using `--addr` or `-a`.
+
+Example:
+
+```
+spawner cluster-status clustername --addr=192.168.1.78:8080 --provider=aws --region=us-west-2
+```
+
+### Create a new cluster
+
+To create a cluster we need more information on the cluster and node specification which can be passed to command as a file by specifying `--request` or `-r`
+
+```
+spawner create-cluster clustername -r request.json
+```
+
+request.json should contain the following
+
+```
+{
+  "provider": "aws",
+  "region": "us-east-1",
+  "labels": {
+    "created_at": "morning"
+  },
+  "node": {
+    "name": "proident",
+    "diskSize": 10,
+    "labels": {
+      "created_by": "alex"
+     
+    },
+    "instance": "m5.xlarge",
+    "gpuEnabled": false
+  }
+}
+
+```
+
+> Note : This wil create a cluster and attach new node to it as per spec, the time taken by this operation completely depends on how fast provider responds.
+
+---
+
+### Cluster status
+
+Get the cluster status such as CREATING, ACTIVE, DELETING
+
+```
+spawner cluster-status clustername --provider "aws" -r=region
+```
+----
+
+### Delete Cluster 
+
+Delete the existing cluster
+```
+spawner delete-cluster clustername --provider "aws" -r=region
+```
+
+If the cluster has the nodes attached to it, this operation will fail, you can force delete the cluster which deletes attached node and then deletes the cluster.
+
+To force delete set the `--force` or `-f`
+
+```
+spawner delete-cluster clustername --provider "aws" -r=region --force
+```
+
+### Add new nodepool
+Create new nodepool in a given cluster
+
+```
+spawner nodepool add clustername --request request.json
+```
+
+request.json will contain the nodespec for the new nodepool,
+
+```
+@request.json
+
+{
+  "nodeSpec": {
+    "diskSize": 31,
+    "name": "prosint",
+    "count": 3,
+    "instance": "Standard_A2_V2",
+    "labels": {
+      "created_by": "cli"
+    }
+  },
+  "region": "eastus2",
+  "clusterName": "my-cluster",
+  "provider": "azure"
+}
+```
+---
+
+### Delete nodepool
+
+```
+spawner nodepool delete clustername --provider "aws" -r=region --nodepool nodepoolname
+```
+
+---
+
+### Get kubeconfg for the cluster
+```
+spawner kubeconfig clustername --provider "aws" -r=region
+```
+
+this will read existing kube config from `~/.kube/config` and merges new cluster config to it, sets the current context as the requested cluster

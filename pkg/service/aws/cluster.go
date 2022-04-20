@@ -4,12 +4,24 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+//getClusterSpec Get the cluster spec of given name
+func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.Cluster, error) {
+	input := eks.DescribeClusterInput{
+		Name: &name,
+	}
+	resp, err := client.DescribeClusterWithContext(ctx, &input)
+	return resp.Cluster, err
+}
 
 func (svc AWSController) createClusterInternal(ctx context.Context, session *Session, clusterName string, req *proto.ClusterRequest) (*eks.Cluster, error) {
 
@@ -45,7 +57,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 		svc.logger.Infow("created network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnetIds)
 	}
 
-	tags := DefaultTags()
+	tags := labels.DefaultTags()
 	tags[constants.ClusterNameLabel] = &clusterName
 	//override with additional labels from request
 	for k, v := range req.Labels {
@@ -81,11 +93,11 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 		Name: &clusterName,
 		ResourcesVpcConfig: &eks.VpcConfigRequest{
 			SubnetIds:             subnetIds,
-			EndpointPublicAccess:  common.BoolPtr(true),
-			EndpointPrivateAccess: common.BoolPtr(false),
+			EndpointPublicAccess:  aws.Bool(true),
+			EndpointPrivateAccess: aws.Bool(false),
 		},
-		Tags:    tags,
-		Version: &constants.KubeVersion,
+		Tags: tags,
+		//		Version: &constants.KubeVersion,
 		RoleArn: eksRole.Arn,
 	}
 
@@ -159,4 +171,270 @@ func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterR
 	return &proto.ClusterResponse{
 		ClusterName: *cluster.Name,
 	}, nil
+}
+
+//GetClusters return active, spawner created clusters
+func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
+
+	//get all clusters in given region
+	region := req.Region
+	accountName := req.AccountName
+	session, err := NewSession(ctx, region, accountName)
+	if err != nil {
+		return nil, err
+	}
+
+	client := session.getEksClient()
+
+	//list cluster allows paginated query,
+	listClusterInput := &eks.ListClustersInput{}
+	listClusterOut, err := client.ListClustersWithContext(ctx, listClusterInput)
+	if err != nil {
+		ctrl.logger.Error("failed to list clusters", err)
+		return &proto.GetClustersResponse{}, err
+	}
+
+	resp := proto.GetClustersResponse{
+		Clusters: [](*proto.ClusterSpec){},
+	}
+
+	for _, cluster := range listClusterOut.Clusters {
+
+		clusterSpec, err := getClusterSpec(ctx, client, *cluster)
+
+		if err != nil {
+			ctrl.logger.Errorw("failed to get cluster details", "cluster", *cluster, "error", err)
+			continue
+
+		}
+		creator, ok := clusterSpec.Tags[constants.CreatorLabel]
+		if !ok {
+			//unknown creator
+			continue
+		}
+
+		if *clusterSpec.Status != "ACTIVE" || *creator != constants.SpawnerServiceLabel {
+			continue
+		}
+
+		scope, ok := clusterSpec.Tags[constants.Scope]
+		if !ok {
+			continue
+		}
+		if labels.ScopeTag() != *scope {
+			//skip clusters which is of not spawner env scope
+			continue
+		}
+
+		input := &eks.ListNodegroupsInput{ClusterName: cluster}
+		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
+		if err != nil {
+			ctrl.logger.Errorf("failed to fetch nodegroups %s", err.Error())
+		}
+
+		nodes := []*proto.NodeSpec{}
+		for _, cNodeGroup := range nodeGroupList.Nodegroups {
+			input := &eks.DescribeNodegroupInput{
+				NodegroupName: cNodeGroup,
+				ClusterName:   cluster}
+			nodeGroupDetails, err := client.DescribeNodegroupWithContext(ctx, input)
+
+			if err != nil {
+				ctrl.logger.Error("failed to fetch nodegroups details ", *cNodeGroup)
+				continue
+			}
+
+			node := &proto.NodeSpec{Name: *cNodeGroup}
+
+			if nodeGroupDetails.Nodegroup.InstanceTypes != nil {
+				node.Instance = *nodeGroupDetails.Nodegroup.InstanceTypes[0]
+			}
+			if nodeGroupDetails.Nodegroup.DiskSize != nil {
+				node.DiskSize = int32(*nodeGroupDetails.Nodegroup.DiskSize)
+			}
+
+			node.Health = healthProto(nodeGroupDetails.Nodegroup.Health)
+			nodes = append(nodes, node)
+		}
+
+		resp.Clusters = append(resp.Clusters, &proto.ClusterSpec{
+			Name:     *cluster,
+			NodeSpec: nodes,
+		})
+	}
+	return &resp, nil
+}
+
+//GetCluster Describe cluster with the given name and region
+func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
+
+	response := &proto.ClusterSpec{}
+	region := req.Region
+	clusterName := req.ClusterName
+	accountName := req.AccountName
+	session, err := NewSession(ctx, region, accountName)
+
+	ctrl.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	if err != nil {
+		return nil, err
+	}
+	client := session.getEksClient()
+
+	cluster, err := getClusterSpec(ctx, client, clusterName)
+
+	if err != nil {
+		ctrl.logger.Error("failed to fetch cluster status", err)
+		return nil, err
+	}
+
+	k8sClient, err := session.getK8sClient(cluster)
+	if err != nil {
+		ctrl.logger.Error(" Failed to create kube client ", err)
+		return nil, err
+	}
+	nodeList, err := k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	response.Name = clusterName
+
+	if err != nil {
+		ctrl.logger.Error(" Failed to query node list ", err)
+		return nil, err
+	}
+
+	var nodeSpecList []*proto.NodeSpec
+	for _, node := range nodeList.Items {
+		nodeGroupName := node.Labels[constants.NodeNameLabel]
+		addresses := node.Status.Addresses
+		ipAddr := ""
+		hostName := node.Name
+		for _, address := range addresses {
+			switch address.Type {
+
+			case "InternalIP":
+				ipAddr = address.Address
+			case "HostName":
+				hostName = address.Address
+			}
+		}
+
+		state := "inactive"
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == "Ready" {
+				state = "active"
+			}
+		}
+
+		ephemeralStorage := node.Status.Capacity.StorageEphemeral()
+
+		//get node health
+		var nodeHealth *proto.Health
+		health, err := ctrl.getNodeHealth(ctx, client, clusterName, nodeGroupName)
+		if err != nil {
+			ctrl.logger.Errorw("failed to get the health check", "error", err)
+		} else {
+			nodeHealth = healthProto(health)
+		}
+
+		//we will use MB for the disk size, int32 is too small for bytes
+		diskSize := ephemeralStorage.Value() / 1024 / 1024
+		nodeSpecList = append(nodeSpecList, &proto.NodeSpec{
+			Name: nodeGroupName,
+			//ClusterId:        node.ClusterID,
+			Instance:         node.Labels["node.kubernetes.io/instance-type"],
+			DiskSize:         int32(diskSize),
+			HostName:         hostName,
+			State:            state,
+			Uuid:             string(node.ObjectMeta.UID),
+			IpAddr:           ipAddr,
+			Labels:           node.Labels,
+			Availabilityzone: node.Labels["topology.kubernetes.io/zone"],
+			Health:           nodeHealth,
+		})
+	}
+	response.NodeSpec = nodeSpecList
+	return response, nil
+}
+
+//ClusterStatus get the cluster status
+func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
+	region := req.Region
+	clusterName := req.ClusterName
+	session, err := NewSession(ctx, region, req.AccountName)
+
+	if err != nil {
+		return nil, err
+	}
+	client := session.getEksClient()
+
+	ctrl.logger.Debugw("fetching cluster status", "cluster-name", clusterName, "region", region)
+	cluster, err := getClusterSpec(ctx, client, clusterName)
+
+	if err != nil {
+		ctrl.logger.Errorw("failed to fetch cluster status", "error", err, "cluster", clusterName, "region", region)
+		return &proto.ClusterStatusResponse{
+			Error: err.Error(),
+		}, err
+	}
+
+	return &proto.ClusterStatusResponse{
+		Status: *cluster.Status,
+	}, err
+}
+
+//DeleteCluster delete empty cluster, cluster should not have any nodegroup attached.
+func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
+
+	clusterName := req.ClusterName
+	region := req.Region
+	forceDelete := req.ForceDelete
+
+	session, err := NewSession(ctx, region, req.AccountName)
+	if err != nil {
+		return nil, err
+	}
+	client := session.getEksClient()
+
+	cluster, err := getClusterSpec(ctx, client, clusterName)
+
+	if err != nil {
+		err := errors.New(err.(awserr.Error).Message())
+		return nil, errors.Wrap(err, "DeleteCluster: ")
+	}
+
+	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
+		return nil, fmt.Errorf("cluster doesnt not available in '%s'", labels.ScopeTag())
+	}
+
+	//get node groups attached to clients when force delete is enabled.
+	//if available delete all attached node groups and proceed to deleting cluster
+	if forceDelete {
+		ctrl.logger.Infow("force deleting all nodegroups of cluster", "cluster", clusterName)
+		err = ctrl.deleteAllNodegroups(ctx, client, clusterName)
+		if err != nil {
+			ctrl.logger.Errorw("failed to delete attached nodegroups", "error", err)
+			return nil, err
+		}
+
+		ctrl.logger.Infow("waiting for all nodegroups deletion", "cluster", clusterName)
+		err = ctrl.waitForAllNodegroupsDeletion(ctx, client, clusterName)
+		if err != nil {
+			ctrl.logger.Errorw("failed waiting for deletion of attached nodegroups", "error", err)
+			return nil, err
+		}
+		ctrl.logger.Infow("done waiting for all nodegroups to delete", "cluster", clusterName)
+	}
+
+	deleteOut, err := client.DeleteClusterWithContext(ctx, &eks.DeleteClusterInput{
+		Name: &clusterName,
+	})
+
+	if err != nil {
+		ctrl.logger.Errorf("failed to delete cluster '%s': %s", clusterName, err.Error())
+		return &proto.ClusterDeleteResponse{
+			Error: err.Error(),
+		}, err
+	}
+
+	ctrl.logger.Infof("requested cluster '%s' to be deleted, Status :%s. It might take some time, check AWS console for more.", clusterName, *deleteOut.Cluster.Status)
+
+	return &proto.ClusterDeleteResponse{}, nil
 }

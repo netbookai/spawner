@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -15,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 )
 
 //manages system level secrets,
@@ -96,23 +96,6 @@ func createSession(region string) (*session.Session, error) {
 	return sess, err
 }
 
-func parseCredentials(blob string) (*credentials.Credentials, error) {
-
-	//secret_id,secret_key
-	splits := strings.Split(blob, ",")
-	if len(splits) != 2 {
-		return nil, errors.New("invalid credentials found in secrets")
-	}
-	// token is set to blank for now
-	creds := credentials.NewStaticCredentials(splits[0], splits[1], "")
-
-	return creds, nil
-}
-
-func encodeCredentials(id, key string) string {
-	return fmt.Sprintf("%s,%s", id, key)
-}
-
 func getSecretManager(region string) (*secretsmanager.SecretsManager, error) {
 
 	sess, err := createSession(region)
@@ -127,13 +110,25 @@ func getSecretManager(region string) (*secretsmanager.SecretsManager, error) {
 
 //GetAwsCredentials Retrieve user credentials from the secret manager
 func GetAwsCredentials(ctx context.Context, region, accountName string) (*credentials.Credentials, error) {
+	c, err := GetCredentials(ctx, region, accountName, constants.AwsLabel)
+	if err != nil {
+		return nil, err
+	}
+	return credentials.NewStaticCredentials(c.GetAws().Id, c.GetAws().Secret, c.GetAws().Token), nil
+}
+
+func sid(provider, name string) string {
+	return fmt.Sprintf("%s/%s", provider, name)
+}
+
+func GetCredentials(ctx context.Context, region, accountName, provider string) (Credentials, error) {
 	secret, err := getSecretManager(region)
 	if err != nil {
 		return nil, errors.Wrapf(err, "GetAwsCredentials: failed to get secretsmanager")
 	}
-
+	s := sid(provider, accountName)
 	input := &secretsmanager.GetSecretValueInput{
-		SecretId:     &accountName,
+		SecretId:     &s,
 		VersionStage: aws.String("AWSCURRENT"),
 	}
 
@@ -143,22 +138,35 @@ func GetAwsCredentials(ctx context.Context, region, accountName string) (*creden
 			return nil, errors.Wrapf(aerr, "GetAwsCredentials: failed to fetch user credentials")
 		}
 	}
-	return parseCredentials(*result.SecretString)
+
+	var cred Credentials
+	switch provider {
+	case constants.AwsLabel:
+		cred, err = NewAwsCredential(*result.SecretString)
+	case constants.AzureLabel:
+		cred, err = NewAzureCredential(*result.SecretString)
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "GetCredentials")
+	}
+	return cred, nil
 }
 
 //WriteOrUpdateCredential Creates a new secrets in AWS, updates the existing if key already present
 // update will be set to true when key Update operation is perfromed,
 // false on new secret creation
-func WriteOrUpdateCredential(ctx context.Context, region, account, id, key string) (update bool, err error) {
+func WriteOrUpdateCredential(ctx context.Context, region, account, provider string, cred Credentials) (update bool, err error) {
 
 	secret, err := getSecretManager(region)
 	if err != nil {
 		return false, err
 	}
+	value := cred.AsSecretValue()
 
-	value := encodeCredentials(id, key)
+	s := sid(provider, account)
 	input := &secretsmanager.GetSecretValueInput{
-		SecretId:     &account,
+		SecretId:     &s,
 		VersionStage: aws.String("AWSCURRENT"),
 	}
 
@@ -178,7 +186,7 @@ func WriteOrUpdateCredential(ctx context.Context, region, account, id, key strin
 	if !exist {
 
 		_, err = secret.CreateSecretWithContext(ctx, &secretsmanager.CreateSecretInput{
-			Name:         &account,
+			Name:         &s,
 			SecretString: &value,
 		})
 		update = false

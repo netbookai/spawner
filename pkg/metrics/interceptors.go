@@ -12,6 +12,7 @@ func getMethod(info *grpc.UnaryServerInfo) string {
 	return splits[len(splits)-1]
 }
 
+//RPCInstrumentation request instrumentation interceptor
 func RPCInstrumentation() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		IncRequest(getMethod(info))

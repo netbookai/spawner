@@ -4,10 +4,10 @@ package constants
 //calling StrPtr() or aws.String() seems like repetetive
 
 var (
-	NameLabel           string = "Name" //Capital N for Aws
-	CreatorLabel               = "creator"
-	SpawnerServiceLabel        = "spawner-service"
-	Scope                      = "scope"
+	NameLabel           = "Name" //Capital N for Aws
+	CreatorLabel        = "creator"
+	SpawnerServiceLabel = "spawner-service"
+	Scope               = "scope"
 
 	ProvisionerLabel         = "provisioner"
 	ClusterNameLabel         = "cluster-name"
@@ -20,7 +20,7 @@ var (
 	NBTypeTagkey             = "nb-type"
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
 	WorkspaceId              = "workspaceid"
-	KubeVersion              = "1.20"
+	AzureLabel               = "azure"
 )
 
 type CloudProvider string
@@ -29,4 +29,9 @@ const (
 	AwsCloud   CloudProvider = "aws"
 	AzureCloud CloudProvider = "azure"
 	GcpCloud   CloudProvider = "gcp"
+)
+
+const (
+	Active   = "active"
+	Inactive = "inactive"
 )

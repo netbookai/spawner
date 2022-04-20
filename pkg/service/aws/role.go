@@ -3,10 +3,11 @@ package aws
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 )
 
 //createRoleOrGetExisting creates a role if it does not exist
@@ -32,16 +33,16 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 			Description:              &description,
 			Tags: []*iam.Tag{
 				{
-					Key:   common.StrPtr(constants.CreatorLabel),
-					Value: common.StrPtr(constants.SpawnerServiceLabel),
+					Key:   aws.String(constants.CreatorLabel),
+					Value: aws.String(constants.SpawnerServiceLabel),
 				},
 				{
-					Key:   common.StrPtr(constants.NameLabel),
+					Key:   aws.String(constants.NameLabel),
 					Value: &roleName,
 				},
 				{
-					Key:   common.StrPtr(constants.Scope),
-					Value: common.StrPtr( /*(internal)aws.*/ ScopeTag()),
+					Key:   aws.String(constants.Scope),
+					Value: aws.String( /*(internal)aws.*/ labels.ScopeTag()),
 				},
 			},
 		}

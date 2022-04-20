@@ -104,7 +104,7 @@ func main() {
 
 	//ENV value can be either prod or dev
 	config := config.Get()
-	if config.Env == "prod" {
+	if config.Env == "prod" || config.Env == "dev" {
 		logger, _ = zap.NewProduction()
 	} else {
 		logger, _ = zap.NewDevelopment()

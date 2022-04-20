@@ -6,12 +6,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 
 	"go.uber.org/zap"
 )
 
-func LogError(methodName string, logger *zap.SugaredLogger, err error) {
+func logError(methodName string, logger *zap.SugaredLogger, err error) {
 
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -28,13 +29,13 @@ func LogError(methodName string, logger *zap.SugaredLogger, err error) {
 	}
 }
 
-func awsTags(labels map[string]string) []*ec2.Tag {
-	for k, v := range DefaultTags() {
-		labels[k] = *v
+func awsTags(label map[string]string) []*ec2.Tag {
+	for k, v := range labels.DefaultTags() {
+		label[k] = *v
 	}
 
 	tags := []*ec2.Tag{}
-	for key, value := range labels {
+	for key, value := range label {
 		tags = append(tags, &ec2.Tag{
 			Key:   aws.String(key),
 			Value: aws.String(value),
@@ -43,6 +44,7 @@ func awsTags(labels map[string]string) []*ec2.Tag {
 	return tags
 }
 
+//CreateVolume create aws volume
 func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 	//Creates an EBS volume
 
@@ -86,7 +88,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	//calling aws sdk CreateVolume function
 	result, err := ec2Client.CreateVolume(input)
 	if err != nil {
-		LogError("CreateVolume", logger, err)
+		logError("CreateVolume", logger, err)
 		return &proto.CreateVolumeResponse{}, err
 	}
 
@@ -94,7 +96,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 		VolumeIds: []*string{result.VolumeId},
 	})
 	if err != nil {
-		LogError("WaitForVolumeAvailable", logger, err)
+		logError("WaitForVolumeAvailable", logger, err)
 		return &proto.CreateVolumeResponse{}, err
 	}
 
@@ -106,6 +108,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	return res, nil
 }
 
+//DeleteVolume delete aws volume
 func (svc AWSController) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
 	//Deletes an EBS volume
 
@@ -138,7 +141,7 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *proto.DeleteVolu
 	_, err = ec2Client.DeleteVolume(input)
 
 	if err != nil {
-		LogError("DeleteVolume", logger, err)
+		logError("DeleteVolume", logger, err)
 		return &proto.DeleteVolumeResponse{}, err
 	}
 
@@ -150,6 +153,7 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *proto.DeleteVolu
 	return res, nil
 }
 
+//CreateSnapshot create volume snapshot
 func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 	//Creates a Snapshot of a volume
 
@@ -189,7 +193,7 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 	//calling aws sdk method to snapshot volume
 	result, err := ec2Client.CreateSnapshot(input)
 	if err != nil {
-		LogError("CreateSnapshot", logger, err)
+		logError("CreateSnapshot", logger, err)
 		return &proto.CreateSnapshotResponse{}, err
 	}
 
@@ -197,7 +201,7 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 		SnapshotIds: []*string{result.SnapshotId},
 	})
 	if err != nil {
-		LogError("WaitForSnapshotCompleted", logger, err)
+		logError("WaitForSnapshotCompleted", logger, err)
 		return &proto.CreateSnapshotResponse{}, err
 	}
 
@@ -208,6 +212,7 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 	return res, nil
 }
 
+//CreateSnapshotAndDelete create a  snapshot of volume and delete the volume
 func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 	//First Creates the snapshot of the volume then deletes the volume
 
@@ -246,7 +251,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 	//calling aws sdk CreateSnapshot method
 	resultSnapshot, err := ec2Client.CreateSnapshot(inputSnapshot)
 	if err != nil {
-		LogError("CreateSnapshot", logger, err)
+		logError("CreateSnapshot", logger, err)
 		return &proto.CreateSnapshotAndDeleteResponse{}, err
 	}
 
@@ -254,7 +259,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 		SnapshotIds: []*string{resultSnapshot.SnapshotId},
 	})
 	if err != nil {
-		LogError("WaitForSnapshotCompleted", logger, err)
+		logError("WaitForSnapshotCompleted", logger, err)
 		return &proto.CreateSnapshotAndDeleteResponse{}, err
 	}
 
@@ -269,7 +274,7 @@ func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 	_, err = ec2Client.DeleteVolume(inputDelete)
 
 	if err != nil {
-		LogError("DeleteVolume", logger, err)
+		logError("DeleteVolume", logger, err)
 
 		return &proto.CreateSnapshotAndDeleteResponse{
 			Snapshotid: *resultSnapshot.SnapshotId,

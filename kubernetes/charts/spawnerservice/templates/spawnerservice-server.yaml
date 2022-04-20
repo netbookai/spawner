@@ -21,10 +21,10 @@ spec:
         env:
         - name: ENV
           value: {{ .Values.env }}
-        - name: PORT
-          value: '{{ .Values.port }}'
-        - name: DEBUG_PORT
-          value: '{{ .Values.debug_port }}'
+        - name: GRPC_PORT
+          value: '{{ .Values.grpc_port }}'
+        - name: HTTP_PORT
+          value: '{{ .Values.http_port }}'
         - name: RANCHER_ADDRESS
           value: {{ .Values.rancher.address }}
         - name: RANCHER_USERNAME
@@ -37,9 +37,13 @@ spec:
           value: {{ .Values.secret_host_region }}
         - name: AWS_ROUTE53_HOSTEDZONEID
           value: {{ .Values.route53_hostedzone_id }}
+        - name: NODE_DELETION_TIME_IN_SECONDS
+          value: '{{ .Values.node_deletion_timeout_in_seconds }}'
+        - name: AZURE_CLOUD_PROVIDER
+          value: {{ .Values.azure_cloud_provider }}
 
         ports:
-          - containerPort: {{ .Values.port }} 
+          - containerPort: {{ .Values.grpc_port }} 
       imagePullSecrets:
         - name: dockerconfigjson-gitlab
       serviceAccountName: awskube2iam

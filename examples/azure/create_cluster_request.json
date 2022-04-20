@@ -1,0 +1,17 @@
+{
+    "provider": "azure",
+    "region": "eastus2",
+    "labels": {
+        "env": "dev"
+    },
+    "node": {
+        "name": "proident",
+        "diskSize": 30,
+        "count": 2,
+        "labels": {
+            "created_by": "alex"
+        },
+        "instance": "Standard_E2bds_v5",
+        "gpuEnabled": false
+    }
+}

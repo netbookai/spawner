@@ -88,8 +88,6 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, err
 	}
 
-	costResponse := &proto.GetWorkspacesCostResponse{}
-
 	costMap := make(map[string]float64)
 
 	var totalCost float64
@@ -102,6 +100,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 			for _, key := range group.Keys {
 
 				if key != nil {
+					key := key
 					groupKey += *key
 				}
 
@@ -128,15 +127,11 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	}
 
-	svc.logger.Infow("service wise cost calculated", "costMap", costMap, "totalCost", totalCost)
+	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
 
-	costResponse.TotalCost = totalCost
-
-	for k, v := range costMap {
-		costResponse.GroupedCost = append(costResponse.GroupedCost, &proto.GetWorkspacesCostGroupResponse{
-			Group: k,
-			Cost:  v,
-		})
+	costResponse := &proto.GetWorkspacesCostResponse{
+		TotalCost:   totalCost,
+		GroupedCost: costMap,
 	}
 
 	return costResponse, nil

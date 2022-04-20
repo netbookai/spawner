@@ -1,0 +1,14 @@
+{
+    "nodeSpec": {
+        "diskSize": 31,
+        "name": "prosint",
+        "count": 3,
+        "instance": "m5.xlarge",
+        "labels": {
+            "created_by": "cli"
+        }
+    },
+    "region": "us-west-2",
+    "clusterName": "my-cluster",
+    "provider": "aws"
+}

@@ -62,6 +62,10 @@ service SpawnerService {
       returns (WriteCredentialResponse) {}
 
   rpc ReadCredential(ReadCredentialRequest) returns (ReadCredentialResponse) {}
+
+  rpc GetKubeConfig(GetKubeConfigRequest) returns (GetKubeConfigResponse) {}
+  rpc TagNodeInstance(TagNodeInstanceRequest)
+      returns (TagNodeInstanceResponse) {}
 }
 
 message Empty {}
@@ -71,6 +75,21 @@ message EchoRequest {
 }
 message EchoResponse {
   string msg = 1;
+}
+
+enum MIGProfile {
+  UNKNOWN = 0;
+  MIG1g = 1;
+  MIG2g = 2;
+  MIG3g = 3;
+  MIG4g = 4;
+  MIG7g = 5;
+}
+
+enum CapacityType {
+  TypeUKNOWN = 0;
+  ONDEMAND = 1;
+  SPOT = 2;
 }
 
 message NodeSpec {
@@ -86,6 +105,10 @@ message NodeSpec {
   map<string, string> labels = 10;
   bool gpu_enabled = 11;
   Health health = 12;
+  MIGProfile migProfile = 13;
+  int64 count = 14;
+  CapacityType capacityType = 15;
+  repeated string spotInstances = 16;
 }
 
 message Issue {
@@ -235,8 +258,10 @@ message CreateVolumeRequest {
 }
 
 message CreateVolumeResponse {
+  // volume id is name
   string volumeid = 1;
   string error = 2;
+  string resource_uri = 3;
 }
 
 message DeleteVolumeRequest {
@@ -307,18 +332,30 @@ message GroupBy {
 
 message GetWorkspacesCostResponse {
   double totalCost = 1;
-  repeated GetWorkspacesCostGroupResponse groupedCost = 2;
+  map<string, double> groupedCost = 2;
 }
 
-message GetWorkspacesCostGroupResponse {
-  string group = 1;
-  double cost = 2;
+message AwsCredentials {
+  string accessKeyID = 1;
+  string secretAccessKey = 2;
+  string token = 3;
+}
+
+message AzureCredentials {
+  string subscriptionID = 1;
+  string tenantID = 2;
+  string clientID = 3;
+  string clientSecret = 4;
+  string resourceGroup = 5;
 }
 
 message WriteCredentialRequest {
   string account = 1;
-  string accessKeyID = 2;
-  string secretAccessKey = 3;
+  string provider = 2;
+  oneof cred {
+    AwsCredentials awsCred = 3;
+    AzureCredentials azureCred = 4;
+  }
 }
 
 message WriteCredentialResponse {
@@ -327,10 +364,36 @@ message WriteCredentialResponse {
 
 message ReadCredentialRequest {
   string account = 1;
+  string provider = 2;
 }
 
 message ReadCredentialResponse {
   string account = 1;
-  string accessKeyID = 2;
-  string secretAccessKey = 3;
+  string provider = 2;
+  oneof cred {
+    AwsCredentials awsCred = 3;
+    AzureCredentials azureCred = 4;
+  }
+}
+
+message GetKubeConfigRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+}
+message GetKubeConfigResponse {
+  string clusterName = 1;
+  bytes config = 2;
+}
+
+message TagNodeInstanceResponse {}
+
+message TagNodeInstanceRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+  string nodeGroup = 5;
+  map<string, string> labels = 6;
 }
