@@ -43,7 +43,7 @@ spec:
           value: {{ .Values.azure_cloud_provider }}
 
         ports:
-          - containerPort: {{ .Values.port }} 
+          - containerPort: {{ .Values.grpc_port }} 
       imagePullSecrets:
         - name: dockerconfigjson-gitlab
       serviceAccountName: awskube2iam
