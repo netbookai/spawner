@@ -46,15 +46,11 @@ func (a *AzureController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 }
 
 func (a *AzureController) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return &proto.AddTokenResponse{}, nil
 }
 
 func (a *AzureController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
 	return a.getToken(ctx, req)
-}
-
-func (a *AzureController) AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error) {
-	panic("not implemented") // TODO: Implement
 }
 
 func (a *AzureController) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
@@ -74,7 +70,7 @@ func (a *AzureController) CreateSnapshotAndDelete(ctx context.Context, req *prot
 }
 
 func (a *AzureController) GetWorkspacesCost(_ context.Context, _ *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
-	panic("not implemented") // TODO: Implement
+	return &proto.GetWorkspacesCostResponse{}, nil
 }
 
 func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
@@ -82,5 +78,5 @@ func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeC
 }
 
 func (a *AzureController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
-	panic("not implemented")
+	return &proto.TagNodeInstanceResponse{}, nil
 }
