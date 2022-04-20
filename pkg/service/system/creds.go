@@ -59,6 +59,8 @@ func (a *AwsCredential) AsSecretValue() string {
 	return fmt.Sprintf("%s,%s,%s", a.Id, a.Secret, a.Token)
 }
 
+//NewAwsCredential recieves comma separated list of credential parts and creates a AwsCredential
+//there can be 2 or 3 parts, when the token is present we will use the latest version of Credentials
 func NewAwsCredential(blob string) (*AwsCredential, error) {
 	//secret_id,secret,token
 	splits := strings.Split(blob, ",")
@@ -79,6 +81,7 @@ func NewAwsCredential(blob string) (*AwsCredential, error) {
 	return nil, errors.New("NewAwsCredential: invalid credentials found in secrets")
 }
 
+//NewAzureCredential recieves comma separated list of credential parts and creates a AzureCredential
 func NewAzureCredential(blob string) (*AzureCredential, error) {
 	splits := strings.Split(blob, ",")
 	if len(splits) != 5 {
