@@ -2,6 +2,8 @@ module gitlab.com/netbook-devs/spawner-service
 
 go 1.17
 
+replace github.com/docker/distribution => github.com/docker/distribution v2.8.0+incompatible
+
 require (
 	github.com/Azure/azure-sdk-for-go v62.2.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.19
