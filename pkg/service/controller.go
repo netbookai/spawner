@@ -6,6 +6,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
 
+//Controller defines the set of the functions which each provider controller must implement to support spawner functionality
 type Controller interface {
 	CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error)
 	GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error)

@@ -8,6 +8,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+//GetKubeConfig generates the kubeconfig from the session
 func (ctrl AWSController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
 
 	region := req.Region
@@ -69,63 +70,13 @@ func (ctrl AWSController) GetKubeConfig(ctx context.Context, req *proto.GetKubeC
 	}
 
 	b, err := clientcmd.Write(clientConfig)
-	//	clusters := []*kubeconfig.KubectlClusterWithName{
-	//		&kubeconfig.KubectlClusterWithName{
-	//			Name: *cluster.Arn,
-	//			Cluster: kubeconfig.KubectlCluster{
-	//				Server:                   kubeConfig.Host,
-	//				CertificateAuthorityData: kubeConfig.CAData,
-	//			},
-	//		},
-	//	}
-	//
-	//	contexts := []*kubeconfig.KubectlContextWithName{&kubeconfig.KubectlContextWithName{
-	//		Name: *cluster.Arn,
-	//		Context: kubeconfig.KubectlContext{
-	//			Cluster: *cluster.Arn,
-	//			User:    *cluster.Arn,
-	//		},
-	//	}}
-	//
-	//	users := []*kubeconfig.KubectlUserWithName{&kubeconfig.KubectlUserWithName{
-	//		Name: *cluster.Arn,
-	//		User: kubeconfig.KubectlUser{},
-	//	}}
-	//
-	//	kconf := kubeconfig.KubectlConfig{
-	//		Kind:       "Config",
-	//		ApiVersion: "v1",
-	//		Clusters:   clusters,
-	//		Contexts:   contexts,
-	//		Users:      users,
-	//	}
-	//
-	//	b, err := yaml.Marshal(&kconf)
-	//
-	//	if err != nil {
-	//		ctrl.logger.Errorw("failed to marshal kube config ", "error", err)
-	//		return nil, errors.Wrap(err, "GetKubeConfig")
-	//	}
-	//
-	//	conf, err := clientcmd.NewClientConfigFromBytes(b)
-	//
-	//	if err != nil {
-	//		ctrl.logger.Errorw("failed to convert Config from bytes", "error", err)
-	//		return nil, errors.Wrap(err, "GetKubeConfig")
-	//	}
-	//
-	//	c, err := conf.RawConfig()
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	spew.Dump(c)
-	//
 	return &proto.GetKubeConfigResponse{
 		ClusterName: *cluster.Arn,
 		Config:      b,
 	}, nil
 }
 
+//GetToken get aws tokens and ca data for kube
 func (ctrl AWSController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
 
 	region := req.Region

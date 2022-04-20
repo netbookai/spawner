@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -9,13 +10,13 @@ import (
 )
 
 var rootCommand = &cobra.Command{
-	Use:   "spawner-cli",
-	Short: "spawner-cli",
+	Use:   "spawner",
+	Short: "spawner",
 	Long:  "cli to interact with slef hosted spawner service",
 }
 
 func getSpawnerConn(addr string) (*grpc.ClientConn, error) {
-	log.Println("connecting to ", addr)
+	log.Println("connecting to ", addr, "...")
 	return grpc.Dial(addr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 }
 
@@ -27,7 +28,8 @@ func setupCommands() {
 	rootCommand.AddCommand(kubeConfig())
 }
 
+//Execute sets up a command execute command handlers
 func Execute() error {
 	setupCommands()
-	return rootCommand.Execute()
+	return rootCommand.ExecuteContext(context.Background())
 }

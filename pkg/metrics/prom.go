@@ -16,6 +16,7 @@ func init() {
 	prometheus.Register(requestCounter)
 }
 
+//IncRequest incerement total request counter
 func IncRequest(method string) {
 	requestCounter.WithLabelValues(method).Inc()
 }

@@ -1,18 +1,31 @@
 package cli
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
+
+//unmarshalFile read the given file content and umarshal it to given interface
+func unmarshalFile(file string, v interface{}) error {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return errors.Wrap(err, "failed to read request file")
+	}
+	err = json.Unmarshal(data, v)
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal request")
+	}
+	return nil
+}
 
 func createCluster() *cobra.Command {
 	name := ""
@@ -38,14 +51,12 @@ func createCluster() *cobra.Command {
 			}
 
 			req := &proto.ClusterRequest{}
-			data, err := os.ReadFile(ifile)
+
+			err := unmarshalFile(ifile, req)
 			if err != nil {
-				log.Fatal("failed to read request file: ", err.Error())
+				log.Fatal(err.Error())
 			}
-			err = json.Unmarshal(data, req)
-			if err != nil {
-				log.Fatal("failed to unmarshal request: ", err.Error())
-			}
+
 			req.ClusterName = name
 			if provider != "" {
 				req.Provider = provider
@@ -58,17 +69,17 @@ func createCluster() *cobra.Command {
 			client := proto.NewSpawnerServiceClient(conn)
 
 			log.Printf("creating cluster '%s'\n", name)
-			_, err = client.CreateCluster(context.Background(), req)
+
+			_, err = client.CreateCluster(cmd.Context(), req)
 
 			if err != nil {
 				log.Fatal("create cluster failed: ", err.Error())
 			}
 
 			if req.Provider == "aws" {
-				stat := waitUntilClusterReady(client, req)
+				stat := waitUntilClusterReady(cmd.Context(), client, req)
 				if stat != "ACTIVE" {
-					log.Panic("failed to wait on cluster activation, please check provider portal")
-
+					log.Fatal("failed to wait on cluster activation, please check provider portal")
 				}
 
 				//add default node
@@ -78,14 +89,13 @@ func createCluster() *cobra.Command {
 				nsr.NodeSpec = req.Node
 				nsr.ClusterName = req.ClusterName
 				log.Printf("cluster '%s' is active, adding node '%s'\n", name, req.Node.Name)
-				_, err := client.AddNode(context.Background(), nsr)
+				_, err := client.AddNode(cmd.Context(), nsr)
 				if err != nil {
 					log.Fatalf("failed to attach node to cluster '%s', can retry 'nodepool add' %s\n", name, err.Error())
 					return
 				}
 				log.Println("nodepool attached to cluster")
 			} else {
-
 				log.Printf("cluster '%s' created\n", name)
 			}
 		},
@@ -133,7 +143,7 @@ func clusteStatus() *cobra.Command {
 			defer conn.Close()
 			client := proto.NewSpawnerServiceClient(conn)
 			log.Printf("fetching cluster '%s' status\n", name)
-			resp, err := client.ClusterStatus(context.Background(), req)
+			resp, err := client.ClusterStatus(cmd.Context(), req)
 			if err != nil {
 				log.Fatal("failed to get status: ", err.Error())
 			}
@@ -190,7 +200,7 @@ func deleteCluster() *cobra.Command {
 			defer conn.Close()
 			client := proto.NewSpawnerServiceClient(conn)
 			log.Printf("deleting cluster '%s'\n", name)
-			_, err = client.DeleteCluster(context.Background(), req)
+			_, err = client.DeleteCluster(cmd.Context(), req)
 			if err != nil {
 				log.Fatal("failed to get status: ", err.Error())
 			}
@@ -232,14 +242,10 @@ func addNodePool() *cobra.Command {
 			if len(args) == 1 {
 				name = args[0]
 			}
-			data, err := os.ReadFile(ifile)
-			if err != nil {
-				log.Fatal("failed to read request file: ", err.Error())
-			}
 			req := &proto.NodeSpawnRequest{}
-			err = json.Unmarshal(data, req)
+			err := unmarshalFile(ifile, req)
 			if err != nil {
-				log.Fatal("failed to unmarshal request: ", err.Error())
+				log.Fatal(err.Error())
 			}
 
 			req.ClusterName = name
@@ -251,7 +257,7 @@ func addNodePool() *cobra.Command {
 			defer conn.Close()
 			client := proto.NewSpawnerServiceClient(conn)
 			log.Printf("adding nodepool '%s' to cluster '%s'\n", req.NodeSpec.Name, name)
-			_, err = client.AddNode(context.Background(), req)
+			_, err = client.AddNode(cmd.Context(), req)
 			if err != nil {
 				log.Fatal("failed to add new node pool: ", err.Error())
 			}
@@ -305,7 +311,7 @@ func deleteNodePool() *cobra.Command {
 			defer conn.Close()
 			client := proto.NewSpawnerServiceClient(conn)
 			log.Printf("deleting nodepool '%s' in cluster '%s'\n", req.NodeGroupName, name)
-			_, err = client.DeleteNode(context.Background(), req)
+			_, err = client.DeleteNode(cmd.Context(), req)
 			if err != nil {
 				log.Fatal("failed to delete node pool: ", err.Error())
 			}
@@ -376,31 +382,28 @@ func kubeConfig() *cobra.Command {
 			}
 			defer conn.Close()
 			client := proto.NewSpawnerServiceClient(conn)
-			log.Println("getting kube config for the cluster")
-			res, err := client.GetKubeConfig(context.Background(), req)
+			log.Printf("getting kube config for the cluster '%s'\n", name)
+			res, err := client.GetKubeConfig(cmd.Context(), req)
 			if err != nil {
 				log.Fatalf("failed to get kube config: %s\n", err.Error())
-				return
 			}
 
 			home, err := os.UserHomeDir()
 			if err != nil {
 				log.Fatalf("failed to read user home directory: %s\n", err.Error())
-				return
 			}
+
 			kubefile := fmt.Sprintf("%s/.kube/config", home)
 			log.Printf("reading existing kube config : %s\n", kubefile)
+
 			currentKC, err := clientcmd.LoadFromFile(kubefile)
+			if err != nil {
+				log.Fatalf("failed to load the existing kube config : %s\n", err.Error())
+			}
 
 			newConfig, err := clientcmd.Load(res.GetConfig())
 			if err != nil {
-				log.Fatalf("failed to get the kube config : %s\n", err.Error())
-				return
-			}
-
-			if err != nil {
 				log.Fatalf("failed to read kube config : %s\n", err.Error())
-				return
 			}
 
 			kubeConfg := clientcmdapi.NewConfig()
@@ -412,7 +415,6 @@ func kubeConfig() *cobra.Command {
 			err = clientcmd.WriteToFile(*kubeConfg, kubefile)
 			if err != nil {
 				log.Fatalf("failed to write kube config : %s\n", err.Error())
-				return
 			}
 			log.Printf("KubeConfig updated in '%s'\n", kubefile)
 		},

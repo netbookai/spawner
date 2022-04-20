@@ -8,7 +8,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/pkg/errors"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 )
@@ -70,13 +69,13 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 	}
 	mcappp := containerservice.ManagedClusterAgentPoolProfileProperties{
 
-		Count:               &count,
-		VMSize:              to.StringPtr(req.NodeSpec.Instance),
-		NodeLabels:          nodeTags,
-		Tags:                nodeTags,
-		Mode:                containerservice.AgentPoolModeUser,
-		OrchestratorVersion: &constants.AzureKubeVersion,
-		OsDiskSizeGB:        &req.NodeSpec.DiskSize,
+		Count:      &count,
+		VMSize:     to.StringPtr(req.NodeSpec.Instance),
+		NodeLabels: nodeTags,
+		Tags:       nodeTags,
+		Mode:       containerservice.AgentPoolModeUser,
+		//	OrchestratorVersion: &constants.AzureKubeVersion,
+		OsDiskSizeGB: &req.NodeSpec.DiskSize,
 	}
 
 	if req.NodeSpec.GpuEnabled && req.NodeSpec.MigProfile != proto.MIGProfile_UNKNOWN {
