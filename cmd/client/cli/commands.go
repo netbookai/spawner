@@ -388,6 +388,11 @@ func kubeConfig() *cobra.Command {
 				log.Fatalf("failed to get kube config: %s\n", err.Error())
 			}
 
+			newConfig, err := clientcmd.Load(res.GetConfig())
+			if err != nil {
+				log.Fatalf("failed to read kube config : %s\n", err.Error())
+			}
+
 			home, err := os.UserHomeDir()
 			if err != nil {
 				log.Fatalf("failed to read user home directory: %s\n", err.Error())
@@ -396,20 +401,26 @@ func kubeConfig() *cobra.Command {
 			kubefile := fmt.Sprintf("%s/.kube/config", home)
 			log.Printf("reading existing kube config : %s\n", kubefile)
 
+			skipMerge := false
 			currentKC, err := clientcmd.LoadFromFile(kubefile)
-			if err != nil {
-				log.Fatalf("failed to load the existing kube config : %s\n", err.Error())
+
+			if os.IsNotExist(err) {
+				//file does not exist, create new one
+				skipMerge = true
+
 			}
 
-			newConfig, err := clientcmd.Load(res.GetConfig())
-			if err != nil {
-				log.Fatalf("failed to read kube config : %s\n", err.Error())
+			if !skipMerge && err != nil {
+				log.Fatalf("failed to load the existing kube config : %s\n", err.Error())
 			}
 
 			kubeConfg := clientcmdapi.NewConfig()
 			//set the current cluster context as new context
 			newConfig.CurrentContext = res.ClusterName
-			mergo.Merge(kubeConfg, currentKC, mergo.WithOverride)
+			if !skipMerge {
+				fmt.Println("added")
+				mergo.Merge(kubeConfg, currentKC, mergo.WithOverride)
+			}
 			mergo.Merge(kubeConfg, newConfig, mergo.WithOverride)
 
 			err = clientcmd.WriteToFile(*kubeConfg, kubefile)
