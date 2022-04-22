@@ -3,6 +3,8 @@
 Mulit-Cloud infrastructure orchestrator for kubernetes first development. One tool to rule them all. No need to use aws, azure or any other vendor specific cli to manage cluster and get kubeconfig.
 
 
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5978/badge)](https://bestpractices.coreinfrastructure.org/projects/5978)
+
 
 ## Prerequisites
 1. Golang v1.17 or later.
