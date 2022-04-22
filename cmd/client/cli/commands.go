@@ -418,7 +418,6 @@ func kubeConfig() *cobra.Command {
 			//set the current cluster context as new context
 			newConfig.CurrentContext = res.ClusterName
 			if !skipMerge {
-				fmt.Println("added")
 				mergo.Merge(kubeConfg, currentKC, mergo.WithOverride)
 			}
 			mergo.Merge(kubeConfg, newConfig, mergo.WithOverride)
