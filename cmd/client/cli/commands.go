@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 //unmarshalFile read the given file content and umarshal it to given interface
@@ -414,15 +413,13 @@ func kubeConfig() *cobra.Command {
 				log.Fatalf("failed to load the existing kube config : %s\n", err.Error())
 			}
 
-			kubeConfg := clientcmdapi.NewConfig()
 			//set the current cluster context as new context
-			newConfig.CurrentContext = res.ClusterName
 			if !skipMerge {
-				mergo.Merge(kubeConfg, currentKC, mergo.WithOverride)
+				mergo.Merge(newConfig, currentKC, mergo.WithOverride)
 			}
-			mergo.Merge(kubeConfg, newConfig, mergo.WithOverride)
+			newConfig.CurrentContext = res.ClusterName
 
-			err = clientcmd.WriteToFile(*kubeConfg, kubefile)
+			err = clientcmd.WriteToFile(*newConfig, kubefile)
 			if err != nil {
 				log.Fatalf("failed to write kube config : %s\n", err.Error())
 			}
