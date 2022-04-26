@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
 	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 //unmarshalFile read the given file content and umarshal it to given interface
@@ -388,6 +387,11 @@ func kubeConfig() *cobra.Command {
 				log.Fatalf("failed to get kube config: %s\n", err.Error())
 			}
 
+			newConfig, err := clientcmd.Load(res.GetConfig())
+			if err != nil {
+				log.Fatalf("failed to read kube config : %s\n", err.Error())
+			}
+
 			home, err := os.UserHomeDir()
 			if err != nil {
 				log.Fatalf("failed to read user home directory: %s\n", err.Error())
@@ -396,23 +400,26 @@ func kubeConfig() *cobra.Command {
 			kubefile := fmt.Sprintf("%s/.kube/config", home)
 			log.Printf("reading existing kube config : %s\n", kubefile)
 
+			skipMerge := false
 			currentKC, err := clientcmd.LoadFromFile(kubefile)
-			if err != nil {
+
+			if os.IsNotExist(err) {
+				//file does not exist, create new one
+				skipMerge = true
+
+			}
+
+			if !skipMerge && err != nil {
 				log.Fatalf("failed to load the existing kube config : %s\n", err.Error())
 			}
 
-			newConfig, err := clientcmd.Load(res.GetConfig())
-			if err != nil {
-				log.Fatalf("failed to read kube config : %s\n", err.Error())
-			}
-
-			kubeConfg := clientcmdapi.NewConfig()
 			//set the current cluster context as new context
+			if !skipMerge {
+				mergo.Merge(newConfig, currentKC, mergo.WithOverride)
+			}
 			newConfig.CurrentContext = res.ClusterName
-			mergo.Merge(kubeConfg, currentKC, mergo.WithOverride)
-			mergo.Merge(kubeConfg, newConfig, mergo.WithOverride)
 
-			err = clientcmd.WriteToFile(*kubeConfg, kubefile)
+			err = clientcmd.WriteToFile(*newConfig, kubefile)
 			if err != nil {
 				log.Fatalf("failed to write kube config : %s\n", err.Error())
 			}
