@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go v1.43.11
 	github.com/google/uuid v1.3.0
 	github.com/imdario/mergo v0.3.12
-	github.com/netbook-ai/interceptors v0.1.1
+	github.com/netbook-ai/interceptors v0.1.2
 	github.com/oklog/oklog v0.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.1
