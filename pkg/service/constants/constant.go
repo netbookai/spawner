@@ -35,3 +35,11 @@ const (
 	Active   = "active"
 	Inactive = "inactive"
 )
+
+const ActualCost string = "ActualCost"
+
+const (
+	CostUSD     = "CostUSD"
+	ServiceName = "ServiceName"
+	TagValue    = "TagValue"
+)

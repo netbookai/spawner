@@ -69,8 +69,8 @@ func (a *AzureController) CreateSnapshotAndDelete(ctx context.Context, req *prot
 	return a.createSnapshotAndDelete(ctx, req)
 }
 
-func (a *AzureController) GetWorkspacesCost(_ context.Context, _ *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
-	return &proto.GetWorkspacesCostResponse{}, nil
+func (a *AzureController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
+	return a.getWorkspacesCost(ctx, req)
 }
 
 func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
