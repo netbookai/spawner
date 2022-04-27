@@ -44,6 +44,8 @@ spec:
 
         ports:
           - containerPort: {{ .Values.grpc_port }} 
+        securityContext:
+          runAsUser: 1001
       imagePullSecrets:
         - name: dockerconfigjson-gitlab
       serviceAccountName: awskube2iam
