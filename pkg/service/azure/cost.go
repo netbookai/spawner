@@ -47,7 +47,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, errors.Wrapf(err, "invalid end date: %s", req.EndDate)
 	}
 
-	scope := "subscriptions/" + cred.SubscriptionID + "/resourceGroups/" + cred.ResourceGroup
+	scope := "subscriptions/" + cred.SubscriptionID
 
 	result, err := costClient.Usage(ctx, scope, costmanagement.QueryDefinition{
 		Type:      costmanagement.ExportTypeActualCost,
