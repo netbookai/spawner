@@ -16,7 +16,7 @@ Mulit-Cloud infrastructure orchestrator for kubernetes first development. One to
 ## Overview
 
 <p align="center" width="100%" >
-    <img width="60%" height="300" src="images/spawner_flow.png">
+    <img width="70%" src="images/spawner_flow.png">
 </p>
 
 - Multi cloud infrastructure orchestrator for kubernetes.
