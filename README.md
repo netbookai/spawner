@@ -1,5 +1,5 @@
 <p align="center" width="100%">
-    <img width="50%" src="images/netbook.png">
+    <img width="50%" height="50" src="images/netbook.png">
 </p>
 
 
@@ -8,13 +8,23 @@
 
 Mulit-Cloud infrastructure orchestrator for kubernetes first development. One tool to rule them all. No need to use aws, azure or any other vendor specific cli to manage cluster and get kubeconfig.
 
----
+
 ![Go](https://img.shields.io/badge/Language-Go-Blue)[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5978/badge)](https://bestpractices.coreinfrastructure.org/projects/5978)
 [![Slack](https://img.shields.io/badge/Join%20Our%20Community-Slack-blue)](https://join.slack.com/t/netbookml/shared_invite/zt-181u18zpv-nImWXM8YPmIkcsBoCcFNJA)
 
+---
+## Overview
 
+<p align="center" width="100%" >
+    <img width="60%" height="300" src="images/spawner_flow.png">
+</p>
 
+- Multi cloud infrastructure orchestrator for kubernetes.
+- Manage cluster kubeconfig for different provider.
+- Provision nodes with on demand or spot instances.
+- Access control built right into spawner, it will not access your existing clusters if it wasnt created by spawner unless your resources tagged as per  spawner policy.
 
+---
 ### Prerequisites
 1. Golang v1.17 or later.
 
