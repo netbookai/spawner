@@ -21,6 +21,7 @@ var (
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
 	WorkspaceId              = "workspaceid"
 	AzureLabel               = "azure"
+	GcpLabel                 = "gcp"
 )
 
 type CloudProvider string

@@ -1,0 +1,19 @@
+package common
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func Test_GetInstance(t *testing.T) {
+
+	got := GetInstance("aws", "m")
+	assert.Equal(t, "m5.2xlarge", got, "GetInstance('aws', 'm')")
+
+	got = GetInstance("gcp", "xl+k80")
+	assert.Equal(t, "custom-64-212992-ext", got, "GetInstance('gcp', 'xl+k80')")
+
+	got = GetInstance("azure", "m+v100")
+	assert.Equal(t, "Standard_NC6s_v3", got, "GetInstance('azure', 'm+v100')")
+}
