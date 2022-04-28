@@ -71,5 +71,12 @@ func init() {
 //GetInstance given machine size return the exact instance type for the provider
 func GetInstance(provider, machine string) string {
 
-	return providerInstanceType[provider][machine]
+	p, ok := providerInstanceType[provider]
+	if !ok {
+		return ""
+	}
+	if t, ok := p[machine]; ok {
+		return t
+	}
+	return ""
 }

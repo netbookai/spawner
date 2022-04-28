@@ -16,4 +16,10 @@ func Test_GetInstance(t *testing.T) {
 
 	got = GetInstance("azure", "m+v100")
 	assert.Equal(t, "Standard_NC6s_v3", got, "GetInstance('azure', 'm+v100')")
+
+	got = GetInstance("k8s", "m+v100")
+	assert.Equal(t, "", got, "GetInstance: for invalid provider")
+
+	got = GetInstance("gcp", "m+v1000")
+	assert.Equal(t, "", got, "GetInstance: for invalid machine size")
 }
