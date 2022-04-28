@@ -190,10 +190,10 @@ this will read existing kube config from `~/.kube/config` and merges new cluster
 Some of the things we want to bring in the near future, there will be more to come mean time if you have any more ideas/thoughts, please drop in issues or discussion. Happy to address.
 
 
-- Documentation to spin Spot Instances
-- Support GCP
-- Support for bare metal servers
-- Attaching existing user clusters by adding spawner policy requirement in user cluster.
+- [ ] Documentation to spin Spot Instances
+- [ ] Support GCP
+- [ ] Support for bare metal servers
+- [ ] Attaching existing user clusters by adding spawner policy requirement in user cluster.
 
 Also if you like to contribute...
 
