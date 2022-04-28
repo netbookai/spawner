@@ -185,6 +185,17 @@ spawner kubeconfig clustername --provider "aws" -r=region
 
 this will read existing kube config from `~/.kube/config` and merges new cluster config to it, sets the current context as the requested cluster
 
+### TODO
+
+Some of the things we want to bring in the near future, there will be more to come mean time if you have any more ideas/thoughts, please drop in issues or discussion. Happy to address.
+
+
+- Documentation to spin Spot Instances
+- Support GCP
+- Support for bare metal servers
+- Attaching existing user clusters by adding spawner policy requirement in user cluster.
+
+Also if you like to contribute...
 
 ### Contributing
 Refer our contributing guidelines [contributing.md](./CONTRIBUTING.md)
