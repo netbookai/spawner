@@ -109,6 +109,7 @@ message NodeSpec {
   int64 count = 14;
   CapacityType capacityType = 15;
   repeated string spotInstances = 16;
+  string machineType = 17;
 }
 
 message Issue {
