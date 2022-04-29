@@ -36,8 +36,7 @@ include:
 docker_build_test:
   stage: test
   script:
-    - docker login --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD  $CI_REGISTRY
-    - docker build --network host -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile . 
+    - docker build --network host -t $CI_REGISTRY_IMAGE/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile .
   except:
     - development
     - main
@@ -46,8 +45,8 @@ docker_creation:
   stage: build
   script:
     - docker login --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD  $CI_REGISTRY
-    - docker build --network host -t registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile .
-    - docker push registry.gitlab.com/netbook-devs/spawner-service/spawnerservice:$CI_COMMIT_SHORT_SHA
+    - docker build --network host -t $CI_REGISTRY_IMAGE/spawnerservice:$CI_COMMIT_SHORT_SHA -f Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/spawnerservice:$CI_COMMIT_SHORT_SHA
   only:
     refs:
       - tags
@@ -56,10 +55,13 @@ docker_creation:
       - branches
 
 helm_deploy_dev_manual:
+  image: 
+    name: netbookai/gitlab:helm
+    entrypoint: [""]
   stage: deploy-dev
   script:
-  - sh .gitlab/ci-scripts/helm.sh
-  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set docker=$DOCKER_K8S_CONFIG --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA --set env="dev" --set secret_host_region=$SECRET_HOST_REGION --set route53_hostedzone_id=$AWS_ROUTE53_HOSTEDZONEID_DEV --set node_deletion_timeout_in_seconds=$NODE_DELETION_TIME_IN_SECONDS --set azure_cloud_provider=$AZURE_CLOUD_PROVIDER
+  - kubectl config use-context $KUBE_CONTEXT
+  - make install
 
   environment:
     name: development
@@ -69,10 +71,13 @@ helm_deploy_dev_manual:
   when: manual
 
 helm_deploy_dev_auto:
+  image: 
+    name: netbookai/gitlab:helm
+    entrypoint: [""]
   stage: deploy-dev
   script:
-  - sh .gitlab/ci-scripts/helm.sh
-  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set docker=$DOCKER_K8S_CONFIG --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA --set env="dev" --set secret_host_region=$SECRET_HOST_REGION --set route53_hostedzone_id=$AWS_ROUTE53_HOSTEDZONEID_DEV --set node_deletion_timeout_in_seconds=$NODE_DELETION_TIME_IN_SECONDS --set azure_cloud_provider=$AZURE_CLOUD_PROVIDER
+  - kubectl config use-context $KUBE_CONTEXT
+  - make install
 
   environment:
     name: development
@@ -83,10 +88,13 @@ helm_deploy_dev_auto:
     - master
     
 helm_deploy_prod:
+  image: 
+    name: netbookai/gitlab:helm
+    entrypoint: [""]
   stage: deploy-prod
   script:
-  - sh .gitlab/ci-scripts/helm.sh
-  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml --set docker=$DOCKER_K8S_CONFIG --set rancher.address=$RANCHER_ADDRESS --set rancher.username=$RANCHER_USERNAME --set rancher.password=$RANCHER_PASSWORD --set rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME --set image.tag=$CI_COMMIT_SHORT_SHA --set env="prod" --set secret_host_region=$SECRET_HOST_REGION --set route53_hostedzone_id=$AWS_ROUTE53_HOSTEDZONEID_PROD --set node_deletion_timeout_in_seconds=$NODE_DELETION_TIME_IN_SECONDS --set azure_cloud_provider=$AZURE_CLOUD_PROVIDER
+  - kubectl config use-context $KUBE_CONTEXT
+  - make install
   
   environment:
     name: production
