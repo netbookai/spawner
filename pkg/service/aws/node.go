@@ -92,7 +92,10 @@ func getInstance(nodeSpec *proto.NodeSpec) (string, []*string, error) {
 		instance := ""
 		if nodeSpec.MachineType != "" {
 			instance = common.GetInstance(constants.AwsLabel, nodeSpec.MachineType)
-		} else {
+		}
+
+		//if user has specified the Instance, we will override previous ask
+		if nodeSpec.Instance != "" {
 			instance = nodeSpec.Instance
 		}
 
@@ -278,8 +281,6 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 			return nil, err
 		}
 	}
-
-	fmt.Println(*newNodeGroupInput.CapacityType, " -- instance ", *newNodeGroupInput.InstanceTypes[0])
 
 	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroupInput)
 	if err != nil {
