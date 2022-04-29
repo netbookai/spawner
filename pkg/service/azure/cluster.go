@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
@@ -16,7 +17,7 @@ import (
 
 const testpubkey = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDL67TCv+MyUnT0gHUl2xpJF56TjCkcTKkXUjhIaUDY/gv/bFm5pVbvrHovKV/W2MrI5e9Ix2iQIiityWVABFEFWe7m0yx3ds49ZkM3kIflsqmPeywCcN8V2bMsiVwyrLBsboeRcbQyJJIrsb8A0mj3ooWFfT44I42YVCg4FOTsB+wmlthawBlMGKzZb8ITUMaN0VCtXfIslg6ptQHtficL/N1HW7FSXXiZPJaRi3kuCH18e/wCkP4eomWMZ6MQC1CIwGIkfh9K4pfuppfZ9HG+jyw0ha0LZ6utDbEULMPAtvgUZXB7+1vk1NTwi78p558Dk6fxWGRVgSQu7Qk4yddZ nishanth@nishanth-Legion-5-15ACH6"
 
-func (a *AzureController) createAKSCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
+func (a *AzureController) createCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 
 	clusterName := req.ClusterName
 	account := req.AccountName
@@ -52,6 +53,18 @@ func (a *AzureController) createAKSCluster(ctx context.Context, req *proto.Clust
 	if req.Node.Count != 0 {
 		count = int32(req.Node.Count)
 	}
+
+	instance := ""
+	if req.Node.MachineType != "" {
+		instance = common.GetInstance(constants.AzureLabel, req.Node.MachineType)
+	} else {
+		instance = req.Node.Instance
+	}
+
+	if instance == "" {
+		return nil, errors.New("must provide valid instance by specifying MachineType or Instance.")
+	}
+
 	mc := containerservice.ManagedCluster{
 		Tags:     tags,
 		Name:     &clusterName,
@@ -62,7 +75,7 @@ func (a *AzureController) createAKSCluster(ctx context.Context, req *proto.Clust
 				{
 					Count:        &count,
 					Name:         to.StringPtr(req.Node.Name),
-					VMSize:       to.StringPtr(req.Node.Instance),
+					VMSize:       &instance,
 					OsDiskSizeGB: to.Int32Ptr(req.Node.DiskSize),
 					NodeLabels:   nodeTags,
 					Tags:         nodeTags,

@@ -18,7 +18,7 @@ func NewController(logger *zap.SugaredLogger) *AzureController {
 }
 
 func (a *AzureController) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
-	return a.createAKSCluster(ctx, req)
+	return a.createCluster(ctx, req)
 }
 
 func (a *AzureController) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
