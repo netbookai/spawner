@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: "registry.gitlab.com/netbook-devs/spawner-service/spawnerservice"
+  repository: "registry.gitlab.com/netbook-devs/spawnergithub/spawnerservice"
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.0.1"

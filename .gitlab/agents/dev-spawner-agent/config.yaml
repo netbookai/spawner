@@ -1,0 +1,5 @@
+gitops:
+  manifest_projects:
+  - id: netbook-devs/spawnergithub
+    paths:
+    - glob: '/gitlab-agent-test/*.yaml'
