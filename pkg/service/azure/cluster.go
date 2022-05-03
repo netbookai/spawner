@@ -62,7 +62,7 @@ func (a *AzureController) createCluster(ctx context.Context, req *proto.ClusterR
 	}
 
 	if instance == "" {
-		return nil, errors.New("must provide valid instance by specifying MachineType or Instance.")
+		return nil, errors.New(constants.InvalidInstanceOrMachineType)
 	}
 
 	mc := containerservice.ManagedCluster{

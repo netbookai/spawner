@@ -100,7 +100,7 @@ func getInstance(nodeSpec *proto.NodeSpec) (string, []*string, error) {
 		}
 
 		if instance == "" {
-			return "", nil, errors.New("must provide valid instance by specifying MachineType or Instance.")
+			return "", nil, errors.New(constants.InvalidInstanceOrMachineType)
 		}
 		instanceTypes = append(instanceTypes, &instance)
 	}
