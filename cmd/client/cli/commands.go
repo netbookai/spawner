@@ -9,7 +9,7 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 	"k8s.io/client-go/tools/clientcmd"
 )
 

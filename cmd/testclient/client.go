@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/costexplorer"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {

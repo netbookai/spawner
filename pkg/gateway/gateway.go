@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/service"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 type gateway struct {

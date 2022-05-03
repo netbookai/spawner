@@ -14,7 +14,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 const ProviderNotFound = "provider not found, must be one of ['aws', 'azure'], got %s"
