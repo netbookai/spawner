@@ -9,7 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 )
 
 func (a *AzureController) createDiskSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, name string, disk *compute.Disk, region string, tags map[string]*string) error {

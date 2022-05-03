@@ -3,7 +3,7 @@ package azure
 import (
 	"context"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 	"go.uber.org/zap"
 )
 

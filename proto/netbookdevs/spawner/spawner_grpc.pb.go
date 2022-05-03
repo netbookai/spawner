@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.20.1
-// source: proto/netbookdevs/spawnerservice/spawner.proto
+// source: proto/netbookdevs/spawner/spawner.proto
 
-package spawnerservice
+package spawner
 
 import (
 	context "context"
@@ -68,7 +68,7 @@ func NewSpawnerServiceClient(cc grpc.ClientConnInterface) SpawnerServiceClient {
 
 func (c *spawnerServiceClient) HealthCheck(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/HealthCheck", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/HealthCheck", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (c *spawnerServiceClient) HealthCheck(ctx context.Context, in *Empty, opts 
 
 func (c *spawnerServiceClient) Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error) {
 	out := new(EchoResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/Echo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/Echo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (c *spawnerServiceClient) Echo(ctx context.Context, in *EchoRequest, opts .
 
 func (c *spawnerServiceClient) CreateCluster(ctx context.Context, in *ClusterRequest, opts ...grpc.CallOption) (*ClusterResponse, error) {
 	out := new(ClusterResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/CreateCluster", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/CreateCluster", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (c *spawnerServiceClient) CreateCluster(ctx context.Context, in *ClusterReq
 
 func (c *spawnerServiceClient) AddToken(ctx context.Context, in *AddTokenRequest, opts ...grpc.CallOption) (*AddTokenResponse, error) {
 	out := new(AddTokenResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/AddToken", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/AddToken", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *spawnerServiceClient) AddToken(ctx context.Context, in *AddTokenRequest
 
 func (c *spawnerServiceClient) GetToken(ctx context.Context, in *GetTokenRequest, opts ...grpc.CallOption) (*GetTokenResponse, error) {
 	out := new(GetTokenResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/GetToken", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/GetToken", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (c *spawnerServiceClient) GetToken(ctx context.Context, in *GetTokenRequest
 
 func (c *spawnerServiceClient) AddRoute53Record(ctx context.Context, in *AddRoute53RecordRequest, opts ...grpc.CallOption) (*AddRoute53RecordResponse, error) {
 	out := new(AddRoute53RecordResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/AddRoute53Record", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/AddRoute53Record", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (c *spawnerServiceClient) AddRoute53Record(ctx context.Context, in *AddRout
 
 func (c *spawnerServiceClient) GetCluster(ctx context.Context, in *GetClusterRequest, opts ...grpc.CallOption) (*ClusterSpec, error) {
 	out := new(ClusterSpec)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/GetCluster", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/GetCluster", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (c *spawnerServiceClient) GetCluster(ctx context.Context, in *GetClusterReq
 
 func (c *spawnerServiceClient) GetClusters(ctx context.Context, in *GetClustersRequest, opts ...grpc.CallOption) (*GetClustersResponse, error) {
 	out := new(GetClustersResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/GetClusters", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/GetClusters", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (c *spawnerServiceClient) GetClusters(ctx context.Context, in *GetClustersR
 
 func (c *spawnerServiceClient) AddNode(ctx context.Context, in *NodeSpawnRequest, opts ...grpc.CallOption) (*NodeSpawnResponse, error) {
 	out := new(NodeSpawnResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/AddNode", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/AddNode", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (c *spawnerServiceClient) AddNode(ctx context.Context, in *NodeSpawnRequest
 
 func (c *spawnerServiceClient) ClusterStatus(ctx context.Context, in *ClusterStatusRequest, opts ...grpc.CallOption) (*ClusterStatusResponse, error) {
 	out := new(ClusterStatusResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/ClusterStatus", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/ClusterStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (c *spawnerServiceClient) ClusterStatus(ctx context.Context, in *ClusterSta
 
 func (c *spawnerServiceClient) DeleteCluster(ctx context.Context, in *ClusterDeleteRequest, opts ...grpc.CallOption) (*ClusterDeleteResponse, error) {
 	out := new(ClusterDeleteResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/DeleteCluster", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/DeleteCluster", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (c *spawnerServiceClient) DeleteCluster(ctx context.Context, in *ClusterDel
 
 func (c *spawnerServiceClient) DeleteNode(ctx context.Context, in *NodeDeleteRequest, opts ...grpc.CallOption) (*NodeDeleteResponse, error) {
 	out := new(NodeDeleteResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/DeleteNode", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/DeleteNode", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (c *spawnerServiceClient) DeleteNode(ctx context.Context, in *NodeDeleteReq
 
 func (c *spawnerServiceClient) CreateVolume(ctx context.Context, in *CreateVolumeRequest, opts ...grpc.CallOption) (*CreateVolumeResponse, error) {
 	out := new(CreateVolumeResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/CreateVolume", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/CreateVolume", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (c *spawnerServiceClient) CreateVolume(ctx context.Context, in *CreateVolum
 
 func (c *spawnerServiceClient) DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error) {
 	out := new(DeleteVolumeResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/DeleteVolume", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/DeleteVolume", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (c *spawnerServiceClient) DeleteVolume(ctx context.Context, in *DeleteVolum
 
 func (c *spawnerServiceClient) CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error) {
 	out := new(CreateSnapshotResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/CreateSnapshot", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/CreateSnapshot", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (c *spawnerServiceClient) CreateSnapshot(ctx context.Context, in *CreateSna
 
 func (c *spawnerServiceClient) CreateSnapshotAndDelete(ctx context.Context, in *CreateSnapshotAndDeleteRequest, opts ...grpc.CallOption) (*CreateSnapshotAndDeleteResponse, error) {
 	out := new(CreateSnapshotAndDeleteResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/CreateSnapshotAndDelete", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/CreateSnapshotAndDelete", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (c *spawnerServiceClient) CreateSnapshotAndDelete(ctx context.Context, in *
 
 func (c *spawnerServiceClient) RegisterWithRancher(ctx context.Context, in *RancherRegistrationRequest, opts ...grpc.CallOption) (*RancherRegistrationResponse, error) {
 	out := new(RancherRegistrationResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/RegisterWithRancher", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/RegisterWithRancher", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (c *spawnerServiceClient) RegisterWithRancher(ctx context.Context, in *Ranc
 
 func (c *spawnerServiceClient) GetWorkspacesCost(ctx context.Context, in *GetWorkspacesCostRequest, opts ...grpc.CallOption) (*GetWorkspacesCostResponse, error) {
 	out := new(GetWorkspacesCostResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/GetWorkspacesCost", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/GetWorkspacesCost", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +230,7 @@ func (c *spawnerServiceClient) GetWorkspacesCost(ctx context.Context, in *GetWor
 
 func (c *spawnerServiceClient) WriteCredential(ctx context.Context, in *WriteCredentialRequest, opts ...grpc.CallOption) (*WriteCredentialResponse, error) {
 	out := new(WriteCredentialResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/WriteCredential", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/WriteCredential", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (c *spawnerServiceClient) WriteCredential(ctx context.Context, in *WriteCre
 
 func (c *spawnerServiceClient) ReadCredential(ctx context.Context, in *ReadCredentialRequest, opts ...grpc.CallOption) (*ReadCredentialResponse, error) {
 	out := new(ReadCredentialResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/ReadCredential", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/ReadCredential", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +248,7 @@ func (c *spawnerServiceClient) ReadCredential(ctx context.Context, in *ReadCrede
 
 func (c *spawnerServiceClient) GetKubeConfig(ctx context.Context, in *GetKubeConfigRequest, opts ...grpc.CallOption) (*GetKubeConfigResponse, error) {
 	out := new(GetKubeConfigResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/GetKubeConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/GetKubeConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func (c *spawnerServiceClient) GetKubeConfig(ctx context.Context, in *GetKubeCon
 
 func (c *spawnerServiceClient) TagNodeInstance(ctx context.Context, in *TagNodeInstanceRequest, opts ...grpc.CallOption) (*TagNodeInstanceResponse, error) {
 	out := new(TagNodeInstanceResponse)
-	err := c.cc.Invoke(ctx, "/spawnerservice.SpawnerService/TagNodeInstance", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/TagNodeInstance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func _SpawnerService_HealthCheck_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/HealthCheck",
+		FullMethod: "/spawner.SpawnerService/HealthCheck",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).HealthCheck(ctx, req.(*Empty))
@@ -416,7 +416,7 @@ func _SpawnerService_Echo_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/Echo",
+		FullMethod: "/spawner.SpawnerService/Echo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).Echo(ctx, req.(*EchoRequest))
@@ -434,7 +434,7 @@ func _SpawnerService_CreateCluster_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/CreateCluster",
+		FullMethod: "/spawner.SpawnerService/CreateCluster",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).CreateCluster(ctx, req.(*ClusterRequest))
@@ -452,7 +452,7 @@ func _SpawnerService_AddToken_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/AddToken",
+		FullMethod: "/spawner.SpawnerService/AddToken",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).AddToken(ctx, req.(*AddTokenRequest))
@@ -470,7 +470,7 @@ func _SpawnerService_GetToken_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/GetToken",
+		FullMethod: "/spawner.SpawnerService/GetToken",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).GetToken(ctx, req.(*GetTokenRequest))
@@ -488,7 +488,7 @@ func _SpawnerService_AddRoute53Record_Handler(srv interface{}, ctx context.Conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/AddRoute53Record",
+		FullMethod: "/spawner.SpawnerService/AddRoute53Record",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).AddRoute53Record(ctx, req.(*AddRoute53RecordRequest))
@@ -506,7 +506,7 @@ func _SpawnerService_GetCluster_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/GetCluster",
+		FullMethod: "/spawner.SpawnerService/GetCluster",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).GetCluster(ctx, req.(*GetClusterRequest))
@@ -524,7 +524,7 @@ func _SpawnerService_GetClusters_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/GetClusters",
+		FullMethod: "/spawner.SpawnerService/GetClusters",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).GetClusters(ctx, req.(*GetClustersRequest))
@@ -542,7 +542,7 @@ func _SpawnerService_AddNode_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/AddNode",
+		FullMethod: "/spawner.SpawnerService/AddNode",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).AddNode(ctx, req.(*NodeSpawnRequest))
@@ -560,7 +560,7 @@ func _SpawnerService_ClusterStatus_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/ClusterStatus",
+		FullMethod: "/spawner.SpawnerService/ClusterStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).ClusterStatus(ctx, req.(*ClusterStatusRequest))
@@ -578,7 +578,7 @@ func _SpawnerService_DeleteCluster_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/DeleteCluster",
+		FullMethod: "/spawner.SpawnerService/DeleteCluster",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).DeleteCluster(ctx, req.(*ClusterDeleteRequest))
@@ -596,7 +596,7 @@ func _SpawnerService_DeleteNode_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/DeleteNode",
+		FullMethod: "/spawner.SpawnerService/DeleteNode",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).DeleteNode(ctx, req.(*NodeDeleteRequest))
@@ -614,7 +614,7 @@ func _SpawnerService_CreateVolume_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/CreateVolume",
+		FullMethod: "/spawner.SpawnerService/CreateVolume",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).CreateVolume(ctx, req.(*CreateVolumeRequest))
@@ -632,7 +632,7 @@ func _SpawnerService_DeleteVolume_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/DeleteVolume",
+		FullMethod: "/spawner.SpawnerService/DeleteVolume",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).DeleteVolume(ctx, req.(*DeleteVolumeRequest))
@@ -650,7 +650,7 @@ func _SpawnerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/CreateSnapshot",
+		FullMethod: "/spawner.SpawnerService/CreateSnapshot",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).CreateSnapshot(ctx, req.(*CreateSnapshotRequest))
@@ -668,7 +668,7 @@ func _SpawnerService_CreateSnapshotAndDelete_Handler(srv interface{}, ctx contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/CreateSnapshotAndDelete",
+		FullMethod: "/spawner.SpawnerService/CreateSnapshotAndDelete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).CreateSnapshotAndDelete(ctx, req.(*CreateSnapshotAndDeleteRequest))
@@ -686,7 +686,7 @@ func _SpawnerService_RegisterWithRancher_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/RegisterWithRancher",
+		FullMethod: "/spawner.SpawnerService/RegisterWithRancher",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).RegisterWithRancher(ctx, req.(*RancherRegistrationRequest))
@@ -704,7 +704,7 @@ func _SpawnerService_GetWorkspacesCost_Handler(srv interface{}, ctx context.Cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/GetWorkspacesCost",
+		FullMethod: "/spawner.SpawnerService/GetWorkspacesCost",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).GetWorkspacesCost(ctx, req.(*GetWorkspacesCostRequest))
@@ -722,7 +722,7 @@ func _SpawnerService_WriteCredential_Handler(srv interface{}, ctx context.Contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/WriteCredential",
+		FullMethod: "/spawner.SpawnerService/WriteCredential",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).WriteCredential(ctx, req.(*WriteCredentialRequest))
@@ -740,7 +740,7 @@ func _SpawnerService_ReadCredential_Handler(srv interface{}, ctx context.Context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/ReadCredential",
+		FullMethod: "/spawner.SpawnerService/ReadCredential",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).ReadCredential(ctx, req.(*ReadCredentialRequest))
@@ -758,7 +758,7 @@ func _SpawnerService_GetKubeConfig_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/GetKubeConfig",
+		FullMethod: "/spawner.SpawnerService/GetKubeConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).GetKubeConfig(ctx, req.(*GetKubeConfigRequest))
@@ -776,7 +776,7 @@ func _SpawnerService_TagNodeInstance_Handler(srv interface{}, ctx context.Contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawnerservice.SpawnerService/TagNodeInstance",
+		FullMethod: "/spawner.SpawnerService/TagNodeInstance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SpawnerServiceServer).TagNodeInstance(ctx, req.(*TagNodeInstanceRequest))
@@ -788,7 +788,7 @@ func _SpawnerService_TagNodeInstance_Handler(srv interface{}, ctx context.Contex
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SpawnerService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "spawnerservice.SpawnerService",
+	ServiceName: "spawner.SpawnerService",
 	HandlerType: (*SpawnerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -881,5 +881,5 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/netbookdevs/spawnerservice/spawner.proto",
+	Metadata: "proto/netbookdevs/spawner/spawner.proto",
 }

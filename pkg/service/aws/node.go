@@ -12,7 +12,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 )
 
 func (ctrl AWSController) getNodeHealth(ctx context.Context, client *eks.EKS, cluster, nodeName string) (*eks.NodegroupHealth, error) {

@@ -14,7 +14,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 )
 
 func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {

@@ -10,7 +10,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 )
 
 func getGPUProfile(profile proto.MIGProfile) containerservice.GPUInstanceProfile {

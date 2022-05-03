@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 	"go.uber.org/zap"
 )
 

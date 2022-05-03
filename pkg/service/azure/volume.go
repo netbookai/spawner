@@ -10,7 +10,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 )
 
 func diskName(size int32) string {

@@ -16,7 +16,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/gateway"
 	"gitlab.com/netbook-devs/spawner-service/pkg/metrics"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawner"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
