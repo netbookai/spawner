@@ -56,7 +56,7 @@ docker_creation:
 
 helm_deploy_dev_manual:
   image: 
-    name: netbookai/gitlab:helm
+    name: netbookai/gitlab:make
     entrypoint: [""]
   stage: deploy-dev
   script:
@@ -72,7 +72,7 @@ helm_deploy_dev_manual:
 
 helm_deploy_dev_auto:
   image: 
-    name: netbookai/gitlab:helm
+    name: netbookai/gitlab:make
     entrypoint: [""]
   stage: deploy-dev
   script:
@@ -89,7 +89,7 @@ helm_deploy_dev_auto:
     
 helm_deploy_prod:
   image: 
-    name: netbookai/gitlab:helm
+    name: netbookai/gitlab:make
     entrypoint: [""]
   stage: deploy-prod
   script:
