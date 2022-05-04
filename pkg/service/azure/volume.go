@@ -88,7 +88,13 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	}
 
 	if req.DeleteSnapshot {
-		a.deleteDisk(ctx, disksClient, cred.ResourceGroup, req.Snapshotid)
+		err = a.deleteDisk(ctx, disksClient, cred.ResourceGroup, req.Snapshotid)
+		if err != nil {
+
+			//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
+			a.logger.Errorw("failed to delete the snapshot", "error", err)
+		}
+
 	}
 
 	return &proto.CreateVolumeResponse{
