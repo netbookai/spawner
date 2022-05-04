@@ -87,20 +87,28 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 		return nil, err
 	}
 
-	if req.DeleteSnapshot {
-		err = a.deleteDisk(ctx, disksClient, cred.ResourceGroup, req.Snapshotid)
-		if err != nil {
+	ret := &proto.CreateVolumeResponse{
+		ResourceUri: *res.ID,
+		Volumeid:    name,
+	}
 
+	if req.DeleteSnapshot {
+		sc, err := getSnapshotClient(cred)
+		if err != nil {
+			a.logger.Errorw("failed to get the snapshot client", "error", err)
+			return ret, nil
+
+		}
+
+		err = a.deleteSnapshot(ctx, sc, cred.ResourceGroup, req.Snapshotid)
+		if err != nil {
 			//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
 			a.logger.Errorw("failed to delete the snapshot", "error", err)
 		}
-
+		a.logger.Errorw("snapshot deleted", "ID", req.Snapshotid)
 	}
+	return ret, nil
 
-	return &proto.CreateVolumeResponse{
-		ResourceUri: *res.ID,
-		Volumeid:    name,
-	}, nil
 }
 
 func (a *AzureController) deleteDisk(ctx context.Context, dc *compute.DisksClient, groupName, name string) error {

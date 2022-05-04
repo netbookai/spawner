@@ -149,3 +149,24 @@ func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *prot
 
 	return &proto.CreateSnapshotAndDeleteResponse{Snapshotid: name, SnapshotUri: uri}, nil
 }
+
+func (a *AzureController) deleteSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
+
+	future, err := sc.Delete(ctx, groupName, snapshotId)
+	a.logger.Debugw("waiting on the delete snapshot future response")
+	err = future.WaitForCompletionRef(ctx, sc.Client)
+	if err != nil {
+		return errors.Wrap(err, "cannot get the snapshot delete response")
+	}
+
+	res, err := future.Result(*sc)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusNoContent {
+		return fmt.Errorf("failed to delete snapshot: requested snapshot '%s' not found", snapshotId)
+	}
+
+	return nil
+}

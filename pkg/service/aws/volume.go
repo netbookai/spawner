@@ -115,6 +115,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 			//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
 			svc.logger.Errorw("failed to delete the snapshot", "error", err)
 		}
+		svc.logger.Infow("snapshot deleted", "ID", snapshotId)
 	}
 
 	return res, nil
