@@ -256,6 +256,7 @@ message CreateVolumeRequest {
   int64 size = 6;
   string snapshotid = 7;
   map<string, string> labels = 8;
+  string snapshotUri= 9;
 }
 
 message CreateVolumeResponse {
@@ -287,7 +288,9 @@ message CreateSnapshotRequest {
 
 message CreateSnapshotResponse {
   string snapshotid = 1;
-  string error = 2;
+  // must retain tag for backward compatibilty, left in commet for reference
+  // string error = 2;
+  string snapshotUri = 3;
 }
 
 message CreateSnapshotAndDeleteRequest {
@@ -301,7 +304,9 @@ message CreateSnapshotAndDeleteRequest {
 message CreateSnapshotAndDeleteResponse {
   string snapshotid = 1;
   bool deleted = 2;
-  string error = 3;
+  // must retain tag for backward compatibilty, left in commet for reference
+  // string error = 3;
+  string snapshotUri = 4;
 }
 
 message RancherRegistrationRequest {
@@ -309,7 +314,8 @@ message RancherRegistrationRequest {
 }
 
 message RancherRegistrationResponse {
-  string error = 1;
+  // must retain tag for backward compatibilty, left in commet for reference
+  // string error = 1;
   string clusterName = 2;
   string clusterID = 3;
   string manifestURL = 4;

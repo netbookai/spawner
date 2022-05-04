@@ -153,8 +153,9 @@ func main() {
 	createVolumeReq := &proto.CreateVolumeRequest{
 		Availabilityzone: region,
 		Volumetype:       "gp2",
-		Size:             20,
-		Snapshotid:       "",
+		Size:             50,
+		Snapshotid:       "vol-30-20220409151829-snapshot",
+		SnapshotUri:      "subscriptions/bb211f1f-4ae5-42de-8e9a-9b3b478480d9/resourceGroups/nb-azure-dev/providers/Microsoft.Compute/snapshots/vol-30-20220409151829-snapshot",
 		Region:           region,
 		Provider:         provider,
 		AccountName:      accountName,

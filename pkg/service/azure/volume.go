@@ -37,19 +37,38 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	tags := labels.DefaultTags()
 
 	a.logger.Infow("creating disk", "name", name, "size", req.Size)
+
+	//if snapshotId is provided
+
+	var creationData *compute.CreationData
+
+	if req.Snapshotid != "" {
+		creationData = &compute.CreationData{
+			CreateOption: compute.DiskCreateOptionCopy,
+			SourceURI:    &req.SnapshotUri,
+		}
+	} else {
+
+		creationData = &compute.CreationData{
+			CreateOption: compute.DiskCreateOptionEmpty,
+		}
+	}
+
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update
 	future, err := disksClient.CreateOrUpdate(
 		ctx,
 		cred.ResourceGroup,
 		name,
 		compute.Disk{
+			Sku: &compute.DiskSku{
+				// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update#diskstorageaccounttypes
+				Name: "StandardSSD_LRS",
+				Tier: to.StringPtr("StandardSSD_LRS"),
+			},
 			Location: to.StringPtr(req.Region),
 			DiskProperties: &compute.DiskProperties{
-
-				CreationData: &compute.CreationData{
-					CreateOption: compute.DiskCreateOptionEmpty,
-				},
-				DiskSizeGB: &size,
+				CreationData: creationData,
+				DiskSizeGB:   &size,
 			},
 			Tags: tags,
 		})
