@@ -86,6 +86,11 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	if err != nil {
 		return nil, err
 	}
+
+	if req.DeleteSnapshot {
+		a.deleteDisk(ctx, disksClient, cred.ResourceGroup, req.Snapshotid)
+	}
+
 	return &proto.CreateVolumeResponse{
 		ResourceUri: *res.ID,
 		Volumeid:    name,
