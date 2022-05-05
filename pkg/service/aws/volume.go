@@ -108,6 +108,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	//if delete requested,nuke em
 	if req.DeleteSnapshot {
 		go func() {
+			svc.logger.Infow("deleting snapshot", "ID", snapshotId)
 			_, err = ec2Client.DeleteSnapshotWithContext(ctx, &ec2.DeleteSnapshotInput{
 				SnapshotId: &snapshotId,
 			})
