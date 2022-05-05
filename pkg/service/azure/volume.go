@@ -42,7 +42,7 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 
 	var creationData *compute.CreationData
 
-	if req.Snapshotid != "" {
+	if req.SnapshotUri != "" {
 		creationData = &compute.CreationData{
 			CreateOption: compute.DiskCreateOptionCopy,
 			SourceURI:    &req.SnapshotUri,
