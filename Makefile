@@ -34,4 +34,5 @@ build-client:
 	go build -o spawner ./cmd/client/main.go 
 
 install:
+	@echo $(NAMESPACE)
 	@helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml -n $(NAMESPACE) --set docker=$(DOCKER_K8S_CONFIG),rancher.address=$(RANCHER_ADDRESS),rancher.username=$(RANCHER_USERNAME),rancher.password=$(RANCHER_PASSWORD),rancher.aws_cred_name=$(RANCHER_AWS_CRED_NAME),image.tag=$(TAG),env=$(ENV),secret_host_region=$(SECRET_HOST_REGION),route53_hostedzone_id=$(AWS_ROUTE53_HOSTEDZONEID_DEV),node_deletion_timeout_in_seconds=$(NODE_DELETION_TIME_IN_SECONDS),azure_cloud_provider=$(AZURE_CLOUD_PROVIDER)
