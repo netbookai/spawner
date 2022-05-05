@@ -93,20 +93,20 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	}
 
 	if req.DeleteSnapshot {
-		sc, err := getSnapshotClient(cred)
-		if err != nil {
-			a.logger.Errorw("failed to get the snapshot client", "error", err)
-			return ret, nil
+		//spawn a routine and let it delete
+		go func() {
+			sc, err := getSnapshotClient(cred)
+			if err != nil {
+				a.logger.Errorw("failed to get the snapshot client", "error", err)
+			}
 
-		}
-
-		err = a.deleteSnapshot(ctx, sc, cred.ResourceGroup, req.Snapshotid)
-		if err != nil {
-			//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
-			a.logger.Errorw("failed to delete the snapshot", "error", err)
-			return ret, nil
-		}
-		a.logger.Errorw("snapshot deleted", "ID", req.Snapshotid)
+			err = a.deleteSnapshot(context.Background(), sc, cred.ResourceGroup, req.Snapshotid)
+			if err != nil {
+				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
+				a.logger.Errorw("failed to delete the snapshot", "error", err)
+			}
+			a.logger.Infow("snapshot deleted", "ID", req.Snapshotid)
+		}()
 	}
 	return ret, nil
 
