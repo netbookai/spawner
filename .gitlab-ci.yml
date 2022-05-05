@@ -77,15 +77,14 @@ helm_deploy_dev_auto:
   stage: deploy-dev
   script:
   - kubectl config use-context $KUBE_CONTEXT
-  - helm upgrade --install spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml -n dev-development --set docker=$DOCKER_K8S_CONFIG,rancher.address=$RANCHER_ADDRESS,rancher.username=$RANCHER_USERNAME,rancher.password=$RANCHER_PASSWORD,rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME,image.tag=$CI_COMMIT_SHORT_SHA,env=$ENV,secret_host_region=$SECRET_HOST_REGION,route53_hostedzone_id=$AWS_ROUTE53_HOSTEDZONEID_DEV,node_deletion_timeout_in_seconds=$NODE_DELETION_TIME_IN_SECONDS,azure_cloud_provider=$AZURE_CLOUD_PROVIDER
+  - make install
 
   environment:
     name: development
   only:
     refs:
-    - tags
     - development
-    - master
+    - main
     
 helm_deploy_prod:
   image: 
