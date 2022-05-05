@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 //Controller defines the set of the functions which each provider controller must implement to support spawner functionality

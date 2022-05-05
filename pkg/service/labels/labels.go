@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 func merge(maps ...map[string]*string) map[string]*string {
@@ -21,9 +21,18 @@ func merge(maps ...map[string]*string) map[string]*string {
 }
 
 func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
+
+	instance := ""
+	if nodeSpec.MachineType != "" {
+		instance = nodeSpec.MachineType
+	}
+	if nodeSpec.Instance != "" {
+		instance = nodeSpec.Instance
+	}
+
 	labels := map[string]*string{
 		constants.NodeNameLabel:          &nodeSpec.Name,
-		constants.InstanceLabel:          &nodeSpec.Instance,
+		constants.InstanceLabel:          &instance,
 		constants.NodeLabelSelectorLabel: &nodeSpec.Name,
 		"type":                           aws.String("nodegroup")}
 

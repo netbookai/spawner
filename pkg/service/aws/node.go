@@ -9,9 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 func (ctrl AWSController) getNodeHealth(ctx context.Context, client *eks.EKS, cluster, nodeName string) (*eks.NodegroupHealth, error) {
@@ -77,6 +78,35 @@ func (ctrl AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, c
 
 }
 
+func getInstance(nodeSpec *proto.NodeSpec) (string, []*string, error) {
+
+	capacityType := eks.CapacityTypesOnDemand
+	instanceTypes := []*string{}
+
+	if nodeSpec.CapacityType == proto.CapacityType_SPOT {
+		capacityType = eks.CapacityTypesSpot
+		for _, i := range nodeSpec.SpotInstances {
+			instanceTypes = append(instanceTypes, &i)
+		}
+	} else {
+		instance := ""
+		if nodeSpec.MachineType != "" {
+			instance = common.GetInstance(constants.AwsLabel, nodeSpec.MachineType)
+		}
+
+		//if user has specified the Instance, we will override previous ask
+		if nodeSpec.Instance != "" {
+			instance = nodeSpec.Instance
+		}
+
+		if instance == "" {
+			return "", nil, errors.New(constants.InvalidInstanceOrMachineType)
+		}
+		instanceTypes = append(instanceTypes, &instance)
+	}
+	return capacityType, instanceTypes, nil
+}
+
 func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *Session, cluster *eks.Cluster, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
 
 	iamClient := session.getIAMClient()
@@ -130,17 +160,10 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 	if nodeSpec.Count != 0 {
 		count = nodeSpec.Count
 	}
-	capacityType := eks.CapacityTypesOnDemand
-	instanceTypes := []*string{}
 
-	if nodeSpec.CapacityType == proto.CapacityType_SPOT {
-		capacityType = eks.CapacityTypesSpot
-		for _, i := range nodeSpec.SpotInstances {
-			instanceTypes = append(instanceTypes, &i)
-		}
-		ctrl.logger.Infow("creating a spot instances", "instances", instanceTypes)
-	} else {
-		instanceTypes = append(instanceTypes, &nodeSpec.Instance)
+	capacityType, instanceTypes, err := getInstance(nodeSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "getNewNodeGroupSpecFromCluster")
 	}
 
 	return &eks.CreateNodegroupInput{
@@ -163,7 +186,7 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 
 }
 
-func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *proto.NodeSpec) *eks.CreateNodegroupInput {
+func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
 	diskSize := int64(nodeSpec.DiskSize)
 
 	//add labels from the given spec
@@ -184,17 +207,9 @@ func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clu
 		count = nodeSpec.Count
 	}
 
-	capacityType := eks.CapacityTypesOnDemand
-	instanceTypes := []*string{}
-
-	if nodeSpec.CapacityType == proto.CapacityType_SPOT {
-		capacityType = eks.CapacityTypesSpot
-		for _, i := range nodeSpec.SpotInstances {
-			instanceTypes = append(instanceTypes, &i)
-		}
-		ctrl.logger.Infow("creating a spot instances", "instances", instanceTypes)
-	} else {
-		instanceTypes = append(instanceTypes, &nodeSpec.Instance)
+	capacityType, instanceTypes, err := getInstance(nodeSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "getNodeSpecFromDefault")
 	}
 
 	ctrl.logger.Infow("requesting for nodegroup", "capacity_type", capacityType, "instances", instanceTypes)
@@ -216,7 +231,7 @@ func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clu
 			MaxSize:     &count,
 		},
 		Tags: labels,
-	}
+	}, nil
 }
 
 //AddNode adds new node group to the existing cluster, cluster atleast have 1 node group already present
@@ -261,7 +276,10 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 		}
 	} else {
 		ctrl.logger.Infof("found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
-		newNodeGroupInput = ctrl.getNodeSpecFromDefault(defaultNode, clusterName, nodeSpec)
+		newNodeGroupInput, err = ctrl.getNodeSpecFromDefault(defaultNode, clusterName, nodeSpec)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroupInput)

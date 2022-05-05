@@ -8,15 +8,15 @@ import (
 	"text/tabwriter"
 	"time"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 const (
-	clusterName = "clusterversion-test"
-	region      = "eastus2" //"us-west-2"
-	provider    = "azure"
+	clusterName = "cluster-node-with-machinenode"
+	region      = "us-east-2" //"eastus2" //"us-west-2"
+	provider    = "aws"
 	accountName = "netbook-aws"
 	nodeName    = "rootnode"
 	instance    = "Standard_A2_v2"
@@ -115,6 +115,7 @@ func main() {
 		Instance:      instance,
 		MigProfile:    proto.MIGProfile_MIG3g,
 		CapacityType:  proto.CapacityType_ONDEMAND,
+		MachineType:   "m",
 		SpotInstances: []string{"t2.small", "t3.small"},
 		DiskSize:      20,
 		GpuEnabled:    false,

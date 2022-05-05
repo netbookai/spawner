@@ -6,10 +6,11 @@ import (
 	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 func getGPUProfile(profile proto.MIGProfile) containerservice.GPUInstanceProfile {
@@ -67,10 +68,22 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 	if req.NodeSpec.Count != 0 {
 		count = int32(req.NodeSpec.Count)
 	}
+
+	instance := ""
+	if req.NodeSpec.MachineType != "" {
+		instance = common.GetInstance(constants.AzureLabel, req.NodeSpec.MachineType)
+	} else {
+		instance = req.NodeSpec.Instance
+	}
+
+	if instance == "" {
+		return nil, errors.New("must provide valid instance by specifying MachineType or Instance.")
+	}
+
 	mcappp := containerservice.ManagedClusterAgentPoolProfileProperties{
 
 		Count:      &count,
-		VMSize:     to.StringPtr(req.NodeSpec.Instance),
+		VMSize:     &instance,
 		NodeLabels: nodeTags,
 		Tags:       nodeTags,
 		Mode:       containerservice.AgentPoolModeUser,
