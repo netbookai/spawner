@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -103,6 +104,28 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	res := &proto.CreateVolumeResponse{
 		Volumeid: *result.VolumeId,
 		Error:    "",
+	}
+
+	//if delete requested,nuke em
+	if req.DeleteSnapshot {
+		go func() {
+
+			//this is to handle the aws API call timeout, we wont need to handle the routine timeout here
+			awsDeleteSnapshotTimeout := time.Duration(10)
+			ctx, cancel := context.WithTimeout(context.Background(), awsDeleteSnapshotTimeout)
+			defer cancel()
+
+			svc.logger.Infow("deleting snapshot", "ID", snapshotId)
+			_, err = ec2Client.DeleteSnapshotWithContext(ctx, &ec2.DeleteSnapshotInput{
+				SnapshotId: &snapshotId,
+			})
+
+			if err != nil {
+				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
+				svc.logger.Errorw("failed to delete the snapshot", "error", err)
+			}
+			svc.logger.Infow("snapshot deleted", "ID", snapshotId)
+		}()
 	}
 
 	return res, nil
