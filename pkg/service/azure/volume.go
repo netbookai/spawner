@@ -95,6 +95,10 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	if req.DeleteSnapshot {
 		//spawn a routine and let it delete
 		go func() {
+			azureDeleteSnapshotTimeout := time.Duration(10)
+			ctx, cancel := context.WithTimeout(context.Background(), azureDeleteSnapshotTimeout)
+			defer cancel()
+
 			a.logger.Infow("deleting snapshot", "ID", req.Snapshotid)
 			sc, err := getSnapshotClient(cred)
 			if err != nil {
@@ -102,7 +106,7 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 				return
 			}
 
-			err = a.deleteSnapshot(context.Background(), sc, cred.ResourceGroup, req.Snapshotid)
+			err = a.deleteSnapshot(ctx, sc, cred.ResourceGroup, req.Snapshotid)
 			if err != nil {
 				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
 				a.logger.Errorw("failed to delete the snapshot", "error", err)
