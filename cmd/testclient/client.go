@@ -153,8 +153,9 @@ func main() {
 	createVolumeReq := &proto.CreateVolumeRequest{
 		Availabilityzone: region,
 		Volumetype:       "gp2",
-		Size:             20,
-		Snapshotid:       "",
+		Size:             50,
+		Snapshotid:       "vol-30-20220409151829-snapshot",
+		SnapshotUri:      "snapshot-uri",
 		Region:           region,
 		Provider:         provider,
 		AccountName:      accountName,

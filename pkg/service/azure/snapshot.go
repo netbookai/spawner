@@ -12,7 +12,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func (a *AzureController) createDiskSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, name string, disk *compute.Disk, region string, tags map[string]*string) error {
+func (a *AzureController) createDiskSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, name string, disk *compute.Disk, region string, tags map[string]*string) (string, error) {
 
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/snapshots/create-or-update
 	future, err := sc.CreateOrUpdate(
@@ -35,27 +35,27 @@ func (a *AzureController) createDiskSnapshot(ctx context.Context, sc *compute.Sn
 		},
 	)
 	if err != nil {
-		return errors.Wrap(err, "createSnapshot: aks call failed")
+		return "", errors.Wrap(err, "createSnapshot: aks call failed")
 	}
 
 	a.logger.Debugw("waiting on the future response")
 	err = future.WaitForCompletionRef(ctx, sc.Client)
 	if err != nil {
-		return errors.Wrap(err, "cannot get the creeate snapshot response")
+		return "", errors.Wrap(err, "cannot get the creeate snapshot response")
 	}
 
 	res, err := future.Result(*sc)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if res.StatusCode != http.StatusOK {
 		b, err := io.ReadAll(res.Response.Body)
 		if err != nil {
 			b = []byte("failed to read response body")
 		}
-		return fmt.Errorf("failed to create snapshot: %s", string(b))
+		return "", fmt.Errorf("failed to create snapshot: %s", string(b))
 	}
-	return nil
+	return *res.ID, nil
 }
 
 func (a *AzureController) createSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
@@ -93,12 +93,12 @@ func (a *AzureController) createSnapshot(ctx context.Context, req *proto.CreateS
 		return nil, errors.Wrap(err, "failed to get snapshot client")
 	}
 
-	err = a.createDiskSnapshot(ctx, sc, groupName, name, &disk, region, tags)
+	uri, err := a.createDiskSnapshot(ctx, sc, groupName, name, &disk, region, tags)
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.CreateSnapshotResponse{Snapshotid: name}, nil
+	return &proto.CreateSnapshotResponse{Snapshotid: name, SnapshotUri: uri}, nil
 }
 
 func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
@@ -137,7 +137,7 @@ func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *prot
 		return nil, errors.Wrap(err, "failed to get snapshot client")
 	}
 
-	err = a.createDiskSnapshot(ctx, sc, cred.ResourceGroup, name, &disk, region, tags)
+	uri, err := a.createDiskSnapshot(ctx, sc, cred.ResourceGroup, name, &disk, region, tags)
 	if err != nil {
 		return nil, err
 	}
@@ -147,5 +147,26 @@ func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *prot
 		return nil, err
 	}
 
-	return &proto.CreateSnapshotAndDeleteResponse{Snapshotid: name}, nil
+	return &proto.CreateSnapshotAndDeleteResponse{Snapshotid: name, SnapshotUri: uri}, nil
+}
+
+func (a *AzureController) deleteSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
+
+	future, err := sc.Delete(ctx, groupName, snapshotId)
+	a.logger.Debugw("waiting on the delete snapshot future response")
+	err = future.WaitForCompletionRef(ctx, sc.Client)
+	if err != nil {
+		return errors.Wrap(err, "cannot get the snapshot delete response")
+	}
+
+	res, err := future.Result(*sc)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode == http.StatusNoContent {
+		return fmt.Errorf("failed to delete snapshot: requested snapshot '%s' not found", snapshotId)
+	}
+
+	return nil
 }

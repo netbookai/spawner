@@ -37,19 +37,38 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	tags := labels.DefaultTags()
 
 	a.logger.Infow("creating disk", "name", name, "size", req.Size)
+
+	//if snapshotId is provided
+
+	var creationData *compute.CreationData
+
+	if req.SnapshotUri != "" {
+		creationData = &compute.CreationData{
+			CreateOption: compute.DiskCreateOptionCopy,
+			SourceURI:    &req.SnapshotUri,
+		}
+	} else {
+
+		creationData = &compute.CreationData{
+			CreateOption: compute.DiskCreateOptionEmpty,
+		}
+	}
+
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update
 	future, err := disksClient.CreateOrUpdate(
 		ctx,
 		cred.ResourceGroup,
 		name,
 		compute.Disk{
+			Sku: &compute.DiskSku{
+				// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update#diskstorageaccounttypes
+				Name: "StandardSSD_LRS",
+				Tier: to.StringPtr("StandardSSD_LRS"),
+			},
 			Location: to.StringPtr(req.Region),
 			DiskProperties: &compute.DiskProperties{
-
-				CreationData: &compute.CreationData{
-					CreateOption: compute.DiskCreateOptionEmpty,
-				},
-				DiskSizeGB: &size,
+				CreationData: creationData,
+				DiskSizeGB:   &size,
 			},
 			Tags: tags,
 		})
@@ -67,10 +86,37 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	if err != nil {
 		return nil, err
 	}
-	return &proto.CreateVolumeResponse{
+
+	ret := &proto.CreateVolumeResponse{
 		ResourceUri: *res.ID,
 		Volumeid:    name,
-	}, nil
+	}
+
+	if req.DeleteSnapshot {
+		//spawn a routine and let it delete
+		go func() {
+			azureDeleteSnapshotTimeout := time.Duration(10)
+			ctx, cancel := context.WithTimeout(context.Background(), azureDeleteSnapshotTimeout)
+			defer cancel()
+
+			a.logger.Infow("deleting snapshot", "ID", req.Snapshotid)
+			sc, err := getSnapshotClient(cred)
+			if err != nil {
+				a.logger.Errorw("failed to get the snapshot client", "error", err)
+				return
+			}
+
+			err = a.deleteSnapshot(ctx, sc, cred.ResourceGroup, req.Snapshotid)
+			if err != nil {
+				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
+				a.logger.Errorw("failed to delete the snapshot", "error", err)
+				return
+			}
+			a.logger.Infow("snapshot deleted", "ID", req.Snapshotid)
+		}()
+	}
+	return ret, nil
+
 }
 
 func (a *AzureController) deleteDisk(ctx context.Context, dc *compute.DisksClient, groupName, name string) error {
