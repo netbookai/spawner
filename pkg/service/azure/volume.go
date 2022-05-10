@@ -83,6 +83,9 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	}
 
 	sku, err := getDiskSku(req.Volumetype)
+	if err != nil {
+		return nil, errors.Wrap(err, "createVolume: failed get disk SKU")
+	}
 
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update
 	future, err := disksClient.CreateOrUpdate(
