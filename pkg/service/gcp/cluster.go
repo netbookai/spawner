@@ -13,20 +13,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-var sa_cred = `
-{
-  "type": "service_account",
-  "project_id": "netbook-testing",
-  "private_key_id": "b486bead29c9cb519c3d45b096b4eab99f9cc8d9",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCd9683jtEG9aHU\nlYUu4CYtdClThmHb0lJHRMNLtccb0BLQJVtmZCNuMMFPfJOgYTj3xiC20KvfRW9v\nsOgDPGltggRtuq0+OCNKH243PHlyZzSL4BS/BuxeRWGG2NneKqs7vD3ywkR7X2Nf\ng4ZpXS8yo9uxpzJopMiAPDJFAyh5W07oIe9gI/rzptyiMr/2MSPs1dHczxE/OZB8\n2NWdR0+1iSm9vLHHvSU3wGGl6fibZB91E0ENQ+9QllAJXqfnC4yLjTbYHnEfvLQa\n8UlpRZrafUMtsWWzC4dr+qT+MSMY5HX9agXFhTjMzN8bppLAw5HXtorKw1AoeX9/\nbq9+93SNAgMBAAECggEAFKAba6ilGECIMcaYDifMNFEfeD1ql5YdkhqjWUZRygrf\n+fd2uKbIjYGmK+e7Ksym8IsZCGW0m0ForG+vy4Rey6KXS3B9YEtaKDp0XJfzz4E0\nNjM64jpYMHLkqgO0ZrKxiuooOIMvB+DLi9QTf7xgBj+o1sha55jkaQHzGlmwNjAG\nFy6/dsP/Hc3ueXY2rUc+kh//3C/OebPHfzSZirsee00X5vTQWdz1YKWdSE3STl6u\nklaJCbriMAdaE0UibLiszz34AVx371pMQ+2NW13e70A/XN4LM1yuH23WLq5ON4S1\ndn0H/5dw+e/C99+4cVHh5ge+k+h3kbGfh0ZnzK0nDQKBgQDd/NFM6gEOBXV9NJQH\n1UoC/++RPGc2YAPvjKNhagmgQOJ1Bd5eS2b/S4aCvgfkfktPmp6ksLiGLeDZ/TJq\nTo4tKdm4orh9y322p+3Kf1jaeYa1meTmM80YeBpP86qpw4dzmlcFOuK8CbiTb3iu\nVBpV0ijzD3+ZpIU/FhI/W1N2xwKBgQC2K8LWprzhzqisbEDOOPVfpnzTRjc/+erz\nJphWVURKac3U0VYazXZU53/ZSKleF738TzfthLm5hndKWZ8pOfqW4VV01a3zsYU3\ne0a19qmjeatLGSghwT6RiJCsvgrzGdxOjMOHJkeka7MRb14E8WxRHaWgt42u+Lbq\nQOpNZzHWCwKBgQDD8Xzt3z+/GKJ0OgzQPTxvGWplUGPqYyYWNJWiTu7gPWWm1d9K\nbFQl1IyOqx5cWf4v7dNKm5LFHYnz4MK3g0+MHfzINRmUMCJvMBt9Ops7fTmi4oxh\nhifrCVhwaiyiXK0bJYjaXPf18r6xpRtpBWOZjUAIDA4dmFLlNJ42vm4V0QKBgHP0\nKOGeYi3M8BpIEXvyT2UhwORuFi7XshAxKdgSEBTZgdWLpaYLz909OWih0oR80kYu\nWmgKCnmnuHiP0TpZmEK/jTh/5mhuP2BQTHL4XYQbpsd3bM8HhP73kTcTBD82377z\n5GU7HXDvyJw5afv1e7+qAknpa/rKfwteZIT+QX9/AoGBALqKU4OdsD/RPr8wEy0C\ns0ME+xfOSvH3MGJghjQtuU4zmr05BOQTthnGYrJRhvkwmzNfCB6Yfb4JnTPj+JHU\nnZoDV2LtV4F+74j0ypS2LnOWvhuPnzxLFj9nhsWjckyGiLALv/7MnEQ5g8+wJ3+O\nLbcp60wqMBK5FNLwMEncSAxE\n-----END PRIVATE KEY-----\n",
-  "client_email": "spawner-dev@netbook-testing.iam.gserviceaccount.com",
-  "client_id": "116364912980375247261",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/spawner-dev%40netbook-testing.iam.gserviceaccount.com"
-}
-`
+var sa_cred = ` `
 
 func parent(projectId, location string) string {
 	return fmt.Sprintf("projects/%s/locations/%s", projectId, location)
