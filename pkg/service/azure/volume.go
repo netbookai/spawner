@@ -23,24 +23,9 @@ func getDiskSku(vt string) (*compute.DiskSku, error) {
 	ds := &compute.DiskSku{}
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update#diskstorageaccounttypes
 	switch vt {
-	case "Premium_LRS":
-		ds.Name = "Premium_LRS"
-		ds.Tier = to.StringPtr("Premium_LRS")
-	case "Premium_ZRS":
-		ds.Name = "Premium_ZRS"
-		ds.Tier = to.StringPtr("Premium_ZRS")
-	case "StandardSSD_LRS":
-		ds.Name = "StandardSSD_LRS"
-		ds.Tier = to.StringPtr("StandardSSD_LRS")
-	case "StandardSSD_ZRS":
-		ds.Name = "StandardSSD_ZRS"
-		ds.Tier = to.StringPtr("StandardSSD_ZRS")
-	case "Standard_LRS":
-		ds.Name = "Standard_LRS"
-		ds.Tier = to.StringPtr("Standard_LRS")
-	case "UltraSSD_LRS":
-		ds.Name = "UltraSSD_LRS"
-		ds.Tier = to.StringPtr("UltraSSD_LRS")
+	case "Premium_LRS", "Premium_ZRS", "StandardSSD_LRS", "StandardSSD_ZRS", "Standard_LRS", "UltraSSD_LRS":
+		ds.Name = compute.DiskStorageAccountTypes(vt)
+		ds.Tier = &vt
 	default:
 		return nil, errors.Errorf("invalid volume type '%s'", vt)
 	}
