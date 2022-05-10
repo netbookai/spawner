@@ -47,6 +47,9 @@ type Config struct {
 	AzureResourceGroup  string `mapstructure:"AZURE_RESOURCE_GROUP"`
 
 	OpenIDRole string `mapstructure:"OPENID_ROLE"`
+	// GCP dev credential config
+	GcpProject     string `mapstructure:"GCP_PROJECT"`
+	GcpCertificate string `mapstructure:"GCP_CERTIFICATE"`
 }
 
 // Load reads configuration from file or environment variables.

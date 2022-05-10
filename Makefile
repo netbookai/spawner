@@ -34,4 +34,4 @@ fmt-proto:
 	clang-format --style=Chromium -i $(ALL_PROTO_FILES)
 
 build-client:
-	go build -o spawner ./cmd/client/main.go
+	go build -o spawner ./cmd/client/main.go 

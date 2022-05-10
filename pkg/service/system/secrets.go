@@ -126,7 +126,7 @@ func sid(credType, name string) string {
 func GetCredentials(ctx context.Context, region, accountName, credType string) (Credentials, error) {
 	secret, err := getSecretManager(region)
 	if err != nil {
-		return nil, errors.Wrapf(err, "GetAwsCredentials: failed to get secretsmanager")
+		return nil, errors.Wrapf(err, "GetCredentials: failed to get secretsmanager")
 	}
 	s := sid(credType, accountName)
 	input := &secretsmanager.GetSecretValueInput{
@@ -147,8 +147,14 @@ func GetCredentials(ctx context.Context, region, accountName, credType string) (
 		cred, err = NewAwsCredential(*result.SecretString)
 	case constants.CredAzure:
 		cred, err = NewAzureCredential(*result.SecretString)
+<<<<<<< HEAD
 	case constants.CredGitPat:
 		cred, err = NewGitPAT(*result.SecretString)
+||||||| parent of c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
+=======
+	case constants.GcpLabel:
+		cred, err = NewGcpCredential(*result.SecretString)
+>>>>>>> c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
 	}
 
 	if err != nil {

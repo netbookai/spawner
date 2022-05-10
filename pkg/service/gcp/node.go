@@ -10,10 +10,6 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 	return nil, nil
 }
 
-func (g *GCPController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
-	return nil, nil
-}
-
 func (g *GCPController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 	return nil, nil
 }

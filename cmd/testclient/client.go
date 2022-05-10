@@ -16,13 +16,13 @@ import (
 )
 
 const (
-	clusterName = "oidc_cluster"
-	region      = "us-west-2" //"eastus2" //"us-west-2"
-	provider    = "aws"
+	clusterName = "gcp-cluster-test-1"
+	region      = "us-central1" //"eastus2" //"us-west-2"
+	provider    = "gcp"
+	nodeName    = "rootnode-gcp"
+	instance    = "e2-medium"
+	volumeName  = "vol-20-20220404123522"
 	accountName = "netbook-aws"
-	nodeName    = "rootnode"
-	instance    = "Standard_A2_v2"
-	volumeName  = "vol-50-20220603121711"
 )
 
 func main() {

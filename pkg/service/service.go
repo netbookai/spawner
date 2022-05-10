@@ -323,6 +323,7 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 				Name:           account,
 			}
 		}
+<<<<<<< HEAD
 	case constants.CredGitPat:
 		cred_type = "GithubPersonalAccessToken"
 		if c := req.GetGitPat(); c != nil {
@@ -331,6 +332,19 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 				Token: c.Token,
 			}
 		}
+||||||| parent of c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
+=======
+	case constants.GcpLabel:
+		cred_type = "GcpCredential"
+		if c := req.GetGcpCred(); c != nil {
+
+			cred = &system.GCPCredential{
+				Name:        account,
+				ProjectId:   c.GetProjectID(),
+				Certificate: c.GetCertificate(),
+			}
+		}
+>>>>>>> c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
 	default:
 		return nil, fmt.Errorf("invalid provider '%s'", credType)
 	}
@@ -391,6 +405,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 				ResourceGroup:  c.ResourceGroup,
 			},
 		}
+<<<<<<< HEAD
 
 	case constants.CredGitPat:
 		c := creds.GetGitPAT()
@@ -399,6 +414,17 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 				Token: c.Token,
 			},
 		}
+||||||| parent of c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
+=======
+	case constants.GcpLabel:
+		c := creds.GetGcp()
+		p.Cred = &proto.ReadCredentialResponse_GcpCred{
+			GcpCred: &proto.GcpCredentials{
+				ProjectID:   c.ProjectId,
+				Certificate: c.Certificate,
+			},
+		}
+>>>>>>> c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
 	}
 
 	s.logger.Debug(ctx, "credentials found", "account", account, "credential_type", credType)

@@ -29,6 +29,10 @@ func (g *GCPController) GetClusters(ctx context.Context, req *proto.GetClustersR
 	return g.getClusters(ctx, req)
 }
 
+func (g *GCPController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
+	return g.deleteCluster(ctx, req)
+}
+
 func (g *GCPController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	return g.clusterStatus(ctx, req)
 }
