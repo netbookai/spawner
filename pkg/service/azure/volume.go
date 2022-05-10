@@ -19,6 +19,34 @@ func diskName(size int32) string {
 	return fmt.Sprintf("vol-%d-%s", size, t)
 }
 
+func getDiskSku(vt string) (*compute.DiskSku, error) {
+	ds := &compute.DiskSku{}
+	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update#diskstorageaccounttypes
+	switch vt {
+	case "Premium_LRS":
+		ds.Name = "Premium_LRS"
+		ds.Tier = to.StringPtr("Premium_LRS")
+	case "Premium_ZRS":
+		ds.Name = "Premium_ZRS"
+		ds.Tier = to.StringPtr("Premium_ZRS")
+	case "StandardSSD_LRS":
+		ds.Name = "StandardSSD_LRS"
+		ds.Tier = to.StringPtr("StandardSSD_LRS")
+	case "StandardSSD_ZRS":
+		ds.Name = "StandardSSD_ZRS"
+		ds.Tier = to.StringPtr("StandardSSD_ZRS")
+	case "Standard_LRS":
+		ds.Name = "Standard_LRS"
+		ds.Tier = to.StringPtr("Standard_LRS")
+	case "UltraSSD_LRS":
+		ds.Name = "UltraSSD_LRS"
+		ds.Tier = to.StringPtr("UltraSSD_LRS")
+	default:
+		return nil, errors.Errorf("invalid volume type '%s'", vt)
+	}
+	return ds, nil
+}
+
 func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 
 	account := req.AccountName
@@ -54,17 +82,15 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 		}
 	}
 
+	sku, err := getDiskSku(req.Volumetype)
+
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update
 	future, err := disksClient.CreateOrUpdate(
 		ctx,
 		cred.ResourceGroup,
 		name,
 		compute.Disk{
-			Sku: &compute.DiskSku{
-				// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update#diskstorageaccounttypes
-				Name: "StandardSSD_LRS",
-				Tier: to.StringPtr("StandardSSD_LRS"),
-			},
+			Sku:      sku,
 			Location: to.StringPtr(req.Region),
 			DiskProperties: &compute.DiskProperties{
 				CreationData: creationData,
