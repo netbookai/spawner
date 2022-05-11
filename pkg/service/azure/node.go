@@ -91,7 +91,9 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 		OsDiskSizeGB: &req.NodeSpec.DiskSize,
 	}
 
-	if req.NodeSpec.GpuEnabled && req.NodeSpec.MigProfile != proto.MIGProfile_UNKNOWN {
+	isGpu := common.IsGPU(req.NodeSpec.MachineType) || req.NodeSpec.GpuEnabled
+
+	if isGpu && req.NodeSpec.MigProfile != proto.MIGProfile_UNKNOWN {
 		mcappp.GpuInstanceProfile = getGPUProfile(req.NodeSpec.MigProfile) // containerservice.GPUInstanceProfileMIG1g
 	}
 
