@@ -15,8 +15,6 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-const testpubkey = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDL67TCv+MyUnT0gHUl2xpJF56TjCkcTKkXUjhIaUDY/gv/bFm5pVbvrHovKV/W2MrI5e9Ix2iQIiityWVABFEFWe7m0yx3ds49ZkM3kIflsqmPeywCcN8V2bMsiVwyrLBsboeRcbQyJJIrsb8A0mj3ooWFfT44I42YVCg4FOTsB+wmlthawBlMGKzZb8ITUMaN0VCtXfIslg6ptQHtficL/N1HW7FSXXiZPJaRi3kuCH18e/wCkP4eomWMZ6MQC1CIwGIkfh9K4pfuppfZ9HG+jyw0ha0LZ6utDbEULMPAtvgUZXB7+1vk1NTwi78p558Dk6fxWGRVgSQu7Qk4yddZ nishanth@nishanth-Legion-5-15ACH6"
-
 func (a *AzureController) createCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 
 	clusterName := req.ClusterName

@@ -22,4 +22,7 @@ func Test_GetInstance(t *testing.T) {
 
 	got = GetInstance("gcp", "m+v1000")
 	assert.Equal(t, "", got, "GetInstance: for invalid machine size")
+
+	assert.True(t, IsGPU(Lk80), "expected gpu machine")
+	assert.False(t, IsGPU(M), "expected non-gpu machine")
 }
