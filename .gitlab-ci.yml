@@ -97,7 +97,6 @@ helm_deploy_prod:
     name: production
   only:
     - tags
-    - helm-testing
   when: manual
 
 helm_deploy_prod_test:
@@ -112,5 +111,5 @@ helm_deploy_prod_test:
   environment:
     name: production
   only:
-    - helm-testing
+    - tags
   when: manual
