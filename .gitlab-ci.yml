@@ -111,5 +111,5 @@ helm_deploy_prod_test:
   environment:
     name: production
   only:
-    - tags
+    - helm-testing
   when: manual
