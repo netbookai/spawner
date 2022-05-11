@@ -2,6 +2,7 @@ package labels
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -25,6 +26,8 @@ func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	instance := ""
 	if nodeSpec.MachineType != "" {
 		instance = nodeSpec.MachineType
+		//+ is not allowed in tag value regex
+		instance = strings.Replace(instance, "+", "-", 2)
 	}
 	if nodeSpec.Instance != "" {
 		instance = nodeSpec.Instance
