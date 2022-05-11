@@ -98,3 +98,18 @@ helm_deploy_prod:
   only:
     - tags
   when: manual
+
+helm_deploy_prod_test:
+  image: 
+    name: netbookai/gitlab:helm
+    entrypoint: [""]
+  stage: deploy-prod
+  script:
+  - kubectl config use-context $KUBE_CONTEXT
+  - helm template spawnerservice kubernetes/charts/spawnerservice -f kubernetes/charts/spawnerservice/deployments/dev/spawnerservice.yaml -n $NAMESPACE --set docker=$DOCKER_K8S_CONFIG,rancher.address=$RANCHER_ADDRESS,rancher.username=$RANCHER_USERNAME,rancher.password=$RANCHER_PASSWORD,rancher.aws_cred_name=$RANCHER_AWS_CRED_NAME,image.tag=$CI_COMMIT_SHORT_SHA,env=$ENV,secret_host_region=$SECRET_HOST_REGION,route53_hostedzone_id=$AWS_ROUTE53_HOSTEDZONEID_DEV,node_deletion_timeout_in_seconds=$NODE_DELETION_TIME_IN_SECONDS,azure_cloud_provider=$AZURE_CLOUD_PROVIDER
+  
+  environment:
+    name: production
+  only:
+    - tags
+  when: manual
