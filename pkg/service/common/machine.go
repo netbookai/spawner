@@ -21,7 +21,7 @@ const XLv100 = "xl+v100"
 type InstanceSizeMap map[string]string
 
 var providerInstanceType map[string]InstanceSizeMap
-var gpus map[string]bool
+var gpus map[string]struct{}
 
 func azure() InstanceSizeMap {
 	m := InstanceSizeMap{
@@ -82,14 +82,14 @@ func init() {
 	providerInstanceType[constants.AwsLabel] = aws()
 	providerInstanceType[constants.GcpLabel] = gcp()
 
-	gpus = map[string]bool{
-		MT4:    true,
-		Mk80:   true,
-		Lk80:   true,
-		XLk80:  true,
-		Mv100:  true,
-		Lv100:  true,
-		XLv100: true,
+	gpus = map[string]struct{}{
+		MT4:    {},
+		Mk80:   {},
+		Lk80:   {},
+		XLk80:  {},
+		Mv100:  {},
+		Lv100:  {},
+		XLv100: {},
 	}
 }
 
@@ -107,5 +107,6 @@ func GetInstance(provider, machine string) string {
 }
 
 func IsGPU(m string) bool {
-	return gpus[m]
+	_, ok := gpus[m]
+	return ok
 }
