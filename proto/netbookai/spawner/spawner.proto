@@ -66,6 +66,9 @@ service SpawnerService {
   rpc GetKubeConfig(GetKubeConfigRequest) returns (GetKubeConfigResponse) {}
   rpc TagNodeInstance(TagNodeInstanceRequest)
       returns (TagNodeInstanceResponse) {}
+
+  rpc GetCostByTime(GetCostByTimeRequest)
+      returns (GetCostByTimeResponse) {}
 }
 
 message Empty {}
@@ -413,4 +416,23 @@ message TagNodeInstanceRequest {
   string clusterName = 4;
   string nodeGroup = 5;
   map<string, string> labels = 6;
+}
+
+
+message GetCostByTimeRequest {
+  repeated string Ids = 1;
+  string provider = 2;
+  string accountName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string granularity = 6;
+  GroupBy groupBy = 8;
+}
+
+message GetCostByTimeResponse {
+  map<string, costMap> groupedCost = 1;
+}
+
+message costMap{
+  map<string, double> cost = 1;
 }

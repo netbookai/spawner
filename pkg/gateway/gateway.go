@@ -130,3 +130,8 @@ func (g *gateway) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigReq
 func (g *gateway) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
 	return g.service.TagNodeInstance(ctx, req)
 }
+
+//GetCostByTime
+func (g *gateway) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+	return g.service.GetCostByTime(ctx, req)
+}

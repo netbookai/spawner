@@ -41,6 +41,7 @@ type SpawnerService interface {
 	WriteCredential(context.Context, *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error)
 	ReadCredential(context.Context, *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error)
 	AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error)
+	GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -415,4 +416,13 @@ func (s *spawnerService) TagNodeInstance(ctx context.Context, req *proto.TagNode
 		return nil, err
 	}
 	return provider.TagNodeInstance(ctx, req)
+}
+
+//GetWorkspaceCost returns filtered cost grouped by given group and time
+func (s *spawnerService) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.GetCostByTime(ctx, req)
 }
