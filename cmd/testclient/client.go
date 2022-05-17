@@ -209,6 +209,19 @@ func main() {
 		},
 	}
 
+	// getCostByTime := &proto.GetCostByTimeRequest{
+	// 	Ids:         []string{"24522d72-9b86-48c4-b66a-521a2f202413", "testid", "5d4eb7d8-9289-4740-a7f8-a9bfbdf06a16", "b5fbc7b6-e502-4093-81aa-d3efdce80afc"},
+	// 	Provider:    "azure",
+	// 	AccountName: "netbook-azure-dev",
+	// 	StartDate:   "2022-04-01",
+	// 	EndDate:     "2022-05-17",
+	// 	Granularity: "DAILY",
+	// 	GroupBy: &proto.GroupBy{
+	// 		Type: "TAG",
+	// 		Key:  "workspaceid",
+	// 	},
+	// }
+
 	switch *method {
 	case "Echo":
 		v, err := client.Echo(context.Background(), &proto.EchoRequest{Msg: "hello spawner"})

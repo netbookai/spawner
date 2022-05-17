@@ -252,7 +252,9 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 				costMap[groupKey] = make(map[string]float64)
 			}
 
-			costMap[groupKey][*resultByTime.TimePeriod.Start] += floatCost
+			date := strings.ReplaceAll(*resultByTime.TimePeriod.Start, "-", "")
+
+			costMap[groupKey][date] += floatCost
 			totalCost += floatCost
 
 		}
@@ -264,13 +266,6 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 	resMap := make(map[string]*proto.CostMap)
 
 	for k, v := range costMap {
-		// timeMap := &proto.CostMap{
-		// 	Cost: make(map[string]float64),
-		// }
-
-		// for k1, v1 := range v {
-		// 	timeMap.Cost[k1] = v1
-		// }
 
 		resMap[k] = &proto.CostMap{
 			Cost: v,
