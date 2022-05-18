@@ -53,6 +53,14 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, errors.Wrapf(err, "invalid end date: %s", req.EndDate)
 	}
 
+	groupFilter := ""
+
+	if req.GroupBy.Type == "TAG" {
+		groupFilter = req.GroupBy.Key
+	} else {
+		groupFilter = constants.WorkspaceId
+	}
+
 	scope := "subscriptions/" + cred.SubscriptionID
 
 	result, err := costClient.Usage(ctx, scope, costmanagement.QueryDefinition{
@@ -67,7 +75,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 			Grouping:    grouping,
 			Filter: &costmanagement.QueryFilter{
 				Tags: &costmanagement.QueryComparisonExpression{
-					Name:     to.StringPtr(constants.WorkspaceId),
+					Name:     to.StringPtr(groupFilter),
 					Operator: to.StringPtr("In"),
 					Values:   &req.WorkspaceIds,
 				},
@@ -352,8 +360,6 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		groupedCost[service][usageDateString] += cost
 
 	}
-
-	// totalCost = common.RoundTo(totalCost, 4)
 
 	resMap := make(map[string]*proto.CostMap)
 

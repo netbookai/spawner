@@ -30,8 +30,8 @@ func main() {
 	defer sugar.Sync()
 
 	fs := flag.NewFlagSet("testclient", flag.ExitOnError)
-	grpcAddr := fs.String("grpc-addr", ":8071", "gRPC address of spawner")
-	method := fs.String("method", "GetCostByTime", "default HealthCheck")
+	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of spawner")
+	method := fs.String("method", "HealthCheck", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
 
@@ -196,6 +196,7 @@ func main() {
 		},
 	}
 
+	//AWS cost request
 	getCostByTime := &proto.GetCostByTimeRequest{
 		Ids:         []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
 		Provider:    "aws",
@@ -209,6 +210,7 @@ func main() {
 		},
 	}
 
+	//Azure Cost Req
 	// getCostByTime := &proto.GetCostByTimeRequest{
 	// 	Ids:         []string{"24522d72-9b86-48c4-b66a-521a2f202413", "testid", "5d4eb7d8-9289-4740-a7f8-a9bfbdf06a16", "b5fbc7b6-e502-4093-81aa-d3efdce80afc"},
 	// 	Provider:    "azure",

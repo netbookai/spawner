@@ -34,6 +34,14 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	svc.logger.Debugw("fetched accountId", "id", accound_id)
 
+	groupFilter := ""
+
+	if req.GroupBy.Type == "TAG" {
+		groupFilter = req.GroupBy.Key
+	} else {
+		groupFilter = constants.WorkspaceId
+	}
+
 	filter := &costexplorer.Expression{
 		And: []*costexplorer.Expression{
 
@@ -45,7 +53,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 			},
 			{
 				Tags: &costexplorer.TagValues{
-					Key:    aws.String(constants.WorkspaceId),
+					Key:    aws.String(groupFilter),
 					Values: aws.StringSlice(req.GetWorkspaceIds()),
 				},
 			},
@@ -101,10 +109,9 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 			for _, key := range group.Keys {
 
 				if key != nil {
-					key := key
-					groupKey += *key
+					key := strings.Split(*key, "$")[1]
+					groupKey += key
 				}
-
 			}
 
 			groupMetric, ok := group.Metrics[req.GetCostType()]
