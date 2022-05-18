@@ -117,10 +117,12 @@ func GetAwsCredentials(ctx context.Context, region, accountName string) (*creden
 	return credentials.NewStaticCredentials(c.GetAws().Id, c.GetAws().Secret, c.GetAws().Token), nil
 }
 
-func sid(provider, name string) string {
-	return fmt.Sprintf("%s/%s", provider, name)
+//sid create secrete id using credType and account name
+func sid(credType, name string) string {
+	return fmt.Sprintf("%s/%s", credType, name)
 }
 
+//GetCredentials retrieve crendential for the given cred type of a account
 func GetCredentials(ctx context.Context, region, accountName, credType string) (Credentials, error) {
 	secret, err := getSecretManager(region)
 	if err != nil {
