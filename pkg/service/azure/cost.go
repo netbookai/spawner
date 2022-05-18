@@ -18,6 +18,12 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
+const (
+	invalidGrouByErr      = "invalid groupby requested"
+	dateFormatForYYYYMMDD = "2006-01-02"
+	failedCostParsing     = "failed to parse the cost"
+)
+
 func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
@@ -30,24 +36,31 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, err
 	}
 
-	if req.GroupBy.Type != "TAG" {
-		a.logger.Errorw("invalid groupby requested", "groupby", req.GroupBy)
-		return nil, errors.Wrap(err, "invalid groupby, valid groupby type is TAG")
-	}
+	var grouping *[]costmanagement.QueryGrouping
 
-	grouping, err := getGrouping(req.GroupBy)
+	if req.GroupBy.Type != "TAG" {
+		a.logger.Errorw(invalidGrouByErr, "groupby", req.GroupBy)
+		return nil, errors.Wrap(err, "invalid groupby, valid groupby type is TAG")
+	} else {
+		grouping = &[]costmanagement.QueryGrouping{
+			{
+				Type: "TagKey",
+				Name: &req.GroupBy.Key,
+			},
+		}
+	}
 
 	if err != nil {
-		a.logger.Errorw("invalid groupby requested", "groupby", req.GroupBy)
-		return nil, errors.Wrap(err, "invalid groupby")
+		a.logger.Errorw(invalidGrouByErr, "groupby", req.GroupBy)
+		return nil, errors.Wrap(err, invalidGrouByErr)
 	}
 
-	startDate, err := date.ParseTime("2006-01-02", req.StartDate)
+	startDate, err := date.ParseTime(dateFormatForYYYYMMDD, req.StartDate)
 	if err != nil {
 		a.logger.Errorw("failed to parse start date", "err", err, "req", req)
 		return nil, errors.Wrapf(err, "failed to parse start date: %s", req.StartDate)
 	}
-	endDate, err := date.ParseTime("2006-01-02", req.EndDate)
+	endDate, err := date.ParseTime(dateFormatForYYYYMMDD, req.EndDate)
 	if err != nil {
 		a.logger.Errorw("failed to parse end date", "req", req)
 		return nil, errors.Wrapf(err, "invalid end date: %s", req.EndDate)
@@ -169,7 +182,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 		if !ok {
 			a.logger.Errorw("azure is not returning cost in float")
-			return nil, errors.New("failed to parse cost")
+			return nil, errors.New(failedCostParsing)
 		}
 		cost = common.RoundTo(cost, 4)
 
@@ -178,7 +191,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		service, ok := r[groupColumn].(string)
 		if !ok {
 			a.logger.Error("azure is not returning serviceName in string")
-			return nil, errors.New("failed to parse cost")
+			return nil, errors.New(failedCostParsing)
 		}
 
 		groupedCost[service] += cost
@@ -216,7 +229,7 @@ func getGrouping(groupBy *proto.GroupBy) (*[]costmanagement.QueryGrouping, error
 			},
 		}
 	} else {
-		return nil, errors.New("invalid groupby requested")
+		return nil, errors.New(invalidGrouByErr)
 	}
 
 	return grouping, nil
@@ -238,16 +251,16 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 	grouping, err := getGrouping(req.GroupBy)
 
 	if err != nil {
-		a.logger.Errorw("invalid groupby requested", "groupby", req.GroupBy)
-		return nil, errors.Wrap(err, "invalid groupby")
+		a.logger.Errorw(invalidGrouByErr, "groupby", req.GroupBy)
+		return nil, errors.Wrap(err, invalidGrouByErr)
 	}
 
-	startDate, err := date.ParseTime("2006-01-02", req.StartDate)
+	startDate, err := date.ParseTime(dateFormatForYYYYMMDD, req.StartDate)
 	if err != nil {
 		a.logger.Errorw("failed to parse start date", "err", err, "req", req)
 		return nil, errors.Wrapf(err, "failed to parse start date: %s", req.StartDate)
 	}
-	endDate, err := date.ParseTime("2006-01-02", req.EndDate)
+	endDate, err := date.ParseTime(dateFormatForYYYYMMDD, req.EndDate)
 	if err != nil {
 		a.logger.Errorw("failed to parse end date", "req", req)
 		return nil, errors.Wrapf(err, "invalid end date: %s", req.EndDate)
@@ -333,7 +346,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 
 		if !ok {
 			a.logger.Errorw("azure is not returning cost in float")
-			return nil, errors.New("failed to parse cost")
+			return nil, errors.New(failedCostParsing)
 		}
 		cost = common.RoundTo(cost, 4)
 
@@ -342,7 +355,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		service, ok := r[tagValueColumn].(string)
 		if !ok {
 			a.logger.Error("azure is not returning serviceName in string")
-			return nil, errors.New("failed to parse cost")
+			return nil, errors.New(failedCostParsing)
 		}
 
 		if groupedCost[service] == nil {
@@ -352,7 +365,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		usageDate, ok := r[usageDateColumn].(float64)
 		if !ok {
 			a.logger.Error("azure is not returning usageDateColumn")
-			return nil, errors.New("failed to parse cost")
+			return nil, errors.New(failedCostParsing)
 		}
 
 		usageDateString := strconv.FormatFloat(usageDate, 'f', -1, 64)
