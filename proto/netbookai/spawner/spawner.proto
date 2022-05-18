@@ -359,7 +359,8 @@ message AzureCredentials {
 
 message WriteCredentialRequest {
   string account = 1;
-  string provider = 2;
+  string provider = 2 [deprecated = true ];
+  string type = 5; 
   oneof cred {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;

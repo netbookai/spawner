@@ -259,12 +259,12 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 	account := req.GetAccount()
 	region := config.Get().SecretHostRegion
 
-	provider := req.GetProvider()
+	credType := req.GetType()
 
 	var cred system.Credentials
 	cred_type := "unknown"
 
-	switch provider {
+	switch credType {
 
 	case constants.AwsLabel:
 
@@ -291,15 +291,15 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 			}
 		}
 	default:
-		return nil, fmt.Errorf("invalid provider '%s'", provider)
+		return nil, fmt.Errorf("invalid provider '%s'", credType)
 	}
 
 	if cred == nil {
-		return nil, fmt.Errorf(" %s credentials must be set for provider %s", cred_type, provider)
+		return nil, fmt.Errorf(" %s credentials must be set for provider %s", cred_type, credType)
 
 	}
 
-	err := s.writeCredentials(ctx, region, account, provider, cred)
+	err := s.writeCredentials(ctx, region, account, credType, cred)
 	if err != nil {
 		s.logger.Errorw("failed to save credentials", "error", err, "account", account)
 		return nil, err
@@ -313,9 +313,9 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 
 	region := config.Get().SecretHostRegion
 	account := req.GetAccount()
-	provider := req.GetProvider()
+	credType := req.GetType()
 
-	creds, err := s.getCredentials(ctx, region, account, provider)
+	creds, err := s.getCredentials(ctx, region, account, credType)
 	if err != nil {
 		s.logger.Errorw("failed to get the credentials", "account", account)
 		return nil, err
@@ -324,7 +324,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 		Account: account,
 	}
 
-	switch provider {
+	switch credType {
 	case constants.AwsLabel:
 
 		c := creds.GetAws()
@@ -348,7 +348,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 		}
 	}
 
-	s.logger.Debugw("credentials found", "account", account, "provider", provider)
+	s.logger.Debugw("credentials found", "account", account, "provider", credType)
 	return p, nil
 }
 
