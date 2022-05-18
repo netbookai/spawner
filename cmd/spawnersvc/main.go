@@ -94,7 +94,7 @@ func startSignalHandler(g *group.Group) {
 
 func main() {
 
-	err := config.Load("./../../")
+	err := config.Load(".")
 
 	if err != nil {
 		log.Fatal("failed to load config", err)
