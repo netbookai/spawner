@@ -110,23 +110,25 @@ func getSecretManager(region string) (*secretsmanager.SecretsManager, error) {
 
 //GetAwsCredentials Retrieve user credentials from the secret manager
 func GetAwsCredentials(ctx context.Context, region, accountName string) (*credentials.Credentials, error) {
-	c, err := GetCredentials(ctx, region, accountName, constants.AwsLabel)
+	c, err := GetCredentials(ctx, region, accountName, constants.CredAws)
 	if err != nil {
 		return nil, err
 	}
 	return credentials.NewStaticCredentials(c.GetAws().Id, c.GetAws().Secret, c.GetAws().Token), nil
 }
 
-func sid(provider, name string) string {
-	return fmt.Sprintf("%s/%s", provider, name)
+//sid create secrete id using credType and account name
+func sid(credType, name string) string {
+	return fmt.Sprintf("%s/%s", credType, name)
 }
 
-func GetCredentials(ctx context.Context, region, accountName, provider string) (Credentials, error) {
+//GetCredentials retrieve crendential for the given cred type of a account
+func GetCredentials(ctx context.Context, region, accountName, credType string) (Credentials, error) {
 	secret, err := getSecretManager(region)
 	if err != nil {
 		return nil, errors.Wrapf(err, "GetAwsCredentials: failed to get secretsmanager")
 	}
-	s := sid(provider, accountName)
+	s := sid(credType, accountName)
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     &s,
 		VersionStage: aws.String("AWSCURRENT"),
@@ -140,11 +142,13 @@ func GetCredentials(ctx context.Context, region, accountName, provider string) (
 	}
 
 	var cred Credentials
-	switch provider {
-	case constants.AwsLabel:
+	switch credType {
+	case constants.CredAws:
 		cred, err = NewAwsCredential(*result.SecretString)
-	case constants.AzureLabel:
+	case constants.CredAzure:
 		cred, err = NewAzureCredential(*result.SecretString)
+	case constants.CredGitPat:
+		cred, err = NewGitPAT(*result.SecretString)
 	}
 
 	if err != nil {
@@ -156,7 +160,7 @@ func GetCredentials(ctx context.Context, region, accountName, provider string) (
 //WriteOrUpdateCredential Creates a new secrets in AWS, updates the existing if key already present
 // update will be set to true when key Update operation is perfromed,
 // false on new secret creation
-func WriteOrUpdateCredential(ctx context.Context, region, account, provider string, cred Credentials) (update bool, err error) {
+func WriteOrUpdateCredential(ctx context.Context, region, account, credType string, cred Credentials) (update bool, err error) {
 
 	secret, err := getSecretManager(region)
 	if err != nil {
@@ -164,7 +168,7 @@ func WriteOrUpdateCredential(ctx context.Context, region, account, provider stri
 	}
 	value := cred.AsSecretValue()
 
-	s := sid(provider, account)
+	s := sid(credType, account)
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     &s,
 		VersionStage: aws.String("AWSCURRENT"),

@@ -44,3 +44,11 @@ const (
 	ServiceName = "ServiceName"
 	TagValue    = "TagValue"
 )
+
+//cred type
+
+const (
+	CredAws    = "aws"
+	CredAzure  = "azure"
+	CredGitPat = "git-pat"
+)
