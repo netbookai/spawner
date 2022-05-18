@@ -22,6 +22,7 @@ var (
 	WorkspaceId              = "workspaceid"
 	AzureLabel               = "azure"
 	GcpLabel                 = "gcp"
+	GitPAT                   = "git-pat"
 )
 
 type CloudProvider string

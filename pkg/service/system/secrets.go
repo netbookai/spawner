@@ -145,6 +145,8 @@ func GetCredentials(ctx context.Context, region, accountName, credType string) (
 		cred, err = NewAwsCredential(*result.SecretString)
 	case constants.AzureLabel:
 		cred, err = NewAzureCredential(*result.SecretString)
+	case constants.GitPAT:
+		cred, err = NewGitPAT(*result.SecretString)
 	}
 
 	if err != nil {

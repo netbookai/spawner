@@ -253,6 +253,14 @@ func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ran
 
 }
 
+func validCredType(ct string) bool {
+	switch ct {
+	case constants.AwsLabel, constants.AzureLabel, constants.GitPAT:
+		return true
+	}
+	return false
+}
+
 //WriteCredential
 func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
 
@@ -260,6 +268,10 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 	region := config.Get().SecretHostRegion
 
 	credType := req.GetType()
+
+	if !validCredType(credType) {
+		return nil, fmt.Errorf("invalid credentials type provided, must be one of ['aws', 'azure', git-pat']")
+	}
 
 	var cred system.Credentials
 	cred_type := "unknown"
@@ -290,6 +302,14 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 				Name:           account,
 			}
 		}
+	case constants.GitPAT:
+		cred_type = "GitPersonalAccessToken"
+		if c := req.GetGitPat(); c != nil {
+			cred = &system.GithubPersonalAccessToken{
+				Name:  account,
+				Token: c.Token,
+			}
+		}
 	default:
 		return nil, fmt.Errorf("invalid provider '%s'", credType)
 	}
@@ -314,6 +334,10 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 	region := config.Get().SecretHostRegion
 	account := req.GetAccount()
 	credType := req.GetType()
+
+	if !validCredType(credType) {
+		return nil, fmt.Errorf("invalid credentials type provided, must be one of ['aws', 'azure', git-pat']")
+	}
 
 	creds, err := s.getCredentials(ctx, region, account, credType)
 	if err != nil {
@@ -344,6 +368,13 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 				ClientID:       c.ClientID,
 				ClientSecret:   c.ClientSecret,
 				ResourceGroup:  c.ResourceGroup,
+			},
+		}
+	case constants.GitPAT:
+		c := creds.GetGitPAT()
+		p.Cred = &proto.ReadCredentialResponse_GitPat{
+			GitPat: &proto.GithubPersonalAccessToken{
+				Token: c.Token,
 			},
 		}
 	}

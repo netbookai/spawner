@@ -22,14 +22,21 @@ type AwsCredential struct {
 	Token  string
 }
 
+type GithubPersonalAccessToken struct {
+	Name  string
+	Token string
+}
+
 type Credentials interface {
 	GetAzure() *AzureCredential
 	GetAws() *AwsCredential
+	GetGitPAT() *GithubPersonalAccessToken
 	AsSecretValue() string
 }
 
 var _ Credentials = (*AzureCredential)(nil)
 var _ Credentials = (*AwsCredential)(nil)
+var _ Credentials = (*GithubPersonalAccessToken)(nil)
 
 //Azure credentials
 
@@ -45,6 +52,10 @@ func (a *AzureCredential) AsSecretValue() string {
 	return fmt.Sprintf("%s,%s,%s,%s,%s", a.SubscriptionID, a.TenantID, a.ClientID, a.ClientSecret, a.ResourceGroup)
 }
 
+func (a *AzureCredential) GetGitPAT() *GithubPersonalAccessToken {
+	return nil
+}
+
 //Aws credential
 
 func (a *AwsCredential) GetAzure() *AzureCredential {
@@ -57,6 +68,28 @@ func (a *AwsCredential) GetAws() *AwsCredential {
 
 func (a *AwsCredential) AsSecretValue() string {
 	return fmt.Sprintf("%s,%s,%s", a.Id, a.Secret, a.Token)
+}
+
+func (a *AwsCredential) GetGitPAT() *GithubPersonalAccessToken {
+	return nil
+}
+
+//GithubPersonalAccessToken credential
+
+func (g *GithubPersonalAccessToken) GetGitPAT() *GithubPersonalAccessToken {
+	return g
+}
+
+func (g *GithubPersonalAccessToken) GetAzure() *AzureCredential {
+	return nil
+}
+
+func (g *GithubPersonalAccessToken) GetAws() *AwsCredential {
+	return nil
+}
+
+func (g *GithubPersonalAccessToken) AsSecretValue() string {
+	return fmt.Sprintf("%s", g.Token)
 }
 
 //NewAwsCredential recieves comma separated list of credential parts and creates a AwsCredential
@@ -95,4 +128,9 @@ func NewAzureCredential(blob string) (*AzureCredential, error) {
 		ResourceGroup:  splits[4],
 	}, nil
 
+}
+
+//NewGitPAT return new GithubPersonalAccessToken
+func NewGitPAT(blob string) (*GithubPersonalAccessToken, error) {
+	return &GithubPersonalAccessToken{Token: blob}, nil
 }

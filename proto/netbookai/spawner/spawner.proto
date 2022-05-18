@@ -357,6 +357,10 @@ message AzureCredentials {
   string resourceGroup = 5;
 }
 
+message GithubPersonalAccessToken {
+ string token =1;
+}
+
 message WriteCredentialRequest {
   string account = 1;
   string provider = 2 [deprecated = true ];
@@ -364,6 +368,7 @@ message WriteCredentialRequest {
   oneof cred {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
+    GithubPersonalAccessToken gitPat = 6;
   }
 }
 
@@ -384,6 +389,7 @@ message ReadCredentialResponse {
   oneof cred {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
+    GithubPersonalAccessToken gitPat = 6;
   }
 }
 

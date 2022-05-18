@@ -337,8 +337,8 @@ func main() {
 
 	case "ReadCredentialAws":
 		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
-			Account:  "alexis",
-			Provider: "aws",
+			Account: "alexis",
+			Type:    "aws",
 		})
 		if err != nil {
 			sugar.Errorw("error reading credentials", "error", err)
@@ -347,8 +347,8 @@ func main() {
 
 	case "WriteCredentialAws":
 		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
-			Account:  "alexis",
-			Provider: "aws",
+			Account: "alexis",
+			Type:    "aws",
 			Cred: &proto.WriteCredentialRequest_AwsCred{
 				AwsCred: &proto.AwsCredentials{
 					AccessKeyID:     "access_id",
@@ -363,8 +363,8 @@ func main() {
 		sugar.Infow("WriteCredentialAws", "response", v)
 	case "ReadCredentialAzure":
 		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
-			Account:  "netbook-azure-dev",
-			Provider: "azure",
+			Account: "netbook-azure-dev",
+			Type:    "azure",
 		})
 		if err != nil {
 			sugar.Errorw("error reading credentials", "error", err)
@@ -373,8 +373,8 @@ func main() {
 
 	case "WriteCredentialAzure":
 		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
-			Account:  "alex",
-			Provider: "azure",
+			Account: "alex",
+			Type:    "azure",
 			Cred: &proto.WriteCredentialRequest_AzureCred{
 				AzureCred: &proto.AzureCredentials{
 					SubscriptionID: "subscription",
@@ -387,9 +387,37 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error writing credentials", "error", err)
+			return
 		}
 		sugar.Infow("WriteCredentialAws", "response", v)
 
+	case "ReadCredentialGitPAT":
+		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
+			Account: "nsp-dev",
+			Type:    "git-pat",
+		})
+
+		if err != nil {
+			sugar.Errorw("error reading Git PAT ", err)
+			return
+		}
+		sugar.Infow("ReadCredentialResponse_GitPat", "response", v)
+	case "WriteCredentialGitPAT":
+		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
+			Account: "nsp-dev",
+			Type:    "git-pat",
+			Cred: &proto.WriteCredentialRequest_GitPat{
+				GitPat: &proto.GithubPersonalAccessToken{
+					Token: "this-is-very-secret-token-thats-why-you-see-this-message-when-reading",
+				},
+			},
+		})
+
+		if err != nil {
+			sugar.Errorw("error writing Git PAT ", err)
+			return
+		}
+		sugar.Infow("WriteCredentialResponse_GitPat", "response", v)
 	case "AddTag":
 		v, err := client.TagNodeInstance(context.Background(), &proto.TagNodeInstanceRequest{
 			Provider:    provider,
