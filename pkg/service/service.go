@@ -255,7 +255,7 @@ func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ran
 
 func validCredType(ct string) bool {
 	switch ct {
-	case constants.AwsLabel, constants.AzureLabel, constants.GitPAT:
+	case constants.CredAws, constants.CredAzure, constants.CredGitPat:
 		return true
 	}
 	return false
@@ -270,7 +270,7 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 	credType := req.GetType()
 
 	if !validCredType(credType) {
-		return nil, fmt.Errorf("invalid credentials type provided, must be one of ['aws', 'azure', git-pat']")
+		return nil, constants.ErrInvalidCredentiualType
 	}
 
 	var cred system.Credentials
@@ -278,7 +278,7 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 
 	switch credType {
 
-	case constants.AwsLabel:
+	case constants.CredAws:
 
 		cred_type = "AwsCredential"
 		if c := req.GetAwsCred(); c != nil {
@@ -290,7 +290,7 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 			}
 		}
 
-	case constants.AzureLabel:
+	case constants.CredAzure:
 		cred_type = "AzureCredential"
 		if c := req.GetAzureCred(); c != nil {
 			cred = &system.AzureCredential{
@@ -302,8 +302,8 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 				Name:           account,
 			}
 		}
-	case constants.GitPAT:
-		cred_type = "GitPersonalAccessToken"
+	case constants.CredGitPat:
+		cred_type = "GithubPersonalAccessToken"
 		if c := req.GetGitPat(); c != nil {
 			cred = &system.GithubPersonalAccessToken{
 				Name:  account,
@@ -315,7 +315,7 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 	}
 
 	if cred == nil {
-		return nil, fmt.Errorf(" %s credentials must be set for provider %s", cred_type, credType)
+		return nil, fmt.Errorf(" %s credentials must be set for type '%s'", cred_type, credType)
 
 	}
 
@@ -336,7 +336,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 	credType := req.GetType()
 
 	if !validCredType(credType) {
-		return nil, fmt.Errorf("invalid credentials type provided, must be one of ['aws', 'azure', git-pat']")
+		return nil, constants.ErrInvalidCredentiualType
 	}
 
 	creds, err := s.getCredentials(ctx, region, account, credType)
@@ -349,8 +349,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 	}
 
 	switch credType {
-	case constants.AwsLabel:
-
+	case constants.CredAws:
 		c := creds.GetAws()
 		p.Cred = &proto.ReadCredentialResponse_AwsCred{
 			AwsCred: &proto.AwsCredentials{
@@ -359,7 +358,8 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 				Token:           c.Token,
 			},
 		}
-	case constants.AzureLabel:
+
+	case constants.CredAzure:
 		c := creds.GetAzure()
 		p.Cred = &proto.ReadCredentialResponse_AzureCred{
 			AzureCred: &proto.AzureCredentials{
@@ -370,7 +370,8 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 				ResourceGroup:  c.ResourceGroup,
 			},
 		}
-	case constants.GitPAT:
+
+	case constants.CredGitPat:
 		c := creds.GetGitPAT()
 		p.Cred = &proto.ReadCredentialResponse_GitPat{
 			GitPat: &proto.GithubPersonalAccessToken{
@@ -379,7 +380,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 		}
 	}
 
-	s.logger.Debugw("credentials found", "account", account, "provider", credType)
+	s.logger.Debugw("credentials found", "account", account, "credential_type", credType)
 	return p, nil
 }
 

@@ -22,7 +22,6 @@ var (
 	WorkspaceId              = "workspaceid"
 	AzureLabel               = "azure"
 	GcpLabel                 = "gcp"
-	GitPAT                   = "git-pat"
 )
 
 type CloudProvider string
@@ -44,4 +43,12 @@ const (
 	CostUSD     = "CostUSD"
 	ServiceName = "ServiceName"
 	TagValue    = "TagValue"
+)
+
+//cred type
+
+const (
+	CredAws    = "aws"
+	CredAzure  = "azure"
+	CredGitPat = "git-pat"
 )

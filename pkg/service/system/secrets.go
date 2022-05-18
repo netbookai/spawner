@@ -110,7 +110,7 @@ func getSecretManager(region string) (*secretsmanager.SecretsManager, error) {
 
 //GetAwsCredentials Retrieve user credentials from the secret manager
 func GetAwsCredentials(ctx context.Context, region, accountName string) (*credentials.Credentials, error) {
-	c, err := GetCredentials(ctx, region, accountName, constants.AwsLabel)
+	c, err := GetCredentials(ctx, region, accountName, constants.CredAws)
 	if err != nil {
 		return nil, err
 	}
@@ -141,11 +141,11 @@ func GetCredentials(ctx context.Context, region, accountName, credType string) (
 
 	var cred Credentials
 	switch credType {
-	case constants.AwsLabel:
+	case constants.CredAws:
 		cred, err = NewAwsCredential(*result.SecretString)
-	case constants.AzureLabel:
+	case constants.CredAzure:
 		cred, err = NewAzureCredential(*result.SecretString)
-	case constants.GitPAT:
+	case constants.CredGitPat:
 		cred, err = NewGitPAT(*result.SecretString)
 	}
 

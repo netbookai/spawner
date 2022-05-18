@@ -23,7 +23,7 @@ func getCredentials(ctx context.Context, account string) (*system.AzureCredentia
 			Name:           account,
 		}, nil
 	} else {
-		c, err := system.GetCredentials(ctx, config.Get().SecretHostRegion, account, constants.AzureLabel)
+		c, err := system.GetCredentials(ctx, config.Get().SecretHostRegion, account, constants.CredAzure)
 		if err != nil {
 			return nil, errors.Wrap(err, "getCredentials")
 		}
