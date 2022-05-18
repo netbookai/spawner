@@ -108,7 +108,7 @@ func getInstance(nodeSpec *proto.NodeSpec) (string, []*string, error) {
 }
 
 //buildNodegroupInput build a new node group request
-func (a *AWSController) buildNodegroupInput(clusterName *string, nodeSpec *proto.NodeSpec, subnetIds []*string, nodeRoleArn *string) (*eks.CreateNodegroupInput, error) {
+func (a *AWSController) buildNodegroupInput(ctx context.Context, session *Session, clusterName *string, nodeSpec *proto.NodeSpec, subnetIds []*string, nodeRoleArn *string) (*eks.CreateNodegroupInput, error) {
 
 	diskSize := int64(nodeSpec.DiskSize)
 
@@ -130,22 +130,38 @@ func (a *AWSController) buildNodegroupInput(clusterName *string, nodeSpec *proto
 		gpuEnabled = true
 	}
 	amiType := ""
+	amiId := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if gpuEnabled {
 		a.logger.Infow("requested gpu node", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
 		amiType = "AL2_x86_64_GPU"
 	} else {
 		amiType = "AL2_x86_64"
+		amiId = "ami-09dd25549dd970de5"
 	}
 	a.logger.Debugw("building node group input", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
 
+	templateId := ""
+	if capacityType == eks.CapacityTypesSpot {
+		templateId, err = a.createSpotLaunchTemplate(ctx, session.getEC2Client(), amiId, "0.001", *instanceTypes[0], "gp2", diskSize, nodeSpec.Labels)
+		if err != nil {
+			return nil, err
+		}
+	}
+	amiType = amiType
+	fmt.Println(diskSize)
 	return &eks.CreateNodegroupInput{
-		AmiType:       &amiType,
-		CapacityType:  &capacityType,
-		NodeRole:      nodeRoleArn,
-		InstanceTypes: instanceTypes,
-		ClusterName:   clusterName,
-		DiskSize:      &diskSize,
+		LaunchTemplate: &eks.LaunchTemplateSpecification{
+			Id: &templateId,
+			//Name:    clusterName,
+			//Version: default --new(string),
+		},
+		//	AmiType:       &amiType,
+		CapacityType: &capacityType,
+		NodeRole:     nodeRoleArn,
+		//	InstanceTypes: instanceTypes,
+		ClusterName: clusterName,
+		//		DiskSize:      &diskSize,
 		NodegroupName: &nodeSpec.Name,
 		Labels:        labels,
 		Subnets:       subnetIds,
@@ -194,7 +210,7 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 		}
 	}
 
-	input, err := ctrl.buildNodegroupInput(cluster.Name, nodeSpec, cluster.ResourcesVpcConfig.SubnetIds, nodeRole.Arn)
+	input, err := ctrl.buildNodegroupInput(ctx, session, cluster.Name, nodeSpec, cluster.ResourcesVpcConfig.SubnetIds, nodeRole.Arn)
 	if err != nil {
 		return nil, errors.Wrap(err, "getNewNodeGroupSpecFromCluster:")
 	}
@@ -202,9 +218,9 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 
 }
 
-func (ctrl AWSController) getNodeSpecFromDefault(defaultNode *eks.Nodegroup, clusterName string, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
+func (ctrl AWSController) getNodeSpecFromDefault(ctx context.Context, session *Session, defaultNode *eks.Nodegroup, clusterName string, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
 
-	input, err := ctrl.buildNodegroupInput(&clusterName, nodeSpec, defaultNode.Subnets, defaultNode.NodeRole)
+	input, err := ctrl.buildNodegroupInput(ctx, session, &clusterName, nodeSpec, defaultNode.Subnets, defaultNode.NodeRole)
 	if err != nil {
 		return nil, errors.Wrap(err, "getNodeSpecFromDefault")
 	}
@@ -253,7 +269,7 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 		}
 	} else {
 		ctrl.logger.Infof("found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
-		newNodeGroupInput, err = ctrl.getNodeSpecFromDefault(defaultNode, clusterName, nodeSpec)
+		newNodeGroupInput, err = ctrl.getNodeSpecFromDefault(ctx, session, defaultNode, clusterName, nodeSpec)
 		if err != nil {
 			return nil, err
 		}

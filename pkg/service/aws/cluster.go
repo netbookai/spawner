@@ -6,7 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
@@ -375,6 +377,32 @@ func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterS
 		}, err
 	}
 
+	//fetch launch template ]
+	ec2client := session.getEC2Client()
+
+	lid := "lt-0f9c1d246b3aad014"
+	lid2 := "lt-015fe7abcd934d354"
+	lre, err := ec2client.DescribeLaunchTemplates(&ec2.DescribeLaunchTemplatesInput{
+		LaunchTemplateIds: []*string{&lid, &lid2},
+	})
+
+	if err != nil {
+		ctrl.logger.Errorw("failed to get the launch template ", "error", err)
+	} else {
+		spew.Dump(lre.LaunchTemplates)
+	}
+
+	l, err := ec2client.DescribeLaunchTemplateVersions(&ec2.DescribeLaunchTemplateVersionsInput{
+		LaunchTemplateId: &lid,
+		MaxVersion:       aws.String("5"),
+		MinVersion:       aws.String("2"),
+	})
+
+	if err != nil {
+		ctrl.logger.Errorw("failed to get the launch template version", "error", err)
+	} else {
+		spew.Dump(l.LaunchTemplateVersions)
+	}
 	return &proto.ClusterStatusResponse{
 		Status: *cluster.Status,
 	}, err
