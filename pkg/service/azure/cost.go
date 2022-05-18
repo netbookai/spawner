@@ -17,7 +17,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
+func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -63,7 +63,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 				Tags: &costmanagement.QueryComparisonExpression{
 					Name:     to.StringPtr(constants.WorkspaceId),
 					Operator: to.StringPtr("In"),
-					Values:   &req.WorkspaceIds,
+					Values:   &req.ApplicationIds,
 				},
 			},
 			Aggregation: map[string]*costmanagement.QueryAggregation{
@@ -85,7 +85,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	if result.Rows == nil || len(*result.Rows) == 0 {
 		a.logger.Infow("didn't find cost for the request", "req", req)
-		return &proto.GetWorkspacesCostResponse{}, nil
+		return &proto.GetApplicationsCostResponse{}, nil
 	}
 
 	var totalCost float64
@@ -173,7 +173,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	totalCost = common.RoundTo(totalCost, 4)
 
-	costResponse := &proto.GetWorkspacesCostResponse{
+	costResponse := &proto.GetApplicationsCostResponse{
 		TotalCost:   totalCost,
 		GroupedCost: groupedCost,
 	}

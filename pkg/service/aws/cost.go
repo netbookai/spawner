@@ -11,7 +11,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
+func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
 
 	session, err := NewSession(ctx, "", req.GetAccountName())
 
@@ -45,7 +45,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 			{
 				Tags: &costexplorer.TagValues{
 					Key:    aws.String(constants.WorkspaceId),
-					Values: aws.StringSlice(req.GetWorkspaceIds()),
+					Values: aws.StringSlice(req.GetApplicationIds()),
 				},
 			},
 
@@ -129,7 +129,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
 
-	costResponse := &proto.GetWorkspacesCostResponse{
+	costResponse := &proto.GetApplicationsCostResponse{
 		TotalCost:   totalCost,
 		GroupedCost: costMap,
 	}

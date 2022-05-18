@@ -106,9 +106,9 @@ func (g *gateway) RegisterWithRancher(ctx context.Context, req *proto.RancherReg
 	return g.service.RegisterWithRancher(ctx, req)
 }
 
-//GetWorkspacesCost
-func (g *gateway) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
-	return g.service.GetWorkspacesCost(ctx, req)
+//GetApplicationsCost
+func (g *gateway) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+	return g.service.GetApplicationsCost(ctx, req)
 }
 
 //WriteCredential save user account credential

@@ -55,8 +55,8 @@ service SpawnerService {
   rpc RegisterWithRancher(RancherRegistrationRequest)
       returns (RancherRegistrationResponse) {}
 
-  rpc GetWorkspacesCost(GetWorkspacesCostRequest)
-      returns (GetWorkspacesCostResponse) {}
+  rpc GetApplicationsCost(GetApplicationsCostRequest)
+      returns (GetApplicationsCostResponse) {}
 
   rpc WriteCredential(WriteCredentialRequest)
       returns (WriteCredentialResponse) {}
@@ -322,8 +322,8 @@ message RancherRegistrationResponse {
   string manifestURL = 4;
 }
 
-message GetWorkspacesCostRequest {
-  repeated string workspaceIds = 1;
+message GetApplicationsCostRequest {
+  repeated string applicationIds = 1;
   string provider = 2;
   string accountName = 3;
   string startDate = 4;
@@ -338,7 +338,7 @@ message GroupBy {
   string key = 2;
 }
 
-message GetWorkspacesCostResponse {
+message GetApplicationsCostResponse {
   double totalCost = 1;
   map<string, double> groupedCost = 2;
 }
