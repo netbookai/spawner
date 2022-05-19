@@ -36,19 +36,8 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, err
 	}
 
-	var grouping *[]costmanagement.QueryGrouping
-
-	if req.GroupBy.Type != "TAG" {
-		a.logger.Errorw(invalidGrouByErr, "groupby", req.GroupBy)
-		return nil, errors.Wrap(err, "invalid groupby, valid groupby type is TAG")
-	} else {
-		grouping = &[]costmanagement.QueryGrouping{
-			{
-				Type: "TagKey",
-				Name: &req.GroupBy.Key,
-			},
-		}
-	}
+	// getting groupby object based on "TAG" or "DIMENSION"
+	grouping, err := getGrouping(req.GroupBy)
 
 	if err != nil {
 		a.logger.Errorw(invalidGrouByErr, "groupby", req.GroupBy)
@@ -236,6 +225,7 @@ func getGrouping(groupBy *proto.GroupBy) (*[]costmanagement.QueryGrouping, error
 
 }
 
+// getCostByTime fetches the cost and returns datewise cost based on the startDate and endDate
 func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
@@ -248,13 +238,22 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		return nil, err
 	}
 
-	grouping, err := getGrouping(req.GroupBy)
+	var grouping *[]costmanagement.QueryGrouping
 
-	if err != nil {
+	// "TAG" is the only valid groupBy type as we filter the resources  based on tags only
+	if req.GroupBy.Type != "TAG" {
 		a.logger.Errorw(invalidGrouByErr, "groupby", req.GroupBy)
-		return nil, errors.Wrap(err, invalidGrouByErr)
+		return nil, errors.Wrap(err, "invalid groupby, valid groupby type is TAG")
+	} else {
+		grouping = &[]costmanagement.QueryGrouping{
+			{
+				Type: "TagKey",
+				Name: &req.GroupBy.Key,
+			},
+		}
 	}
 
+	// parsing string to date format
 	startDate, err := date.ParseTime(dateFormatForYYYYMMDD, req.StartDate)
 	if err != nil {
 		a.logger.Errorw("failed to parse start date", "err", err, "req", req)
@@ -267,7 +266,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 	}
 
 	scope := "subscriptions/" + cred.SubscriptionID
-
+	// calling azure cost api
 	result, err := costClient.Usage(ctx, scope, costmanagement.QueryDefinition{
 		Type:      costmanagement.ExportTypeActualCost,
 		Timeframe: costmanagement.TimeframeTypeCustom,
@@ -302,6 +301,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		return nil, fmt.Errorf("azure returned %v status code", result.Response.StatusCode)
 	}
 
+	// check for no result for request
 	if result.Rows == nil || len(*result.Rows) == 0 {
 		a.logger.Infow("didn't find cost for the request", "req", req)
 		return &proto.GetCostByTimeResponse{}, nil
@@ -314,7 +314,9 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 	costUSDColumn := -1
 	usageDateColumn := -1
 	tagValueColumn := -1
-
+	// Azure returns the result in rows and columns fields, rows contains the actual data
+	// and columns contains the coloumn name, here we are getting the indices for all the
+	// required columns
 	for i, c := range *result.Columns {
 		if *c.Name == constants.CostUSD {
 			costUSDColumn = i
@@ -335,9 +337,9 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		return nil, fmt.Errorf("azure result doesn't have column: %v", constants.TagValue)
 	}
 
-	if tagValueColumn == -1 {
-		a.logger.Errorw("grouping only available for tag and service, couldn't initilize grouping column", "groupBy", req.GroupBy)
-		return nil, errors.New("GroupBy only possible for tag and service")
+	if usageDateColumn == -1 {
+		a.logger.Errorw("azure result doesn't have column", "column", constants.UsageDate)
+		return nil, fmt.Errorf("azure result doesn't have column: %v", constants.UsageDate)
 	}
 
 	for _, r := range *result.Rows {
@@ -364,7 +366,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 
 		usageDate, ok := r[usageDateColumn].(float64)
 		if !ok {
-			a.logger.Error("azure is not returning usageDateColumn")
+			a.logger.Error("azure is not returning usageDateColumn in float64")
 			return nil, errors.New(failedCostParsing)
 		}
 
