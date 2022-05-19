@@ -66,6 +66,8 @@ service SpawnerService {
   rpc GetKubeConfig(GetKubeConfigRequest) returns (GetKubeConfigResponse) {}
   rpc TagNodeInstance(TagNodeInstanceRequest)
       returns (TagNodeInstanceResponse) {}
+
+  rpc GetCostByTime(GetCostByTimeRequest) returns (GetCostByTimeResponse) {}
 }
 
 message Empty {}
@@ -256,7 +258,7 @@ message CreateVolumeRequest {
   int64 size = 6;
   string snapshotid = 7;
   map<string, string> labels = 8;
-  string snapshotUri= 9;
+  string snapshotUri = 9;
   bool deleteSnapshot = 10;
 }
 
@@ -323,8 +325,8 @@ message RancherRegistrationResponse {
 }
 
 message GetWorkspacesCostRequest {
-  repeated string workspaceIds = 1;
   string provider = 2;
+  repeated string workspaceIds = 1;
   string accountName = 3;
   string startDate = 4;
   string endDate = 5;
@@ -364,7 +366,7 @@ message GithubPersonalAccessToken {
 message WriteCredentialRequest {
   string account = 1;
   string provider = 2 [deprecated = true ];
-  string type = 5; 
+  string type = 5;
   oneof cred {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
@@ -413,4 +415,23 @@ message TagNodeInstanceRequest {
   string clusterName = 4;
   string nodeGroup = 5;
   map<string, string> labels = 6;
+}
+
+message GetCostByTimeRequest {
+
+  string provider = 2;
+  repeated string Ids = 1;
+  string accountName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string granularity = 6;
+  GroupBy groupBy = 8;
+}
+
+message GetCostByTimeResponse {
+  map<string, costMap> groupedCost = 1;
+}
+
+message costMap {
+  map<string, double> cost = 1;
 }

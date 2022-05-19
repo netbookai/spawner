@@ -80,3 +80,7 @@ func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeC
 func (a *AzureController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
 	return &proto.TagNodeInstanceResponse{}, nil
 }
+
+func (a *AzureController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+	return a.getCostByTime(ctx, req)
+}

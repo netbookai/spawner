@@ -185,16 +185,44 @@ func main() {
 	getWorkspacesCost := &proto.GetWorkspacesCostRequest{
 		WorkspaceIds: []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
 		Provider:     "aws",
-		AccountName:  "netbook-aws",
-		StartDate:    "2021-08-01",
-		EndDate:      "2022-03-01",
-		Granularity:  "MONTHLY",
+		AccountName:  "netbook-aws-dev",
+		StartDate:    "2022-04-01",
+		EndDate:      "2022-05-01",
+		Granularity:  "DAILY",
 		CostType:     "BlendedCost",
 		GroupBy: &proto.GroupBy{
 			Type: "TAG",
 			Key:  "workspaceid",
 		},
 	}
+
+	//AWS cost request
+	getCostByTime := &proto.GetCostByTimeRequest{
+		Ids:         []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
+		Provider:    "aws",
+		AccountName: "netbook-aws-dev",
+		StartDate:   "2022-04-01",
+		EndDate:     "2022-05-01",
+		Granularity: "DAILY",
+		GroupBy: &proto.GroupBy{
+			Type: "TAG",
+			Key:  "workspaceid",
+		},
+	}
+
+	//Azure Cost Req
+	// getCostByTime := &proto.GetCostByTimeRequest{
+	// 	Ids:         []string{"24522d72-9b86-48c4-b66a-521a2f202413", "testid", "5d4eb7d8-9289-4740-a7f8-a9bfbdf06a16", "b5fbc7b6-e502-4093-81aa-d3efdce80afc"},
+	// 	Provider:    "azure",
+	// 	AccountName: "netbook-azure-dev",
+	// 	StartDate:   "2022-04-01",
+	// 	EndDate:     "2022-05-17",
+	// 	Granularity: "DAILY",
+	// 	GroupBy: &proto.GroupBy{
+	// 		Type: "TAG",
+	// 		Key:  "workspaceid",
+	// 	},
+	// }
 
 	switch *method {
 	case "Echo":
@@ -330,7 +358,7 @@ func main() {
 	case "GetWorkspacesCost":
 		v, err := client.GetWorkspacesCost(context.Background(), getWorkspacesCost)
 		if err != nil && err.Error() != "" {
-			sugar.Errorw("error registering cluster with rancher", "error", err)
+			sugar.Errorw("error getting workspaces cost", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
@@ -433,6 +461,14 @@ func main() {
 			sugar.Errorw("error adding tags to node", "error", err)
 		}
 		sugar.Infow("TagNodeInstane", "response", v)
+
+	case "GetCostByTime":
+		v, err := client.GetCostByTime(context.Background(), getCostByTime)
+		if err != nil && err.Error() != "" {
+			sugar.Errorw("error getting cost by time", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetWorkspaceCost method", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
