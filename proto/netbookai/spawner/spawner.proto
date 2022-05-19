@@ -325,8 +325,8 @@ message RancherRegistrationResponse {
 }
 
 message GetWorkspacesCostRequest {
-  repeated string workspaceIds = 1;
   string provider = 2;
+  repeated string workspaceIds = 1;
   string accountName = 3;
   string startDate = 4;
   string endDate = 5;
@@ -366,7 +366,7 @@ message GithubPersonalAccessToken {
 message WriteCredentialRequest {
   string account = 1;
   string provider = 2 [deprecated = true ];
-  string type = 5; 
+  string type = 5;
   oneof cred {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
@@ -418,8 +418,9 @@ message TagNodeInstanceRequest {
 }
 
 message GetCostByTimeRequest {
-  repeated string Ids = 1;
+
   string provider = 2;
+  repeated string Ids = 1;
   string accountName = 3;
   string startDate = 4;
   string endDate = 5;
