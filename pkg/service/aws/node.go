@@ -130,38 +130,22 @@ func (a *AWSController) buildNodegroupInput(ctx context.Context, session *Sessio
 		gpuEnabled = true
 	}
 	amiType := ""
-	amiId := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if gpuEnabled {
 		a.logger.Infow("requested gpu node", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
 		amiType = "AL2_x86_64_GPU"
 	} else {
 		amiType = "AL2_x86_64"
-		amiId = "ami-09dd25549dd970de5"
 	}
 	a.logger.Debugw("building node group input", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
 
-	templateId := ""
-	if capacityType == eks.CapacityTypesSpot {
-		templateId, err = a.createSpotLaunchTemplate(ctx, session.getEC2Client(), amiId, "0.001", *instanceTypes[0], "gp2", diskSize, nodeSpec.Labels)
-		if err != nil {
-			return nil, err
-		}
-	}
-	amiType = amiType
-	fmt.Println(diskSize)
 	return &eks.CreateNodegroupInput{
-		LaunchTemplate: &eks.LaunchTemplateSpecification{
-			Id: &templateId,
-			//Name:    clusterName,
-			//Version: default --new(string),
-		},
-		//	AmiType:       &amiType,
-		CapacityType: &capacityType,
-		NodeRole:     nodeRoleArn,
-		//	InstanceTypes: instanceTypes,
-		ClusterName: clusterName,
-		//		DiskSize:      &diskSize,
+		AmiType:       &amiType,
+		CapacityType:  &capacityType,
+		NodeRole:      nodeRoleArn,
+		InstanceTypes: instanceTypes,
+		ClusterName:   clusterName,
+		DiskSize:      &diskSize,
 		NodegroupName: &nodeSpec.Name,
 		Labels:        labels,
 		Subnets:       subnetIds,

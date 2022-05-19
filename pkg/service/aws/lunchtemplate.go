@@ -12,6 +12,8 @@ import (
 )
 
 func (a *AWSController) createSpotLaunchTemplate(ctx context.Context, client *ec2.EC2, amiId, price, instance, volumeType string, diskSize int64, label map[string]string) (string, error) {
+
+	//amiId = "ami-09dd25549dd970de5"
 	//fetch launch template ]
 	//	marketTyp := "spot"
 	//	spotType := "one-time" // "persistent" -- cant have persistent for autoscaling instacnes
@@ -33,7 +35,7 @@ func (a *AWSController) createSpotLaunchTemplate(ctx context.Context, client *ec
 		//	},
 		InstanceType: &instance,
 		BlockDeviceMappings: []*ec2.LaunchTemplateBlockDeviceMappingRequest{
-			&ec2.LaunchTemplateBlockDeviceMappingRequest{
+			{
 				DeviceName: aws.String("/dev/xvda"),
 				Ebs: &ec2.LaunchTemplateEbsBlockDeviceRequest{
 					DeleteOnTermination: aws.Bool(true),
