@@ -6,7 +6,7 @@
 # spawner
 
 
-Mulit-Cloud infrastructure orchestrator for kubernetes first development. One tool to rule them all. No need to use aws, azure or any other vendor specific cli to manage cluster and get kubeconfig.
+Multi-Cloud infrastructure orchestrator for Kubernetes first development. One tool to rule them all.To administer the cluster and retrieve kubeconfig, no need to utilise aws, azure, or any other vendor-specific cli.
 
 
 ![Go](https://img.shields.io/badge/Language-Go-Blue)[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5978/badge)](https://bestpractices.coreinfrastructure.org/projects/5978)
@@ -22,7 +22,7 @@ Mulit-Cloud infrastructure orchestrator for kubernetes first development. One to
 - Multi cloud infrastructure orchestrator for kubernetes.
 - Manage cluster kubeconfig for different provider.
 - Provision nodes with on demand or spot instances.
-- Access control built right into spawner, it will not access your existing clusters if it wasnt created by spawner unless your resources tagged as per  spawner policy.
+- Access control built right into spawner, it will not access your existing clusters if it wasn't created by spawner unless your resources tagged as per spawner policy.
 
 ---
 ### Prerequisites
