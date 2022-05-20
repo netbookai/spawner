@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
@@ -19,6 +18,10 @@ func merge(maps ...map[string]*string) map[string]*string {
 		}
 	}
 	return m
+}
+
+func TagKey(k string) string {
+	return fmt.Sprintf("%s/%s", LabelNamespace, k)
 }
 
 func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
@@ -34,10 +37,10 @@ func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	}
 
 	labels := map[string]*string{
-		constants.NodeNameLabel:          &nodeSpec.Name,
-		constants.InstanceLabel:          &instance,
-		constants.NodeLabelSelectorLabel: &nodeSpec.Name,
-		"type":                           aws.String("nodegroup")}
+		TagKey(NodeNameLabel):          &nodeSpec.Name,
+		TagKey(InstanceLabel):          &instance,
+		TagKey(NodeLabelSelectorLabel): &nodeSpec.Name,
+		TagKey("type"):                 aws.String("nodegroup")}
 
 	return merge(DefaultTags(), labels, aws.StringMap(nodeSpec.Labels))
 }
@@ -50,7 +53,7 @@ func ScopeTag() string {
 func DefaultTags() map[string]*string {
 	scope := ScopeTag()
 	return map[string]*string{
-		constants.Scope:        &scope,
-		constants.CreatorLabel: &constants.SpawnerServiceLabel,
+		TagKey(Scope):        &scope,
+		TagKey(CreatorLabel): aws.String(SpawnerServiceLabel),
 	}
 }

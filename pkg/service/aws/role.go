@@ -6,7 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 )
 
@@ -22,6 +21,11 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 		return role.Role, false, nil
 
 	}
+
+	key := func(k string) *string {
+		return aws.String(labels.TagKey(k))
+	}
+
 	//role not found, create it
 	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == iam.ErrCodeNoSuchEntityException {
 		svc.logger.Warn(ctx, "failed to get role, creating new role", "role", roleName)
@@ -33,15 +37,15 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 			Description:              &description,
 			Tags: []*iam.Tag{
 				{
-					Key:   aws.String(constants.CreatorLabel),
-					Value: aws.String(constants.SpawnerServiceLabel),
+					Key:   key(labels.CreatorLabel),
+					Value: aws.String(labels.SpawnerServiceLabel),
 				},
 				{
-					Key:   aws.String(constants.NameLabel),
+					Key:   key(labels.NameLabel),
 					Value: &roleName,
 				},
 				{
-					Key:   aws.String(constants.Scope),
+					Key:   key(labels.Scope),
 					Value: aws.String( /*(internal)aws.*/ labels.ScopeTag()),
 				},
 			},

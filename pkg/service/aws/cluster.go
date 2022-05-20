@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/pkg/errors"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,7 +57,7 @@ func (svc AWSController) createClusterInternal(ctx context.Context, session *Ses
 	}
 
 	tags := labels.DefaultTags()
-	tags[constants.ClusterNameLabel] = &clusterName
+	tags[labels.TagKey(labels.ClusterNameLabel)] = &clusterName
 	//override with additional labels from request
 	for k, v := range req.Labels {
 		v := v
@@ -207,17 +206,17 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 			continue
 
 		}
-		creator, ok := clusterSpec.Tags[constants.CreatorLabel]
+		creator, ok := clusterSpec.Tags[labels.TagKey(labels.CreatorLabel)]
 		if !ok {
 			//unknown creator
 			continue
 		}
 
-		if *clusterSpec.Status != "ACTIVE" || *creator != constants.SpawnerServiceLabel {
+		if *clusterSpec.Status != "ACTIVE" || *creator != labels.SpawnerServiceLabel {
 			continue
 		}
 
-		scope, ok := clusterSpec.Tags[constants.Scope]
+		scope, ok := clusterSpec.Tags[labels.TagKey(labels.Scope)]
 		if !ok {
 			continue
 		}
@@ -302,7 +301,7 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 
 	var nodeSpecList []*proto.NodeSpec
 	for _, node := range nodeList.Items {
-		nodeGroupName := node.Labels[constants.NodeNameLabel]
+		nodeGroupName := node.Labels[labels.TagKey(labels.NodeNameLabel)]
 		addresses := node.Status.Addresses
 		ipAddr := ""
 		hostName := node.Name
@@ -400,7 +399,7 @@ func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 		return nil, errors.Wrap(err, "DeleteCluster: ")
 	}
 
-	if scope, ok := cluster.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
+	if scope, ok := cluster.Tags[labels.TagKey(labels.Scope)]; !ok || *scope != labels.ScopeTag() {
 		return nil, fmt.Errorf("cluster doesnt not available in '%s'", labels.ScopeTag())
 	}
 
