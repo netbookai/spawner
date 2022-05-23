@@ -212,7 +212,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 			continue
 		}
 
-		if *clusterSpec.Status != "ACTIVE" || *creator != labels.SpawnerServiceLabel {
+		if *clusterSpec.Status != "ACTIVE" || *creator != labels.SpawnerLabel {
 			continue
 		}
 

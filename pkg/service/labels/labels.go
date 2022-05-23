@@ -54,6 +54,6 @@ func DefaultTags() map[string]*string {
 	scope := ScopeTag()
 	return map[string]*string{
 		TagKey(Scope):        &scope,
-		TagKey(CreatorLabel): aws.String(SpawnerServiceLabel),
+		TagKey(CreatorLabel): aws.String(SpawnerLabel),
 	}
 }

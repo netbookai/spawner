@@ -64,11 +64,11 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 			},
 			{
 				Name:   tagName(labels.CreatorLabel),
-				Values: tagValue(labels.SpawnerServiceLabel),
+				Values: tagValue(labels.SpawnerLabel),
 			},
 			{
 				Name:   tagName(labels.ProvisionerLabel),
-				Values: tagValue(labels.SpawnerServiceLabel),
+				Values: tagValue(labels.SpawnerLabel),
 			},
 			{
 				Name:   tagName(labels.NBTypeTagkey),
@@ -314,11 +314,11 @@ func CreateVPC(client *ec2.EC2, name string, vpcCidr string) (*ec2.Vpc, error) {
 					},
 					{
 						Key:   key(labels.CreatorLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.ProvisionerLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.NBTypeTagkey),
@@ -356,11 +356,11 @@ func CreateInternetGateway(client *ec2.EC2, name string) (*ec2.InternetGateway, 
 					},
 					{
 						Key:   key(labels.CreatorLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.ProvisionerLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.Scope),
@@ -404,11 +404,11 @@ func CreateRouteTable(client *ec2.EC2, vpc *ec2.Vpc, name string) (*ec2.RouteTab
 					},
 					{
 						Key:   key(labels.CreatorLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.ProvisionerLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.Scope),
@@ -460,11 +460,11 @@ func CreateSubnet(client *ec2.EC2, vpc *ec2.Vpc, vpcName string, name string, ci
 					},
 					{
 						Key:   key(labels.CreatorLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.ProvisionerLabel),
-						Value: aws.String(labels.SpawnerServiceLabel),
+						Value: aws.String(labels.SpawnerLabel),
 					},
 					{
 						Key:   key(labels.Scope),

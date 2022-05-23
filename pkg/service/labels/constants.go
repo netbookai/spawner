@@ -3,9 +3,9 @@ package labels
 const (
 	NameLabel = "Name" //Capital N for Aws
 
-	CreatorLabel        = "creator"
-	SpawnerServiceLabel = "spawner-service"
-	Scope               = "scope"
+	CreatorLabel = "creator"
+	SpawnerLabel = "spawner"
+	Scope        = "scope"
 
 	ProvisionerLabel         = "provisioner"
 	ClusterNameLabel         = "cluster-name"

@@ -38,7 +38,7 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 			Tags: []*iam.Tag{
 				{
 					Key:   key(labels.CreatorLabel),
-					Value: aws.String(labels.SpawnerServiceLabel),
+					Value: aws.String(labels.SpawnerLabel),
 				},
 				{
 					Key:   key(labels.NameLabel),

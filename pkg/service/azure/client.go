@@ -19,7 +19,7 @@ func getAKSClient(c *system.AzureCredential) (*containerservice.ManagedClustersC
 		return nil, err
 	}
 	aksClient.Authorizer = auth
-	aksClient.AddToUserAgent(labels.SpawnerServiceLabel)
+	aksClient.AddToUserAgent(labels.SpawnerLabel)
 	aksClient.PollingDuration = time.Hour * 1
 	aksClient.RetryAttempts = 1
 	return &aksClient, nil
@@ -34,7 +34,7 @@ func getCostManagementClient(c *system.AzureCredential) (*costmanagement.QueryCl
 	}
 	costmgmtClient.Authorizer = auth
 	costmgmtClient.RetryAttempts = 1
-	costmgmtClient.AddToUserAgent(labels.SpawnerServiceLabel)
+	costmgmtClient.AddToUserAgent(labels.SpawnerLabel)
 
 	return &costmgmtClient, nil
 }
@@ -47,7 +47,7 @@ func getAgentPoolClient(c *system.AzureCredential) (*containerservice.AgentPools
 		return nil, err
 	}
 	agentClient.Authorizer = auth
-	agentClient.AddToUserAgent(labels.SpawnerServiceLabel)
+	agentClient.AddToUserAgent(labels.SpawnerLabel)
 	agentClient.PollingDuration = time.Hour * 1
 	return &agentClient, nil
 }
@@ -60,7 +60,7 @@ func getDisksClient(c *system.AzureCredential) (*compute.DisksClient, error) {
 		return nil, err
 	}
 	dc.Authorizer = a
-	dc.AddToUserAgent(labels.SpawnerServiceLabel)
+	dc.AddToUserAgent(labels.SpawnerLabel)
 	return &dc, nil
 }
 
@@ -72,6 +72,6 @@ func getSnapshotClient(c *system.AzureCredential) (*compute.SnapshotsClient, err
 		return nil, err
 	}
 	sc.Authorizer = a
-	sc.AddToUserAgent(labels.SpawnerServiceLabel)
+	sc.AddToUserAgent(labels.SpawnerLabel)
 	return &sc, nil
 }
