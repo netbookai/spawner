@@ -73,6 +73,10 @@ func (a *AzureController) GetWorkspacesCost(ctx context.Context, req *proto.GetW
 	return a.getWorkspacesCost(ctx, req)
 }
 
+func (a *AzureController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+	return a.getApplicationsCost(ctx, req)
+}
+
 func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
 	return a.getKubeConfig(ctx, req)
 }

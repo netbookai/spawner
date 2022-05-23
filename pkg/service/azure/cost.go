@@ -197,6 +197,170 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 	return costResponse, nil
 }
 
+func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+
+	cred, err := getCredentials(ctx, req.AccountName)
+	if err != nil {
+		return nil, err
+	}
+
+	costClient, err := getCostManagementClient(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	grouping, err := getGrouping(req.GroupBy)
+
+	if err != nil {
+		a.logger.Errorw("invalid groupby requested", "groupby", req.GroupBy)
+		return nil, errors.Wrap(err, "invalid groupby")
+	}
+
+	startDate, err := date.ParseTime("2006-01-02", req.StartDate)
+	if err != nil {
+		a.logger.Errorw("failed to parse start date", "err", err, "req", req)
+		return nil, errors.Wrapf(err, "failed to parse start date: %s", req.StartDate)
+	}
+	endDate, err := date.ParseTime("2006-01-02", req.EndDate)
+	if err != nil {
+		a.logger.Errorw("failed to parse end date", "req", req)
+		return nil, errors.Wrapf(err, "invalid end date: %s", req.EndDate)
+	}
+
+	scope := "subscriptions/" + cred.SubscriptionID
+
+	result, err := costClient.Usage(ctx, scope, costmanagement.QueryDefinition{
+		Type:      costmanagement.ExportTypeActualCost,
+		Timeframe: costmanagement.TimeframeTypeCustom,
+		TimePeriod: &costmanagement.QueryTimePeriod{
+			From: &date.Time{startDate},
+			To:   &date.Time{endDate},
+		},
+		Dataset: &costmanagement.QueryDataset{
+			Granularity: costmanagement.GranularityType("None"),
+			Grouping:    grouping,
+			Filter: &costmanagement.QueryFilter{
+				Tags: &costmanagement.QueryComparisonExpression{
+					Name:     to.StringPtr(constants.WorkspaceId),
+					Operator: to.StringPtr("In"),
+					Values:   &req.ApplicationIds,
+				},
+			},
+			Aggregation: map[string]*costmanagement.QueryAggregation{
+				"totalCostUSD": {
+					Name:     to.StringPtr("CostUSD"),
+					Function: costmanagement.FunctionTypeSum,
+				},
+			},
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Response.StatusCode != 200 {
+		return nil, fmt.Errorf("azure returned %v status code", result.Response.StatusCode)
+	}
+
+	if result.Rows == nil || len(*result.Rows) == 0 {
+		a.logger.Infow("didn't find cost for the request", "req", req)
+		return &proto.GetApplicationsCostResponse{}, nil
+	}
+
+	var totalCost float64
+
+	groupedCost := make(map[string]float64)
+
+	costUSDColumn := -1
+	groupColumn := -1
+
+	if req.GroupBy.Type == "TAG" {
+
+		tagValueColumn := -1
+
+		for i, c := range *result.Columns {
+			if *c.Name == constants.CostUSD {
+				costUSDColumn = i
+			} else if *c.Name == constants.TagValue {
+				tagValueColumn = i
+			}
+		}
+
+		if costUSDColumn == -1 {
+			a.logger.Errorw("azure result doesn't have column", "column", constants.CostUSD)
+			return nil, fmt.Errorf("azure result doesn't have column: %v", constants.CostUSD)
+		}
+
+		if tagValueColumn == -1 {
+			a.logger.Errorw("azure result doesn't have column", "column", constants.TagValue)
+			return nil, fmt.Errorf("azure result doesn't have column: %v", constants.TagValue)
+		}
+
+		groupColumn = tagValueColumn
+
+	} else if req.GroupBy.Key == "SERVICE" {
+
+		serviceNameColumn := -1
+
+		for i, c := range *result.Columns {
+			if *c.Name == constants.CostUSD {
+				costUSDColumn = i
+			} else if *c.Name == constants.ServiceName {
+				serviceNameColumn = i
+			}
+		}
+
+		if costUSDColumn == -1 {
+			a.logger.Errorw("azure result doesn't have column", "column", constants.CostUSD)
+			return nil, fmt.Errorf("azure result doesn't have column: %v", constants.CostUSD)
+		}
+
+		if serviceNameColumn == -1 {
+			a.logger.Errorw("azure result doesn't have column", "column", constants.ServiceName)
+			return nil, fmt.Errorf("azure result doesn't have column: %v", constants.ServiceName)
+		}
+
+		groupColumn = serviceNameColumn
+	}
+
+	if groupColumn == -1 {
+		a.logger.Errorw("grouping only available for tag and service, couldn't initilize grouping column", "groupBy", req.GroupBy)
+		return nil, errors.New("GroupBy only possible for tag and service")
+	}
+
+	for _, r := range *result.Rows {
+
+		cost, ok := r[costUSDColumn].(float64)
+
+		if !ok {
+			a.logger.Errorw("azure is not returning cost in float")
+			return nil, errors.New("failed to parse cost")
+		}
+		cost = common.RoundTo(cost, 4)
+
+		totalCost += cost
+
+		service, ok := r[groupColumn].(string)
+		if !ok {
+			a.logger.Error("azure is not returning serviceName in string")
+			return nil, errors.New("failed to parse cost")
+		}
+
+		groupedCost[service] += cost
+
+	}
+
+	totalCost = common.RoundTo(totalCost, 4)
+
+	costResponse := &proto.GetApplicationsCostResponse{
+		TotalCost:   totalCost,
+		GroupedCost: groupedCost,
+	}
+
+	return costResponse, nil
+}
+
 // getGrouping retruns cost grouping based on azure
 func getGrouping(groupBy *proto.GroupBy) (*[]costmanagement.QueryGrouping, error) {
 

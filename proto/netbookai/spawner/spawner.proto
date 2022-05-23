@@ -56,7 +56,12 @@ service SpawnerService {
       returns (RancherRegistrationResponse) {}
 
   rpc GetWorkspacesCost(GetWorkspacesCostRequest)
-      returns (GetWorkspacesCostResponse) {}
+      returns (GetWorkspacesCostResponse) {
+        option deprecated = true ; 
+      }
+  
+  rpc GetApplicationsCost(GetApplicationsCostRequest)
+  returns (GetApplicationsCostResponse) {}
 
   rpc WriteCredential(WriteCredentialRequest)
       returns (WriteCredentialResponse) {}
@@ -325,8 +330,20 @@ message RancherRegistrationResponse {
 }
 
 message GetWorkspacesCostRequest {
+  option deprecated = true;
   string provider = 2;
   repeated string workspaceIds = 1;
+  string accountName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string granularity = 6;
+  string costType = 7;
+  GroupBy groupBy = 8;
+}
+
+message GetApplicationsCostRequest {
+  repeated string applicationIds = 1;
+  string provider = 2;
   string accountName = 3;
   string startDate = 4;
   string endDate = 5;
@@ -341,6 +358,11 @@ message GroupBy {
 }
 
 message GetWorkspacesCostResponse {
+  double totalCost = 1;
+  map<string, double> groupedCost = 2;
+}
+
+message GetApplicationsCostResponse {
   double totalCost = 1;
   map<string, double> groupedCost = 2;
 }
