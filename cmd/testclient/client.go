@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	clusterName = "cluster-node-with-machinenode"
+	clusterName = "cluster-chaper-node-test"
 	region      = "us-east-2" //"eastus2" //"us-west-2"
 	provider    = "aws"
 	accountName = "netbook-aws"
-	nodeName    = "rootnode"
-	instance    = "Standard_A2_v2"
+	nodeName    = "spotinstance-200"
+	instance    = "" //"Standard_A2_v2"
 	volumeName  = "vol-20-20220404123522"
 )
 
@@ -114,7 +114,7 @@ func main() {
 		Name:          nodeName,
 		Instance:      instance,
 		MigProfile:    proto.MIGProfile_MIG3g,
-		CapacityType:  proto.CapacityType_ONDEMAND,
+		CapacityType:  proto.CapacityType_SPOT,
 		MachineType:   "m",
 		SpotInstances: []string{"t2.small", "t3.small"},
 		DiskSize:      20,
