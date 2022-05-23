@@ -57,11 +57,11 @@ service SpawnerService {
 
   rpc GetWorkspacesCost(GetWorkspacesCostRequest)
       returns (GetWorkspacesCostResponse) {
-        option deprecated = true ; 
-      }
-  
+    option deprecated = true;
+  }
+
   rpc GetApplicationsCost(GetApplicationsCostRequest)
-  returns (GetApplicationsCostResponse) {}
+      returns (GetApplicationsCostResponse) {}
 
   rpc WriteCredential(WriteCredentialRequest)
       returns (WriteCredentialResponse) {}
@@ -382,12 +382,12 @@ message AzureCredentials {
 }
 
 message GithubPersonalAccessToken {
- string token =1;
+  string token = 1;
 }
 
 message WriteCredentialRequest {
   string account = 1;
-  string provider = 2 [deprecated = true ];
+  string provider = 2 [deprecated = true];
   string type = 5;
   oneof cred {
     AwsCredentials awsCred = 3;
@@ -402,7 +402,7 @@ message WriteCredentialResponse {
 
 message ReadCredentialRequest {
   string account = 1;
-  string provider = 2 [deprecated = true] ;
+  string provider = 2 [deprecated = true];
   string type = 3;
 }
 
@@ -440,7 +440,6 @@ message TagNodeInstanceRequest {
 }
 
 message GetCostByTimeRequest {
-
   string provider = 2;
   repeated string Ids = 1;
   string accountName = 3;
