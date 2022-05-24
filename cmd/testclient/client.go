@@ -263,8 +263,7 @@ func main() {
 			sugar.Errorw("error getting token", "error", err)
 			os.Exit(1)
 		}
-		//sugar.Infow("GetToken method", "response", v)
-		fmt.Println(v.Token)
+		sugar.Infow("GetToken method", "response", v)
 	case "AddRoute53Record":
 		v, err := client.AddRoute53Record(context.Background(), addRoute53RecordReq)
 		if err != nil {
