@@ -188,12 +188,6 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	}
 
-	totalCostInFloat, ok := totalCost.Float64()
-	if !ok {
-		a.logger.Errorw("failed to convert totalCost to float64", "costInDecimal", totalCost)
-		return nil, fmt.Errorf("failed to convert cost to float64, costInDecimal: %v", totalCost)
-	}
-
 	groupedCostInt, err := common.ConverDecimalCostMapToIntCostMap(groupedCost)
 
 	if err != nil {
@@ -201,7 +195,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, err
 	}
 
-	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCostInFloat)
+	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCost)
 
 	costResponse := &proto.GetWorkspacesCostResponse{
 		TotalCost:   totalCostIn100thCents,

@@ -2,7 +2,6 @@ package aws
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -139,13 +138,10 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
 
-	totalCostInFloat, ok := totalCost.Float64()
-	if !ok {
-		svc.logger.Errorw("failed to convert totalCost to float64", "costInDecimal", totalCost)
-		return nil, fmt.Errorf("failed to convert cost to float64, costInDecimal: %v", totalCost)
-	}
+	// // skipping bool check if value in decimal and float are exactly same
+	// totalCostInFloat, _ := totalCost.Float64()
 
-	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCostInFloat)
+	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCost)
 
 	costMapInt, err := common.ConverDecimalCostMapToIntCostMap(costMap)
 	if err != nil {
