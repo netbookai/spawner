@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 
 	// Note: "github.com/Azure/azure-sdk-for-go/services/costmanagement/mgmt/2019-11-01/costmanagement"
 	// using 2019-11-1 version for cost management as latest version had issues
@@ -104,9 +105,9 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return &proto.GetWorkspacesCostResponse{}, nil
 	}
 
-	var totalCost float64
+	var totalCost decimal.Decimal
 
-	groupedCost := make(map[string]float64)
+	groupedCost := make(map[string]decimal.Decimal)
 
 	costUSDColumn := -1
 	groupColumn := -1
@@ -173,9 +174,9 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 			a.logger.Errorw("azure is not returning cost in float")
 			return nil, errors.New(failedCostParsing)
 		}
-		cost = common.RoundTo(cost, 4)
+		costDecimal := decimal.NewFromFloatWithExponent(cost, -4)
 
-		totalCost += cost
+		totalCost = totalCost.Add(costDecimal)
 
 		service, ok := r[groupColumn].(string)
 		if !ok {
@@ -183,15 +184,28 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 			return nil, errors.New(failedCostParsing)
 		}
 
-		groupedCost[service] += cost
+		groupedCost[service] = groupedCost[service].Add(costDecimal)
 
 	}
 
-	totalCost = common.RoundTo(totalCost, 4)
+	totalCostInFloat, ok := totalCost.Float64()
+	if !ok {
+		a.logger.Errorw("failed to convert totalCost to float64", "costInDecimal", totalCost)
+		return nil, fmt.Errorf("failed to convert cost to float64, costInDecimal: %v", totalCost)
+	}
+
+	groupedCostInt, err := common.ConverDecimalCostMapToIntCostMap(groupedCost)
+
+	if err != nil {
+		a.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		return nil, err
+	}
+
+	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCostInFloat)
 
 	costResponse := &proto.GetWorkspacesCostResponse{
-		TotalCost:   totalCost,
-		GroupedCost: groupedCost,
+		TotalCost:   totalCostIn100thCents,
+		GroupedCost: groupedCostInt,
 	}
 
 	return costResponse, nil
@@ -307,9 +321,9 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		return &proto.GetCostByTimeResponse{}, nil
 	}
 
-	var totalCost float64
+	var totalCost decimal.Decimal
 
-	groupedCost := make(map[string]map[string]float64)
+	groupedCost := make(map[string]map[string]decimal.Decimal)
 
 	costUSDColumn := -1
 	usageDateColumn := -1
@@ -350,9 +364,10 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 			a.logger.Errorw("azure is not returning cost in float")
 			return nil, errors.New(failedCostParsing)
 		}
-		cost = common.RoundTo(cost, 4)
 
-		totalCost += cost
+		costDecimal := decimal.NewFromFloatWithExponent(cost, -4)
+
+		totalCost = totalCost.Add(costDecimal)
 
 		service, ok := r[tagValueColumn].(string)
 		if !ok {
@@ -361,7 +376,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		}
 
 		if groupedCost[service] == nil {
-			groupedCost[service] = make(map[string]float64)
+			groupedCost[service] = make(map[string]decimal.Decimal)
 		}
 
 		usageDate, ok := r[usageDateColumn].(float64)
@@ -372,13 +387,20 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 
 		usageDateString := strconv.FormatFloat(usageDate, 'f', -1, 64)
 
-		groupedCost[service][usageDateString] += cost
+		groupedCost[service][usageDateString] = groupedCost[service][usageDateString].Add(costDecimal)
 
+	}
+
+	groupedCostInt, err := common.ConverDecimalCostMapOfMapToIntCostMapOfMap(groupedCost)
+
+	if err != nil {
+		a.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		return nil, err
 	}
 
 	resMap := make(map[string]*proto.CostMap)
 
-	for k, v := range groupedCost {
+	for k, v := range groupedCostInt {
 
 		resMap[k] = &proto.CostMap{
 			Cost: v,
