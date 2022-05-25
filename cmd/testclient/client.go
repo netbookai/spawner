@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	clusterName = "cluster-chaper-node-test"
-	region      = "us-east-2" //"eastus2" //"us-west-2"
+	clusterName = "kubeflow"
+	region      = "us-west-2" //"eastus2" //"us-west-2"
 	provider    = "aws"
 	accountName = "netbook-aws"
 	nodeName    = "spotinstance-200"

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 
 	// Note: "github.com/Azure/azure-sdk-for-go/services/costmanagement/mgmt/2019-11-01/costmanagement"
 	// using 2019-11-1 version for cost management as latest version had issues
@@ -28,12 +29,12 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get credentials")
 	}
 
 	costClient, err := getCostManagementClient(cred)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get costManagement client")
 	}
 
 	// getting groupby object based on "TAG" or "DIMENSION"
@@ -92,10 +93,12 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 	})
 
 	if err != nil {
-		return nil, err
+		a.logger.Errorw("failed to get cost from azure", "error", err)
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get cost from azure")
 	}
 
 	if result.Response.StatusCode != 200 {
+		a.logger.Errorw("azure didn't return 200 status", "statusCode", result.Response.StatusCode)
 		return nil, fmt.Errorf("azure returned %v status code", result.Response.StatusCode)
 	}
 
@@ -104,9 +107,9 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return &proto.GetWorkspacesCostResponse{}, nil
 	}
 
-	var totalCost float64
+	var totalCost decimal.Decimal
 
-	groupedCost := make(map[string]float64)
+	groupedCost := make(map[string]decimal.Decimal)
 
 	costUSDColumn := -1
 	groupColumn := -1
@@ -173,9 +176,9 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 			a.logger.Errorw("azure is not returning cost in float")
 			return nil, errors.New(failedCostParsing)
 		}
-		cost = common.RoundTo(cost, 4)
+		costDecimal := decimal.NewFromFloatWithExponent(cost, -4)
 
-		totalCost += cost
+		totalCost = totalCost.Add(costDecimal)
 
 		service, ok := r[groupColumn].(string)
 		if !ok {
@@ -183,15 +186,22 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 			return nil, errors.New(failedCostParsing)
 		}
 
-		groupedCost[service] += cost
+		groupedCost[service] = groupedCost[service].Add(costDecimal)
 
 	}
 
-	totalCost = common.RoundTo(totalCost, 4)
+	groupedCostInt, err := common.ConverDecimalCostMapToIntCostMap(groupedCost)
+
+	if err != nil {
+		a.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		return nil, err
+	}
+
+	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCost)
 
 	costResponse := &proto.GetWorkspacesCostResponse{
-		TotalCost:   totalCost,
-		GroupedCost: groupedCost,
+		TotalCost:   totalCostIn100thCents,
+		GroupedCost: groupedCostInt,
 	}
 
 	return costResponse, nil
@@ -201,30 +211,39 @@ func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.Get
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get credentials")
 	}
 
 	costClient, err := getCostManagementClient(cred)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get costManagement client")
 	}
 
+	// getting groupby object based on "TAG" or "DIMENSION"
 	grouping, err := getGrouping(req.GroupBy)
 
 	if err != nil {
-		a.logger.Errorw("invalid groupby requested", "groupby", req.GroupBy)
-		return nil, errors.Wrap(err, "invalid groupby")
+		a.logger.Errorw(invalidGrouByErr, "groupby", req.GroupBy)
+		return nil, errors.Wrap(err, invalidGrouByErr)
 	}
 
-	startDate, err := date.ParseTime("2006-01-02", req.StartDate)
+	startDate, err := date.ParseTime(dateFormatForYYYYMMDD, req.StartDate)
 	if err != nil {
 		a.logger.Errorw("failed to parse start date", "err", err, "req", req)
 		return nil, errors.Wrapf(err, "failed to parse start date: %s", req.StartDate)
 	}
-	endDate, err := date.ParseTime("2006-01-02", req.EndDate)
+	endDate, err := date.ParseTime(dateFormatForYYYYMMDD, req.EndDate)
 	if err != nil {
 		a.logger.Errorw("failed to parse end date", "req", req)
 		return nil, errors.Wrapf(err, "invalid end date: %s", req.EndDate)
+	}
+
+	groupFilter := ""
+
+	if req.GroupBy.Type == "TAG" {
+		groupFilter = req.GroupBy.Key
+	} else {
+		groupFilter = constants.WorkspaceId
 	}
 
 	scope := "subscriptions/" + cred.SubscriptionID
@@ -241,7 +260,7 @@ func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.Get
 			Grouping:    grouping,
 			Filter: &costmanagement.QueryFilter{
 				Tags: &costmanagement.QueryComparisonExpression{
-					Name:     to.StringPtr(constants.WorkspaceId),
+					Name:     to.StringPtr(groupFilter),
 					Operator: to.StringPtr("In"),
 					Values:   &req.ApplicationIds,
 				},
@@ -256,10 +275,12 @@ func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.Get
 	})
 
 	if err != nil {
-		return nil, err
+		a.logger.Errorw("failed to get cost from azure", "error", err)
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get cost from azure")
 	}
 
 	if result.Response.StatusCode != 200 {
+		a.logger.Errorw("azure didn't return 200 status", "statusCode", result.Response.StatusCode)
 		return nil, fmt.Errorf("azure returned %v status code", result.Response.StatusCode)
 	}
 
@@ -268,9 +289,9 @@ func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.Get
 		return &proto.GetApplicationsCostResponse{}, nil
 	}
 
-	var totalCost float64
+	var totalCost decimal.Decimal
 
-	groupedCost := make(map[string]float64)
+	groupedCost := make(map[string]decimal.Decimal)
 
 	costUSDColumn := -1
 	groupColumn := -1
@@ -335,27 +356,34 @@ func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.Get
 
 		if !ok {
 			a.logger.Errorw("azure is not returning cost in float")
-			return nil, errors.New("failed to parse cost")
+			return nil, errors.New(failedCostParsing)
 		}
-		cost = common.RoundTo(cost, 4)
+		costDecimal := decimal.NewFromFloatWithExponent(cost, -4)
 
-		totalCost += cost
+		totalCost = totalCost.Add(costDecimal)
 
 		service, ok := r[groupColumn].(string)
 		if !ok {
 			a.logger.Error("azure is not returning serviceName in string")
-			return nil, errors.New("failed to parse cost")
+			return nil, errors.New(failedCostParsing)
 		}
 
-		groupedCost[service] += cost
+		groupedCost[service] = groupedCost[service].Add(costDecimal)
 
 	}
 
-	totalCost = common.RoundTo(totalCost, 4)
+	groupedCostInt, err := common.ConverDecimalCostMapToIntCostMap(groupedCost)
+
+	if err != nil {
+		a.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		return nil, err
+	}
+
+	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCost)
 
 	costResponse := &proto.GetApplicationsCostResponse{
-		TotalCost:   totalCost,
-		GroupedCost: groupedCost,
+		TotalCost:   totalCostIn100thCents,
+		GroupedCost: groupedCostInt,
 	}
 
 	return costResponse, nil
@@ -471,9 +499,9 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		return &proto.GetCostByTimeResponse{}, nil
 	}
 
-	var totalCost float64
+	var totalCost decimal.Decimal
 
-	groupedCost := make(map[string]map[string]float64)
+	groupedCost := make(map[string]map[string]decimal.Decimal)
 
 	costUSDColumn := -1
 	usageDateColumn := -1
@@ -514,9 +542,10 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 			a.logger.Errorw("azure is not returning cost in float")
 			return nil, errors.New(failedCostParsing)
 		}
-		cost = common.RoundTo(cost, 4)
 
-		totalCost += cost
+		costDecimal := decimal.NewFromFloatWithExponent(cost, -4)
+
+		totalCost = totalCost.Add(costDecimal)
 
 		service, ok := r[tagValueColumn].(string)
 		if !ok {
@@ -525,7 +554,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 		}
 
 		if groupedCost[service] == nil {
-			groupedCost[service] = make(map[string]float64)
+			groupedCost[service] = make(map[string]decimal.Decimal)
 		}
 
 		usageDate, ok := r[usageDateColumn].(float64)
@@ -536,13 +565,20 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 
 		usageDateString := strconv.FormatFloat(usageDate, 'f', -1, 64)
 
-		groupedCost[service][usageDateString] += cost
+		groupedCost[service][usageDateString] = groupedCost[service][usageDateString].Add(costDecimal)
 
+	}
+
+	groupedCostInt, err := common.ConverDecimalCostMapOfMapToIntCostMapOfMap(groupedCost)
+
+	if err != nil {
+		a.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		return nil, errors.Wrap(err, "getCostByTime: failed to convert cost from decimal to int")
 	}
 
 	resMap := make(map[string]*proto.CostMap)
 
-	for k, v := range groupedCost {
+	for k, v := range groupedCostInt {
 
 		resMap[k] = &proto.CostMap{
 			Cost: v,
