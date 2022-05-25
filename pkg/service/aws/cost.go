@@ -209,9 +209,9 @@ func getCostAndUsageRequest(account_id *string, req *proto.GetApplicationsCostRe
 	return input
 }
 
-func getTotalCost(costMap map[string]decimal.Decimal, result *costexplorer.GetCostAndUsageOutput, costType string) (decimal.Decimal, error) {
+func getCostMap(result *costexplorer.GetCostAndUsageOutput, costType string) (map[string]decimal.Decimal, error) {
 
-	var totalCost decimal.Decimal
+	costMap := make(map[string]decimal.Decimal)
 
 	for _, resultByTime := range result.ResultsByTime {
 
@@ -236,17 +236,16 @@ func getTotalCost(costMap map[string]decimal.Decimal, result *costexplorer.GetCo
 
 			decimalCost, err := decimal.NewFromString(*groupMetric.Amount)
 			if err != nil {
-				return decimal.Zero, errors.Wrap(err, "GetWorkspacesCost: failed to convert amount to decimal")
+				return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert amount to decimal")
 			}
 
 			costMap[groupKey] = costMap[groupKey].Add(decimalCost)
-			totalCost = totalCost.Add(decimalCost)
 
 		}
 
 	}
 
-	return totalCost, nil
+	return costMap, nil
 }
 func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
 
@@ -271,6 +270,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 	svc.logger.Debugw("fetched accountId", "id", account_id)
 
 	input := getCostAndUsageRequest(account_id, req)
+
 	client := session.getCostExplorerClient()
 
 	result, err := client.GetCostAndUsage(&input)
@@ -280,15 +280,17 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 		return nil, err
 	}
 
-	costMap := make(map[string]decimal.Decimal)
-
 	var totalCost decimal.Decimal
 
-	totalCost, err = getTotalCost(costMap, result, req.GetCostType())
+	costMap, err := getCostMap(result, req.GetCostType())
 
 	if err != nil {
-		svc.logger.Errorw("failed to format cost and usage output", "error", err)
+		svc.logger.Errorw("failed to get costmap", "error", err)
 		return nil, err
+	}
+
+	for _, val := range costMap {
+		totalCost = totalCost.Add(val)
 	}
 
 	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)

@@ -440,13 +440,13 @@ message TagNodeInstanceRequest {
 }
 
 message GetCostByTimeRequest {
-  string provider = 2;
-  repeated string Ids = 1;
+  string provider = 1;
+  repeated string Ids = 2;
   string accountName = 3;
   string startDate = 4;
   string endDate = 5;
   string granularity = 6;
-  GroupBy groupBy = 8;
+  GroupBy groupBy = 7;
 }
 
 message GetCostByTimeResponse {

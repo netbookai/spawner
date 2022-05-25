@@ -199,10 +199,10 @@ func main() {
 	getApplicationsCost := &proto.GetApplicationsCostRequest{
 		ApplicationIds: []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
 		Provider:       "aws",
-		AccountName:    "netbook-aws",
-		StartDate:      "2021-08-01",
-		EndDate:        "2022-03-01",
-		Granularity:    "MONTHLY",
+		AccountName:    "netbook-aws-dev",
+		StartDate:      "2022-04-01",
+		EndDate:        "2022-05-01",
+		Granularity:    "DAILY",
 		CostType:       "BlendedCost",
 		GroupBy: &proto.GroupBy{
 			Type: "TAG",
