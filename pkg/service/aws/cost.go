@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -30,9 +31,9 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, err
 	}
 
-	accound_id := callerIdentity.Account
+	account_id := callerIdentity.Account
 
-	svc.logger.Debugw("fetched accountId", "id", accound_id)
+	svc.logger.Debugw("fetched accountId", "id", account_id)
 
 	groupFilter := ""
 
@@ -48,7 +49,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 			{
 				Dimensions: &costexplorer.DimensionValues{
 					Key:    aws.String("LINKED_ACCOUNT"),
-					Values: aws.StringSlice([]string{*accound_id}),
+					Values: aws.StringSlice([]string{*account_id}),
 				},
 			},
 			{
@@ -145,27 +146,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	return costResponse, nil
 }
 
-func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
-
-	session, err := NewSession(ctx, "", req.GetAccountName())
-
-	if err != nil {
-		svc.logger.Errorw("can't start AWS session", "error", err)
-		return nil, err
-	}
-
-	stsClient := session.getSTSClient()
-
-	callerIdentity, err := stsClient.GetCallerIdentity(nil)
-
-	if err != nil {
-		svc.logger.Errorw("failed to get identity", "error", err)
-		return nil, err
-	}
-
-	accound_id := callerIdentity.Account
-
-	svc.logger.Debugw("fetched accountId", "id", accound_id)
+func formatCostAndUsageInput(account_id *string, req *proto.GetApplicationsCostRequest) costexplorer.GetCostAndUsageInput {
 
 	filter := &costexplorer.Expression{
 		And: []*costexplorer.Expression{
@@ -173,7 +154,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 			{
 				Dimensions: &costexplorer.DimensionValues{
 					Key:    aws.String("LINKED_ACCOUNT"),
-					Values: aws.StringSlice([]string{*accound_id}),
+					Values: aws.StringSlice([]string{*account_id}),
 				},
 			},
 			{
@@ -213,16 +194,10 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 		Filter:  filter,
 	}
 
-	client := session.getCostExplorerClient()
+	return input
+}
 
-	result, err := client.GetCostAndUsage(&input)
-
-	if err != nil {
-		svc.logger.Errorw("failed to get cost ", "error", err)
-		return nil, err
-	}
-
-	costMap := make(map[string]float64)
+func formatCostAndUsageOutput(costMap map[string]float64, result *costexplorer.GetCostAndUsageOutput, costType string) (float64, error) {
 
 	var totalCost float64
 
@@ -240,7 +215,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 
 			}
 
-			groupMetric, ok := group.Metrics[req.GetCostType()]
+			groupMetric, ok := group.Metrics[costType]
 			if !ok {
 				groupMetric = &costexplorer.MetricValue{
 					Amount: aws.String("0"),
@@ -250,8 +225,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 
 			floatCost, err := strconv.ParseFloat(*groupMetric.Amount, 64)
 			if err != nil {
-				svc.logger.Errorw("error converting amount from str to float", "error", err)
-				return nil, err
+				return 0, errors.New("error converting amount from str to float, error: " + err.Error())
 			}
 			floatCost = common.RoundTo(floatCost, 4)
 			costMap[groupKey] += floatCost
@@ -259,6 +233,49 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 
 		}
 
+	}
+
+	return totalCost, nil
+}
+func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+
+	session, err := NewSession(ctx, "", req.GetAccountName())
+
+	if err != nil {
+		svc.logger.Errorw("can't start AWS session", "error", err)
+		return nil, err
+	}
+
+	stsClient := session.getSTSClient()
+
+	callerIdentity, err := stsClient.GetCallerIdentity(nil)
+
+	if err != nil {
+		svc.logger.Errorw("failed to get identity", "error", err)
+		return nil, err
+	}
+
+	account_id := callerIdentity.Account
+
+	svc.logger.Debugw("fetched accountId", "id", account_id)
+
+	input := formatCostAndUsageInput(account_id, req)
+	client := session.getCostExplorerClient()
+
+	result, err := client.GetCostAndUsage(&input)
+
+	if err != nil {
+		svc.logger.Errorw("failed to get cost ", "error", err)
+		return nil, err
+	}
+
+	costMap := make(map[string]float64)
+
+	totalCost, err := formatCostAndUsageOutput(costMap, result, req.GetCostType())
+
+	if err != nil {
+		svc.logger.Errorw("failed to format cost and usage output", "error", err)
+		return nil, err
 	}
 
 	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
@@ -289,9 +306,9 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 		return nil, err
 	}
 
-	accound_id := callerIdentity.Account
+	account_id := callerIdentity.Account
 
-	svc.logger.Debugw("fetched accountId", "id", accound_id)
+	svc.logger.Debugw("fetched accountId", "id", account_id)
 
 	filter := &costexplorer.Expression{
 		And: []*costexplorer.Expression{
@@ -299,7 +316,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 			{
 				Dimensions: &costexplorer.DimensionValues{
 					Key:    aws.String("LINKED_ACCOUNT"),
-					Values: aws.StringSlice([]string{*accound_id}),
+					Values: aws.StringSlice([]string{*account_id}),
 				},
 			},
 			{
