@@ -2,14 +2,16 @@ package aws
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/costexplorer"
+	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
+
+	"github.com/shopspring/decimal"
 )
 
 func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
@@ -18,7 +20,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	if err != nil {
 		svc.logger.Errorw("can't start AWS session", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get aws session")
 	}
 
 	stsClient := session.getSTSClient()
@@ -27,7 +29,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	if err != nil {
 		svc.logger.Errorw("failed to get identity", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get callerIdentity")
 	}
 
 	accound_id := callerIdentity.Account
@@ -93,13 +95,13 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	result, err := client.GetCostAndUsage(&input)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get cost ", "error", err)
-		return nil, err
+		svc.logger.Errorw("failed to get cost from aws", "error", err)
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get from aws")
 	}
 
-	costMap := make(map[string]float64)
+	costMap := make(map[string]decimal.Decimal)
 
-	var totalCost float64
+	var totalCost decimal.Decimal
 
 	for _, resultByTime := range result.ResultsByTime {
 
@@ -122,14 +124,14 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 				}
 			}
 
-			floatCost, err := strconv.ParseFloat(*groupMetric.Amount, 64)
+			decimalCost, err := decimal.NewFromString(*groupMetric.Amount)
 			if err != nil {
-				svc.logger.Errorw("error converting amount from str to float", "error", err)
-				return nil, err
+				svc.logger.Errorw("error converting amount from str to decimal", "error", err)
+				return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert amount to decimal")
 			}
-			floatCost = common.RoundTo(floatCost, 4)
-			costMap[groupKey] += floatCost
-			totalCost += floatCost
+
+			costMap[groupKey] = costMap[groupKey].Add(decimalCost)
+			totalCost = totalCost.Add(decimalCost)
 
 		}
 
@@ -137,9 +139,20 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
 
+	// // skipping bool check if value in decimal and float are exactly same
+	// totalCostInFloat, _ := totalCost.Float64()
+
+	totalCostIn100thCents := common.Get100thOfCentsInIntegerForDollar(totalCost)
+
+	costMapInt, err := common.ConverDecimalCostMapToIntCostMap(costMap)
+	if err != nil {
+		svc.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert cost to integer")
+	}
+
 	costResponse := &proto.GetWorkspacesCostResponse{
-		TotalCost:   totalCost,
-		GroupedCost: costMap,
+		TotalCost:   totalCostIn100thCents,
+		GroupedCost: costMapInt,
 	}
 
 	return costResponse, nil
@@ -151,7 +164,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 
 	if err != nil {
 		svc.logger.Errorw("can't start AWS session", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws session")
 	}
 
 	stsClient := session.getSTSClient()
@@ -160,7 +173,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 
 	if err != nil {
 		svc.logger.Errorw("failed to get identity", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws callerIdentity ")
 	}
 
 	accound_id := callerIdentity.Account
@@ -218,13 +231,13 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 	result, err := client.GetCostAndUsage(&input)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get cost ", "error", err)
-		return nil, err
+		svc.logger.Errorw("failed to get cost from aws ", "error", err)
+		return nil, errors.Wrap(err, "GetCostByTime:  failed to get cost from aws")
 	}
 
-	costMap := make(map[string]map[string]float64)
+	costMap := make(map[string]map[string]decimal.Decimal)
 
-	var totalCost float64
+	var totalCost decimal.Decimal
 
 	for _, resultByTime := range result.ResultsByTime {
 
@@ -248,31 +261,36 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 				}
 			}
 
-			floatCost, err := strconv.ParseFloat(*groupMetric.Amount, 64)
+			costInDecimal, err := decimal.NewFromString(*groupMetric.Amount)
 			if err != nil {
-				svc.logger.Errorw("error converting amount from str to float", "error", err)
+				svc.logger.Errorw("error converting amount from str to decimal", "error", err)
 				return nil, err
 			}
-			floatCost = common.RoundTo(floatCost, 4)
 
 			if costMap[groupKey] == nil {
-				costMap[groupKey] = make(map[string]float64)
+				costMap[groupKey] = make(map[string]decimal.Decimal)
 			}
 
 			date := strings.ReplaceAll(*resultByTime.TimePeriod.Start, "-", "")
 
-			costMap[groupKey][date] += floatCost
-			totalCost += floatCost
+			costMap[groupKey][date] = costMap[groupKey][date].Add(costInDecimal)
+			totalCost = totalCost.Add(costInDecimal)
 
 		}
 
 	}
 
-	svc.logger.Infow("service-wise cost calculated", "costMap", costMap)
+	svc.logger.Infow("cost calculated", "costMap", costMap)
+
+	costMapInt, err := common.ConverDecimalCostMapOfMapToIntCostMapOfMap(costMap)
+	if err != nil {
+		svc.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		return nil, errors.Wrap(err, "GetCostByTime: failed to convert cost to integer ")
+	}
 
 	resMap := make(map[string]*proto.CostMap)
 
-	for k, v := range costMap {
+	for k, v := range costMapInt {
 
 		resMap[k] = &proto.CostMap{
 			Cost: v,

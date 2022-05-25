@@ -341,8 +341,8 @@ message GroupBy {
 }
 
 message GetWorkspacesCostResponse {
-  double totalCost = 1;
-  map<string, double> groupedCost = 2;
+  int64 totalCost = 1;
+  map<string, int64> groupedCost = 2;
 }
 
 message AwsCredentials {
@@ -433,5 +433,5 @@ message GetCostByTimeResponse {
 }
 
 message costMap {
-  map<string, double> cost = 1;
+  map<string, int64> cost = 1;
 }
