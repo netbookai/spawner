@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/costexplorer"
+	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
@@ -19,7 +20,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	if err != nil {
 		svc.logger.Errorw("can't start AWS session", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get aws session")
 	}
 
 	stsClient := session.getSTSClient()
@@ -28,7 +29,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	if err != nil {
 		svc.logger.Errorw("failed to get identity", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get callerIdentity")
 	}
 
 	accound_id := callerIdentity.Account
@@ -94,8 +95,8 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	result, err := client.GetCostAndUsage(&input)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get cost ", "error", err)
-		return nil, err
+		svc.logger.Errorw("failed to get cost from aws", "error", err)
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get from aws")
 	}
 
 	costMap := make(map[string]decimal.Decimal)
@@ -125,8 +126,8 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 			decimalCost, err := decimal.NewFromString(*groupMetric.Amount)
 			if err != nil {
-				svc.logger.Errorw("error converting amount from str to float", "error", err)
-				return nil, err
+				svc.logger.Errorw("error converting amount from str to decimal", "error", err)
+				return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert amount to decimal")
 			}
 
 			costMap[groupKey] = costMap[groupKey].Add(decimalCost)
@@ -146,7 +147,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	costMapInt, err := common.ConverDecimalCostMapToIntCostMap(costMap)
 	if err != nil {
 		svc.logger.Errorw("failed to convert cost from decimal to int", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert cost to integer")
 	}
 
 	costResponse := &proto.GetWorkspacesCostResponse{
@@ -163,7 +164,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 
 	if err != nil {
 		svc.logger.Errorw("can't start AWS session", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws session")
 	}
 
 	stsClient := session.getSTSClient()
@@ -172,7 +173,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 
 	if err != nil {
 		svc.logger.Errorw("failed to get identity", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws callerIdentity ")
 	}
 
 	accound_id := callerIdentity.Account
@@ -230,8 +231,8 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 	result, err := client.GetCostAndUsage(&input)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get cost ", "error", err)
-		return nil, err
+		svc.logger.Errorw("failed to get cost from aws ", "error", err)
+		return nil, errors.Wrap(err, "GetCostByTime:  failed to get cost from aws")
 	}
 
 	costMap := make(map[string]map[string]decimal.Decimal)
@@ -279,12 +280,12 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 
 	}
 
-	svc.logger.Infow("service-wise cost calculated", "costMap", costMap)
+	svc.logger.Infow("cost calculated", "costMap", costMap)
 
 	costMapInt, err := common.ConverDecimalCostMapOfMapToIntCostMapOfMap(costMap)
 	if err != nil {
 		svc.logger.Errorw("failed to convert cost from decimal to int", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetCostByTime: failed to convert cost to integer ")
 	}
 
 	resMap := make(map[string]*proto.CostMap)

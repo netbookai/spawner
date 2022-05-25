@@ -29,12 +29,12 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get credentials")
 	}
 
 	costClient, err := getCostManagementClient(cred)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get costManagement client")
 	}
 
 	// getting groupby object based on "TAG" or "DIMENSION"
@@ -93,10 +93,12 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 	})
 
 	if err != nil {
-		return nil, err
+		a.logger.Errorw("failed to get cost from azure", "error", err)
+		return nil, errors.Wrap(err, "getWorkspacesCost: failed to get cost from azure")
 	}
 
 	if result.Response.StatusCode != 200 {
+		a.logger.Errorw("azure didn't return 200 status", "statusCode", result.Response.StatusCode)
 		return nil, fmt.Errorf("azure returned %v status code", result.Response.StatusCode)
 	}
 
@@ -389,7 +391,7 @@ func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostBy
 
 	if err != nil {
 		a.logger.Errorw("failed to convert cost from decimal to int", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "getCostByTime: failed to convert cost from decimal to int")
 	}
 
 	resMap := make(map[string]*proto.CostMap)
