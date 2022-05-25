@@ -146,7 +146,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	return costResponse, nil
 }
 
-func formatCostAndUsageInput(account_id *string, req *proto.GetApplicationsCostRequest) costexplorer.GetCostAndUsageInput {
+func getCostAndUsageRequest(account_id *string, req *proto.GetApplicationsCostRequest) costexplorer.GetCostAndUsageInput {
 
 	filter := &costexplorer.Expression{
 		And: []*costexplorer.Expression{
@@ -197,7 +197,7 @@ func formatCostAndUsageInput(account_id *string, req *proto.GetApplicationsCostR
 	return input
 }
 
-func formatCostAndUsageOutput(costMap map[string]float64, result *costexplorer.GetCostAndUsageOutput, costType string) (float64, error) {
+func getTotalCost(costMap map[string]float64, result *costexplorer.GetCostAndUsageOutput, costType string) (float64, error) {
 
 	var totalCost float64
 
@@ -259,7 +259,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 
 	svc.logger.Debugw("fetched accountId", "id", account_id)
 
-	input := formatCostAndUsageInput(account_id, req)
+	input := getCostAndUsageRequest(account_id, req)
 	client := session.getCostExplorerClient()
 
 	result, err := client.GetCostAndUsage(&input)
@@ -271,7 +271,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 
 	costMap := make(map[string]float64)
 
-	totalCost, err := formatCostAndUsageOutput(costMap, result, req.GetCostType())
+	totalCost, err := getTotalCost(costMap, result, req.GetCostType())
 
 	if err != nil {
 		svc.logger.Errorw("failed to format cost and usage output", "error", err)
