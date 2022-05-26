@@ -111,6 +111,11 @@ func (g *gateway) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspace
 	return g.service.GetWorkspacesCost(ctx, req)
 }
 
+//GetApplicationsCost
+func (g *gateway) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+	return g.service.GetApplicationsCost(ctx, req)
+}
+
 //WriteCredential save user account credential
 func (g *gateway) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
 	return g.service.WriteCredential(ctx, req)

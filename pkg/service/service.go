@@ -34,6 +34,7 @@ type SpawnerService interface {
 	CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error)
 	GetWorkspacesCost(context.Context, *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error)
+	GetApplicationsCost(context.Context, *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error)
 	GetKubeConfig(ctx context.Context, in *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error)
 	TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error)
 
@@ -201,6 +202,15 @@ func (s *spawnerService) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, err
 	}
 	return provider.GetWorkspacesCost(ctx, req)
+}
+
+//GetApplicationsCost returns workspace cost grouped by given group
+func (s *spawnerService) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.GetApplicationsCost(ctx, req)
 }
 
 //RegisterWithRancher register cluster on the rancher, returns the kube manifest to apply on the cluster

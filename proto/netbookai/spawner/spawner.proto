@@ -56,7 +56,12 @@ service SpawnerService {
       returns (RancherRegistrationResponse) {}
 
   rpc GetWorkspacesCost(GetWorkspacesCostRequest)
-      returns (GetWorkspacesCostResponse) {}
+      returns (GetWorkspacesCostResponse) {
+    option deprecated = true;
+  }
+
+  rpc GetApplicationsCost(GetApplicationsCostRequest)
+      returns (GetApplicationsCostResponse) {}
 
   rpc WriteCredential(WriteCredentialRequest)
       returns (WriteCredentialResponse) {}
@@ -325,8 +330,20 @@ message RancherRegistrationResponse {
 }
 
 message GetWorkspacesCostRequest {
+  option deprecated = true;
   string provider = 2;
   repeated string workspaceIds = 1;
+  string accountName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string granularity = 6;
+  string costType = 7;
+  GroupBy groupBy = 8;
+}
+
+message GetApplicationsCostRequest {
+  repeated string applicationIds = 1;
+  string provider = 2;
   string accountName = 3;
   string startDate = 4;
   string endDate = 5;
@@ -341,6 +358,11 @@ message GroupBy {
 }
 
 message GetWorkspacesCostResponse {
+  int64 totalCost = 1;
+  map<string, int64> groupedCost = 2;
+}
+
+message GetApplicationsCostResponse {
   int64 totalCost = 1;
   map<string, int64> groupedCost = 2;
 }
@@ -360,12 +382,12 @@ message AzureCredentials {
 }
 
 message GithubPersonalAccessToken {
- string token =1;
+  string token = 1;
 }
 
 message WriteCredentialRequest {
   string account = 1;
-  string provider = 2 [deprecated = true ];
+  string provider = 2 [deprecated = true];
   string type = 5;
   oneof cred {
     AwsCredentials awsCred = 3;
@@ -380,7 +402,7 @@ message WriteCredentialResponse {
 
 message ReadCredentialRequest {
   string account = 1;
-  string provider = 2 [deprecated = true] ;
+  string provider = 2 [deprecated = true];
   string type = 3;
 }
 
@@ -418,14 +440,13 @@ message TagNodeInstanceRequest {
 }
 
 message GetCostByTimeRequest {
-
-  string provider = 2;
-  repeated string Ids = 1;
+  string provider = 1;
+  repeated string Ids = 2;
   string accountName = 3;
   string startDate = 4;
   string endDate = 5;
   string granularity = 6;
-  GroupBy groupBy = 8;
+  GroupBy groupBy = 7;
 }
 
 message GetCostByTimeResponse {
