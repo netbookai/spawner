@@ -125,7 +125,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 			decimalCost, err := decimal.NewFromString(*groupMetric.Amount)
 			if err != nil {
-				svc.logger.Error(ctx, "error converting amount from str to float", "error", err)
+				svc.logger.Error(ctx, "error converting amount from str to deciaml", "error", err)
 				return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert amount to decimal")
 			}
 
