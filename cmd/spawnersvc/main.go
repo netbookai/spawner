@@ -38,7 +38,7 @@ func startHttpServer(ctx context.Context, g *group.Group, config config.Config, 
 	router.Handle("/metrics", promhttp.Handler())
 
 	g.Add(func() error {
-		logger.Error(ctx, "startHttpServer", "transport", "debug/HTTP", "address", address)
+		logger.Info(ctx, "startHttpServer", "transport", "debug/HTTP", "address", address)
 		return http.Serve(listener, router)
 	}, func(err error) {
 		logger.Error(ctx, "http-listener", "error", err)
