@@ -3,15 +3,15 @@ package azure
 import (
 	"context"
 
+	"github.com/netbookai/log"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
-	"go.uber.org/zap"
 )
 
 type AzureController struct {
-	logger *zap.SugaredLogger
+	logger log.Logger
 }
 
-func NewController(logger *zap.SugaredLogger) *AzureController {
+func NewController(logger log.Logger) *AzureController {
 	return &AzureController{
 		logger: logger,
 	}

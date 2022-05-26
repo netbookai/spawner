@@ -10,7 +10,7 @@ func (svc *spawnerService) getCredentials(ctx context.Context, region, account, 
 
 	creds, err := system.GetCredentials(ctx, region, account, credType)
 	if err != nil {
-		svc.logger.Errorw("failed to get the credentials", "account", account)
+		svc.logger.Error(ctx, "failed to get the credentials", "account", account)
 		return nil, err
 	}
 	return creds, nil
@@ -20,6 +20,6 @@ func (svc *spawnerService) getCredentials(ctx context.Context, region, account, 
 func (svc *spawnerService) writeCredentials(ctx context.Context, region, account, credType string, cred system.Credentials) error {
 
 	update, err := system.WriteOrUpdateCredential(ctx, region, account, credType, cred)
-	svc.logger.Infow("Secrets written successfully", "update", update)
+	svc.logger.Info(ctx, "Secrets written successfully", "update", update)
 	return err
 }

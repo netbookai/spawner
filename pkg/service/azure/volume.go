@@ -42,14 +42,14 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 	}
 	disksClient, err := getDisksClient(cred)
 	if err != nil {
-		a.logger.Errorw("failed to get the disk client", "error", err)
+		a.logger.Error(ctx, "failed to get the disk client", "error", err)
 		return nil, err
 	}
 	size := int32(req.GetSize())
 	name := diskName(size)
 	tags := labels.DefaultTags()
 
-	a.logger.Infow("creating disk", "name", name, "size", req.Size)
+	a.logger.Info(ctx, "creating disk", "name", name, "size", req.Size)
 
 	//if snapshotId is provided
 
@@ -90,7 +90,7 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 		return nil, errors.Wrap(err, "createDisk: aks call failed")
 	}
 
-	a.logger.Debugw("waiting on the future response")
+	a.logger.Debug(ctx, "waiting on the future response")
 	err = future.WaitForCompletionRef(ctx, disksClient.Client)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get the disk create or update future response")
@@ -113,20 +113,20 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 			ctx, cancel := context.WithTimeout(context.Background(), azureDeleteSnapshotTimeout)
 			defer cancel()
 
-			a.logger.Infow("deleting snapshot", "ID", req.Snapshotid)
+			a.logger.Info(ctx, "deleting snapshot", "ID", req.Snapshotid)
 			sc, err := getSnapshotClient(cred)
 			if err != nil {
-				a.logger.Errorw("failed to get the snapshot client", "error", err)
+				a.logger.Error(ctx, "failed to get the snapshot client", "error", err)
 				return
 			}
 
 			err = a.deleteSnapshot(ctx, sc, cred.ResourceGroup, req.Snapshotid)
 			if err != nil {
 				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
-				a.logger.Errorw("failed to delete the snapshot", "error", err)
+				a.logger.Error(ctx, "failed to delete the snapshot", "error", err)
 				return
 			}
-			a.logger.Infow("snapshot deleted", "ID", req.Snapshotid)
+			a.logger.Info(ctx, "snapshot deleted", "ID", req.Snapshotid)
 		}()
 	}
 	return ret, nil
@@ -145,7 +145,7 @@ func (a *AzureController) deleteDisk(ctx context.Context, dc *compute.DisksClien
 		return errors.Wrap(err, "deleteDisk: aks call failed")
 	}
 
-	a.logger.Debugw("waiting on the delete disk future response")
+	a.logger.Debug(ctx, "waiting on the delete disk future response")
 	err = future.WaitForCompletionRef(ctx, dc.Client)
 	if err != nil {
 		return errors.Wrap(err, "cannot get the disk delete response")
@@ -174,11 +174,11 @@ func (a *AzureController) deleteVolume(ctx context.Context, req *proto.DeleteVol
 	}
 	disksClient, err := getDisksClient(cred)
 	if err != nil {
-		a.logger.Errorw("failed to get the disk client", "error", err)
+		a.logger.Error(ctx, "failed to get the disk client", "error", err)
 		return nil, err
 	}
 
-	a.logger.Infow("deleting disk", "name", name)
+	a.logger.Info(ctx, "deleting disk", "name", name)
 	err = a.deleteDisk(ctx, disksClient, cred.ResourceGroup, name)
 	if err != nil {
 		return nil, err

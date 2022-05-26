@@ -55,7 +55,7 @@ func (ctrl AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, c
 	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
 	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 	if err != nil {
-		ctrl.logger.Errorf("failed to fetch nodegroups: %s", err.Error())
+		ctrl.logger.Error(ctx, "failed to fetch nodegroups: %s", err.Error())
 		return nil, err
 	}
 
@@ -132,12 +132,12 @@ func (a *AWSController) buildNodegroupInput(ctx context.Context, session *Sessio
 	amiType := ""
 	//Choose Amazon Linux 2 (AL2_x86_64) for Linux non-GPU instances, Amazon Linux 2 GPU Enabled (AL2_x86_64_GPU) for Linux GPU instances
 	if gpuEnabled {
-		a.logger.Infow("requested gpu node", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
+		a.logger.Info(ctx, "requested gpu node", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
 		amiType = "AL2_x86_64_GPU"
 	} else {
 		amiType = "AL2_x86_64"
 	}
-	a.logger.Debugw("building node group input", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
+	a.logger.Debug(ctx, "building node group input", "name", nodeSpec.Name, "instance ", instanceTypes, "machine_type", nodeSpec.MachineType)
 
 	return &eks.CreateNodegroupInput{
 		AmiType:       &amiType,
@@ -166,7 +166,7 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 	nodeRole, newRole, err := ctrl.createRoleOrGetExisting(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
 
 	if err != nil {
-		ctrl.logger.Errorf("failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
+		ctrl.logger.Error(ctx, "failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
 		return nil, err
 	}
 
@@ -175,21 +175,21 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 		err = ctrl.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_WORKER_NODE_POLICY_ARN)
 
 		if err != nil {
-			ctrl.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_WORKER_NODE_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			ctrl.logger.Error(ctx, "failed to attach policy to role", "policy", EKS_WORKER_NODE_POLICY_ARN, "node-role", AWS_NODE_GROUP_ROLE_NAME, "error", err)
 			return nil, err
 		}
 
 		err = ctrl.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_EC2_CONTAINER_RO_POLICY_ARN)
 
 		if err != nil {
-			ctrl.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_EC2_CONTAINER_RO_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			ctrl.logger.Error(ctx, "failed to attach policy to role", "policy", EKS_EC2_CONTAINER_RO_POLICY_ARN, "node-role", AWS_NODE_GROUP_ROLE_NAME, "error", err)
 			return nil, err
 		}
 
 		err = ctrl.attachPolicy(ctx, iamClient, *nodeRole.RoleName, EKS_CNI_POLICY_ARN)
 
 		if err != nil {
-			ctrl.logger.Errorf("failed to attach policy '%s' to role '%s' %w", EKS_CNI_POLICY_ARN, AWS_NODE_GROUP_ROLE_NAME, err)
+			ctrl.logger.Error(ctx, "failed to attach policy to role", "policy", EKS_CNI_POLICY_ARN, "node-role", AWS_NODE_GROUP_ROLE_NAME, "error", err)
 			return nil, err
 		}
 	}
@@ -229,11 +229,11 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 
 	if err != nil {
 
-		ctrl.logger.Errorw("unable to get cluster, spec", "error", err.Error(), "cluster", clusterName, "region", region)
+		ctrl.logger.Error(ctx, "unable to get cluster, spec", "error", err, "cluster", clusterName, "region", region)
 		return nil, err
 	}
 
-	ctrl.logger.Infof("querying default nodes on cluster '%s' in region '%s'", clusterName, region)
+	ctrl.logger.Info(ctx, "querying default nodes on cluster '%s' in region '%s'", clusterName, region)
 	defaultNode, err := ctrl.getDefaultNode(ctx, client, clusterName, nodeSpec.Name)
 
 	var newNodeGroupInput *eks.CreateNodegroupInput
@@ -245,14 +245,14 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 
 		if errors.Is(err, ERR_NO_NODEGROUP) {
 			//no node group present,
-			ctrl.logger.Infof("default nodegroup not found in cluster '%s', creating NodegroupRequest from cluster config ", clusterName)
+			ctrl.logger.Info(ctx, "default nodegroup not found in cluster '%s', creating NodegroupRequest from cluster config ", clusterName)
 			newNodeGroupInput, err = ctrl.getNewNodeGroupSpecFromCluster(ctx, session, cluster, nodeSpec)
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		ctrl.logger.Infof("found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
+		ctrl.logger.Info(ctx, "found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
 		newNodeGroupInput, err = ctrl.getNodeSpecFromDefault(ctx, session, defaultNode, clusterName, nodeSpec)
 		if err != nil {
 			return nil, err
@@ -261,10 +261,10 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 
 	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroupInput)
 	if err != nil {
-		ctrl.logger.Errorf("failed to add a node '%s': %w", nodeSpec.Name, err)
+		ctrl.logger.Error(ctx, "failed to add a node '%s': %w", nodeSpec.Name, err)
 		return nil, err
 	}
-	ctrl.logger.Infof("creating nodegroup '%s' on cluster '%s', Status : %s, it might take some time. Please check AWS console.", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
+	ctrl.logger.Info(ctx, "creating nodegroup '%s' on cluster '%s', Status : %s, it might take some time. Please check AWS console.", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
 	return &proto.NodeSpawnResponse{}, err
 }
 
@@ -282,11 +282,11 @@ func (ctrl AWSController) deleteAllNodegroups(ctx context.Context, client *eks.E
 	for _, nodeGroupName := range nodeGroupList.Nodegroups {
 		//drop em
 		if err = ctrl.deleteNode(ctx, client, clusterName, *nodeGroupName); err != nil {
-			ctrl.logger.Errorw("error when deleting nodegroup", "nodegroup", nodeGroupName)
+			ctrl.logger.Error(ctx, "error when deleting nodegroup", "nodegroup", nodeGroupName)
 			return err
 		}
 	}
-	ctrl.logger.Infow("all attached nodegroups are being deleted", "cluster", clusterName)
+	ctrl.logger.Info(ctx, "all attached nodegroups are being deleted", "cluster", clusterName)
 	return nil
 }
 
@@ -370,7 +370,7 @@ func (ctrl AWSController) deleteNode(ctx context.Context, client *eks.EKS, clust
 		return err
 
 	}
-	ctrl.logger.Infof("requested nodegroup '%s' to be deleted, Status %s. It might take some time, check AWS console for more.", node, *nodeDeleteOut.Nodegroup.Status)
+	ctrl.logger.Info(ctx, "requested nodegroup to be deleted. It might take some time, check AWS console for more.", "nodegroup", node, "status", *nodeDeleteOut.Nodegroup.Status)
 	return nil
 }
 
@@ -392,18 +392,18 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 	})
 
 	if err != nil {
-		ctrl.logger.Errorw("failed to get nodegroup details", "error", err)
+		ctrl.logger.Error(ctx, "failed to get nodegroup details", "error", err)
 		return nil, err
 	}
 
 	if scope, ok := nodeGroup.Nodegroup.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
-		ctrl.logger.Errorw("nodegroup is not available in scope", "scope", labels.ScopeTag())
+		ctrl.logger.Error(ctx, "nodegroup is not available in scope", "scope", labels.ScopeTag())
 		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, labels.ScopeTag())
 	}
 
 	err = ctrl.deleteNode(ctx, client, clusterName, nodeName)
 	if err != nil {
-		ctrl.logger.Errorw("failed to delete nodegroup", "nodename", nodeName)
+		ctrl.logger.Error(ctx, "failed to delete nodegroup", "nodename", nodeName)
 		return &proto.NodeDeleteResponse{Error: err.Error()}, err
 	}
 

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -10,6 +10,8 @@ import (
 	"syscall"
 
 	"github.com/netbook-ai/interceptors"
+	"github.com/netbookai/log"
+	"github.com/netbookai/log/loggers/zap"
 	"github.com/oklog/oklog/pkg/group"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -17,17 +19,16 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/metrics"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
-func startHttpServer(g *group.Group, config config.Config, logger *zap.SugaredLogger) {
+func startHttpServer(ctx context.Context, g *group.Group, config config.Config, logger log.Logger) {
 
 	address := fmt.Sprintf("%s:%d", "", config.DebugPort)
 
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		logger.Errorw("startHttpServer: failed to listen", "error", err)
+		logger.Error(ctx, "startHttpServer: failed to listen", "error", err)
 		os.Exit(1)
 
 	}
@@ -37,23 +38,22 @@ func startHttpServer(g *group.Group, config config.Config, logger *zap.SugaredLo
 	router.Handle("/metrics", promhttp.Handler())
 
 	g.Add(func() error {
-
-		logger.Infow("startHttpServer", "transport", "debug/HTTP", "address", address)
+		logger.Error(ctx, "startHttpServer", "transport", "debug/HTTP", "address", address)
 		return http.Serve(listener, router)
 	}, func(err error) {
-		logger.Errorw("http-listener", "error", err)
+		logger.Error(ctx, "http-listener", "error", err)
 		listener.Close()
 	})
 }
 
-func startGRPCServer(g *group.Group, config config.Config, logger *zap.SugaredLogger) {
+func startGRPCServer(ctx context.Context, g *group.Group, config config.Config, logger log.Logger) {
 
 	address := fmt.Sprintf("%s:%d", "", config.Port)
 	service := service.New(logger)
 	grpcServer := gateway.New(service)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		logger.Errorw("startGRPCServer", "transport", "gRPC", "during", "Listen", "error", err)
+		logger.Error(ctx, "startGRPCServer", "transport", "gRPC", "during", "Listen", "error", err)
 		os.Exit(1)
 	}
 
@@ -62,14 +62,14 @@ func startGRPCServer(g *group.Group, config config.Config, logger *zap.SugaredLo
 		interceptors.WithInterecptor(metrics.RPCInstrumentation()))
 
 	g.Add(func() error {
-		logger.Infow("startGRPCServer", "transport", "gRPC", "address", address)
+		logger.Info(ctx, "startGRPCServer", "transport", "gRPC", "address", address)
 
 		baseServer := grpc.NewServer(interceptors.Get())
 
 		proto.RegisterSpawnerServiceServer(baseServer, grpcServer)
 		return baseServer.Serve(listener)
 	}, func(error) {
-		logger.Errorw("startGRPCServer", "error", err)
+		logger.Error(ctx, "startGRPCServer", "error", err)
 		listener.Close()
 	})
 
@@ -94,32 +94,26 @@ func startSignalHandler(g *group.Group) {
 
 func main() {
 
+	ctx := context.Background()
 	err := config.Load(".")
+	logger := log.NewLogger(zap.NewLogger())
 
 	if err != nil {
-		log.Fatal("failed to load config", err)
+		logger.Error(ctx, "failed to load config", "error", err)
+		return
 	}
-
-	var logger *zap.Logger
 
 	//ENV value can be either prod or dev
 	config := config.Get()
-	if config.Env == "prod" || config.Env == "dev" {
-		logger, _ = zap.NewProduction()
-	} else {
-		logger, _ = zap.NewDevelopment()
-	}
-	var sugar = logger.Sugar()
-	defer sugar.Sync()
 
 	if err != nil {
-		sugar.Errorw("error loading config", "error", err.Error())
+		logger.Error(ctx, "error loading config", "error", err.Error())
 	}
 	var g group.Group
 
-	startHttpServer(&g, config, sugar)
-	startGRPCServer(&g, config, sugar)
+	startHttpServer(ctx, &g, config, logger)
+	startGRPCServer(ctx, &g, config, logger)
 	startSignalHandler(&g)
 
-	sugar.Infow("main", "exit", g.Run())
+	logger.Info(ctx, "main", "exit", g.Run())
 }

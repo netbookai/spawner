@@ -110,7 +110,7 @@ func (a *AWSController) createSpotLaunchTemplate(ctx context.Context, client *ec
 	})
 
 	if err != nil {
-		a.logger.Errorw("failed to get the launch template version", "error", err)
+		a.logger.Error(ctx, "failed to get the launch template version", "error", err)
 	} else {
 		spew.Dump(l.LaunchTemplateVersions)
 	}

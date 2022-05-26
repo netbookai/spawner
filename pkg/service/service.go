@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
+	"github.com/netbookai/log"
 
 	rnchrClient "github.com/rancher/rancher/pkg/client/generated/management/v3"
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/service/aws"
@@ -49,13 +49,13 @@ type SpawnerService interface {
 type spawnerService struct {
 	awsController   Controller
 	azureController Controller
-	logger          *zap.SugaredLogger
+	logger          log.Logger
 
 	proto.UnimplementedSpawnerServiceServer
 }
 
 //New return ClusterController
-func New(logger *zap.SugaredLogger) SpawnerService {
+func New(logger log.Logger) SpawnerService {
 
 	svc := &spawnerService{
 		awsController:   aws.NewAWSController(logger),
@@ -217,13 +217,13 @@ func (s *spawnerService) GetApplicationsCost(ctx context.Context, req *proto.Get
 func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error) {
 
 	clusterName := req.ClusterName
-	s.logger.Info("registering cluster with rancher ", req.ClusterName)
+	s.logger.Info(ctx, "registering cluster with rancher ", req.ClusterName)
 
 	conf := config.Get()
 	client, err := rancher.CreateRancherClient(conf.RancherAddr, conf.RancherUsername, conf.RancherPassword)
 
 	if err != nil {
-		s.logger.Error("failed to get rancher client ", client)
+		s.logger.Error(ctx, "failed to get rancher client ", client)
 
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ran
 	registeredCluster, err := client.Cluster.Create(&regCluster)
 
 	if err != nil {
-		s.logger.Errorf("failed to create a rancher cluster '%s' %s", clusterName, err.Error())
+		s.logger.Error(ctx, "failed to create a rancher cluster", "cluster", clusterName, "error", err.Error())
 		return nil, err
 	}
 
@@ -251,10 +251,10 @@ func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.Ran
 		//TODO: we may want to revert the creation process,
 		//but we will keep it now, so we can manually deal with the registration in case of failure.
 
-		s.logger.Errorf("failed to fetch registration token for '%s' %s", clusterName, err.Error())
+		s.logger.Error(ctx, "failed to fetch registration token ", "cluster", clusterName, "error", err.Error())
 		return nil, err
 	}
-	s.logger.Infof("cluster created on the rancher, apply the manifest file on the target cluster '%s'", registrationToken.ManifestURL)
+	s.logger.Info(ctx, "cluster created on the rancher, apply the manifest file on the target cluster", "manifest-url", registrationToken.ManifestURL)
 
 	return &proto.RancherRegistrationResponse{
 		ClusterName: registeredCluster.Name,
@@ -332,7 +332,7 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 
 	err := s.writeCredentials(ctx, region, account, credType, cred)
 	if err != nil {
-		s.logger.Errorw("failed to save credentials", "error", err, "account", account)
+		s.logger.Error(ctx, "failed to save credentials", "error", err, "account", account)
 		return nil, err
 	}
 	return &proto.WriteCredentialResponse{}, nil
@@ -352,7 +352,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 
 	creds, err := s.getCredentials(ctx, region, account, credType)
 	if err != nil {
-		s.logger.Errorw("failed to get the credentials", "account", account)
+		s.logger.Error(ctx, "failed to get the credentials", "account", account, "error", err)
 		return nil, err
 	}
 	p := &proto.ReadCredentialResponse{
@@ -391,7 +391,7 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 		}
 	}
 
-	s.logger.Debugw("credentials found", "account", account, "credential_type", credType)
+	s.logger.Debug(ctx, "credentials found", "account", account, "credential_type", credType)
 	return p, nil
 }
 
@@ -405,10 +405,10 @@ func (s *spawnerService) AddRoute53Record(ctx context.Context, req *proto.AddRou
 
 	changeId, err := s.addRoute53Record(ctx, dnsName, recordName, regionName, isAwsResource)
 	if err != nil {
-		s.logger.Errorw("failed to add route53 record", "error", err)
+		s.logger.Error(ctx, "failed to add route53 record", "error", err)
 		return nil, err
 	}
-	s.logger.Infow("added route 53 record", "change-id", changeId)
+	s.logger.Info(ctx, "added route 53 record", "change-id", changeId)
 	return &proto.AddRoute53RecordResponse{}, nil
 }
 

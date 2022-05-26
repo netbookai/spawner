@@ -38,7 +38,7 @@ func (a *AzureController) createDiskSnapshot(ctx context.Context, sc *compute.Sn
 		return "", errors.Wrap(err, "createSnapshot: aks call failed")
 	}
 
-	a.logger.Debugw("waiting on the future response")
+	a.logger.Debug(ctx, "waiting on the future response")
 	err = future.WaitForCompletionRef(ctx, sc.Client)
 	if err != nil {
 		return "", errors.Wrap(err, "cannot get the creeate snapshot response")
@@ -86,7 +86,7 @@ func (a *AzureController) createSnapshot(ctx context.Context, req *proto.CreateS
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the disk")
 	}
-	a.logger.Infow("creating disk snapshot", "name", name, "source", req.Volumeid)
+	a.logger.Info(ctx, "creating disk snapshot", "name", name, "source", req.Volumeid)
 
 	sc, err := getSnapshotClient(cred)
 	if err != nil {
@@ -130,7 +130,7 @@ func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *prot
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the disk")
 	}
-	a.logger.Infow("creating disk snapshot", "name", name, "source", req.Volumeid)
+	a.logger.Info(ctx, "creating disk snapshot", "name", name, "source", req.Volumeid)
 
 	sc, err := getSnapshotClient(cred)
 	if err != nil {
@@ -141,7 +141,7 @@ func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *prot
 	if err != nil {
 		return nil, err
 	}
-	a.logger.Infow("snapshot created, deleting source disk", "source", *disk.Name)
+	a.logger.Info(ctx, "snapshot created, deleting source disk", "source", *disk.Name)
 	err = a.deleteDisk(ctx, dc, cred.ResourceGroup, req.Volumeid)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *prot
 func (a *AzureController) deleteSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
 
 	future, err := sc.Delete(ctx, groupName, snapshotId)
-	a.logger.Debugw("waiting on the delete snapshot future response")
+	a.logger.Debug(ctx, "waiting on the delete snapshot future response")
 	err = future.WaitForCompletionRef(ctx, sc.Client)
 	if err != nil {
 		return errors.Wrap(err, "cannot get the snapshot delete response")
