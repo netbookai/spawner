@@ -217,7 +217,7 @@ func (s *spawnerService) GetApplicationsCost(ctx context.Context, req *proto.Get
 func (s *spawnerService) RegisterWithRancher(ctx context.Context, req *proto.RancherRegistrationRequest) (*proto.RancherRegistrationResponse, error) {
 
 	clusterName := req.ClusterName
-	s.logger.Info(ctx, "registering cluster with rancher ", req.ClusterName)
+	s.logger.Info(ctx, "registering cluster with rancher ", "cluster", req.ClusterName)
 
 	conf := config.Get()
 	client, err := rancher.CreateRancherClient(conf.RancherAddr, conf.RancherUsername, conf.RancherPassword)
