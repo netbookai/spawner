@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	container_proto "google.golang.org/genproto/googleapis/container/v1"
+	"google.golang.org/grpc/codes"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/googleapis/gax-go/v2/apierror"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
@@ -110,18 +112,18 @@ func (g *GCPController) createCluster(ctx context.Context, req *proto.ClusterReq
 		Parent:  getParent(cred.ProjectId, req.Region),
 	}
 
-	g.logger.Infow("creating cluster in gcp", "name", req.ClusterName, "region", req.Region)
+	g.logger.Info(ctx, "creating cluster in gcp", "name", req.ClusterName, "region", req.Region)
 	res, err := client.CreateCluster(ctx, cr)
 	if err != nil {
-		g.logger.Errorw("failed to create cluster in gcp", "error", err)
+		g.logger.Error(ctx, "failed to create cluster in gcp", "error", err)
 		return nil, errors.Wrap(err, "createCluster")
 	}
 
 	if res.GetError() != nil {
-		g.logger.Errorw("failed to create cluster in gcp", "error", res.GetError().Message)
+		g.logger.Error(ctx, "failed to create cluster in gcp", "error", res.GetError().Message)
 		return nil, errors.New(res.GetError().GetMessage())
 	}
-	g.logger.Infow("cluster created in gcp")
+	g.logger.Info(ctx, "cluster created in gcp")
 
 	return &proto.ClusterResponse{
 		ClusterName: req.ClusterName,
@@ -150,7 +152,7 @@ func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterReq
 		return nil, errors.Wrap(err, "getCluster:")
 	}
 
-	g.logger.Infow("cluster found")
+	g.logger.Info(ctx, "cluster found")
 	spew.Dump(cluster)
 	return &proto.ClusterSpec{
 		Name:      cluster.GetName(),
@@ -172,7 +174,7 @@ func (g *GCPController) getClusters(ctx context.Context, req *proto.GetClustersR
 	defer client.Close()
 
 	parent := getParent(cred.ProjectId, req.Region)
-	g.logger.Infow("fetching clusters", "parent", parent)
+	g.logger.Info(ctx, "fetching clusters", "parent", parent)
 	resp, err := client.ListClusters(ctx, &container_proto.ListClustersRequest{
 		Parent: parent,
 	})
@@ -199,15 +201,26 @@ func (g *GCPController) clusterStatus(ctx context.Context, req *proto.ClusterSta
 	defer client.Close()
 
 	name := fmt.Sprintf("projects/%s/locations/%s/clusters/%s", cred.ProjectId, req.Region, req.ClusterName)
-	g.logger.Infow("fetching cluster", "name", name)
+	g.logger.Info(ctx, "fetching cluster", "name", name)
 	cluster, err := client.GetCluster(ctx, &container_proto.GetClusterRequest{
 		Name: name,
 	})
 
 	if err != nil {
+
+		if e, ok := err.(*apierror.APIError); ok {
+			st := e.GRPCStatus()
+			g.logger.Error(ctx, "cluster not found", "cluster", req.ClusterName, "code", st.Code(), "reason", st.Details())
+			if st.Code() == codes.NotFound {
+				return nil, errors.New("cluster not found")
+			}
+			return nil, errors.Wrap(st.Err(), "cluster not found")
+		}
+
+		g.logger.Error(ctx, "failed to get cluster", "error", err)
 		return nil, errors.Wrap(err, "clusterStatus:")
 	}
-	g.logger.Infow("cluster status", "status", cluster.Status)
+	g.logger.Info(ctx, "cluster status", "status", cluster.Status)
 	stat := constants.Inactive
 	if cluster.Status == container_proto.Cluster_RUNNING {
 		stat = constants.Active
@@ -230,19 +243,29 @@ func (g *GCPController) deleteCluster(ctx context.Context, req *proto.ClusterDel
 	defer client.Close()
 
 	name := fmt.Sprintf("projects/%s/locations/%s/clusters/%s", cred.ProjectId, req.Region, req.ClusterName)
-	g.logger.Infow("deleting cluster", "name", name)
+	g.logger.Info(ctx, "deleting cluster", "name", name)
 	res, err := client.DeleteCluster(ctx, &container_proto.DeleteClusterRequest{
 		Name: name,
 	})
 
 	if err != nil {
+
+		if e, ok := err.(*apierror.APIError); ok {
+			st := e.GRPCStatus()
+			g.logger.Error(ctx, "cluster not found", "cluster", req.ClusterName, "code", st.Code(), "reason", st.Details())
+
+			if st.Code() == codes.NotFound {
+				return nil, errors.New("cluster not found")
+			}
+			return nil, errors.Wrap(st.Err(), "cluster not found")
+		}
 		return nil, errors.Wrap(err, "deleteCluster:")
 	}
 
 	if res.GetError() != nil {
-		g.logger.Errorw("failed to delete cluster in gcp", "error", res.GetError().Message)
+		g.logger.Error(ctx, "failed to delete cluster in gcp", "error", res.GetError().Message)
 		return nil, errors.New(res.GetError().GetMessage())
 	}
-	g.logger.Infow("cluster deleted in gcp")
+	g.logger.Info(ctx, "cluster deleted in gcp")
 	return &proto.ClusterDeleteResponse{}, nil
 }

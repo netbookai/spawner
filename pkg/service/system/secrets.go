@@ -147,14 +147,10 @@ func GetCredentials(ctx context.Context, region, accountName, credType string) (
 		cred, err = NewAwsCredential(*result.SecretString)
 	case constants.CredAzure:
 		cred, err = NewAzureCredential(*result.SecretString)
-<<<<<<< HEAD
 	case constants.CredGitPat:
 		cred, err = NewGitPAT(*result.SecretString)
-||||||| parent of c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
-=======
 	case constants.GcpLabel:
 		cred, err = NewGcpCredential(*result.SecretString)
->>>>>>> c438c6f (implement get clusters, cluster status, delete cluster, credentials for gcp)
 	}
 
 	if err != nil {

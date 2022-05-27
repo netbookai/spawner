@@ -14,6 +14,11 @@ func getCredentials(ctx context.Context, account string) (*system.GCPCredential,
 
 	if env == "local" {
 		conf := config.Get()
+
+		if conf.GcpProject == "" || conf.GcpCertificate == "" {
+			return nil, errors.New("gcp credentials are empty")
+		}
+
 		return &system.GCPCredential{
 			ProjectId:   conf.GcpProject,
 			Certificate: conf.GcpCertificate,

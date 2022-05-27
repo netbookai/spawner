@@ -3,15 +3,15 @@ package gcp
 import (
 	"context"
 
+	"github.com/netbookai/log"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
-	"go.uber.org/zap"
 )
 
 type GCPController struct {
-	logger *zap.SugaredLogger
+	logger log.Logger
 }
 
-func NewController(logger *zap.SugaredLogger) *GCPController {
+func NewController(logger log.Logger) *GCPController {
 	return &GCPController{
 		logger: logger,
 	}
@@ -65,10 +65,17 @@ func (g *GCPController) GetKubeConfig(ctx context.Context, req *proto.GetKubeCon
 	return g.getKubeConfig(ctx, req)
 }
 
+func (g *GCPController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
+	return &proto.TagNodeInstanceResponse{}, nil
+}
+
 func (g *GCPController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
 	return nil, nil
 }
+func (g *GCPController) GetApplicationsCost(context.Context, *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
 
-func (g *GCPController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
-	return &proto.TagNodeInstanceResponse{}, nil
+	return nil, nil
+}
+func (g *GCPController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+	return nil, nil
 }
