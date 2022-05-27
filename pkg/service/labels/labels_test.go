@@ -35,4 +35,7 @@ func Test_LabelKey(t *testing.T) {
 	got := Scope.Key()
 
 	assert.Equal(t, expected, got, "Scope.Key()")
+	got = NameLabel.Key()
+
+	assert.Equal(t, "Name", got, "Name.Key()")
 }
