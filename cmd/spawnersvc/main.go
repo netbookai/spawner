@@ -22,6 +22,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+var skipMethods = []string{"ReadCredential", "WriteCredential"}
+
 func startHttpServer(ctx context.Context, g *group.Group, config config.Config, logger log.Logger) {
 
 	address := fmt.Sprintf("%s:%d", "", config.DebugPort)
@@ -59,7 +61,8 @@ func startGRPCServer(ctx context.Context, g *group.Group, config config.Config, 
 
 	interceptors := interceptors.NewInterceptor("spawnerservice",
 		logger,
-		interceptors.WithInterecptor(metrics.RPCInstrumentation()))
+		interceptors.WithInterecptor(metrics.RPCInstrumentation()),
+		interceptors.WithSkipMethod(skipMethods))
 
 	g.Add(func() error {
 		logger.Info(ctx, "startGRPCServer", "transport", "gRPC", "address", address)
