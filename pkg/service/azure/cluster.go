@@ -36,7 +36,7 @@ func (a *AzureController) createCluster(ctx context.Context, req *proto.ClusterR
 		return nil, errors.Wrap(err, "creaetAKSCluster: cannot to get AKS client")
 	}
 
-	a.logger.Infow("creating cluster in AKS", "name", clusterName, "resource-group", groupName)
+	a.logger.Info(ctx, "creating cluster in AKS", "name", clusterName, "resource-group", groupName)
 	tags := labels.DefaultTags()
 	for k, v := range req.Labels {
 		v := v
@@ -95,14 +95,14 @@ func (a *AzureController) createCluster(ctx context.Context, req *proto.ClusterR
 		mc,
 	)
 	if err != nil {
-		a.logger.Errorw("failed to create a AKS cluster", "error", err)
+		a.logger.Error(ctx, "failed to create a AKS cluster", "error", err)
 		return nil, fmt.Errorf("cannot create AKS cluster: %v", err)
 	}
 
-	a.logger.Infow("waiting on the future completion")
+	a.logger.Info(ctx, "waiting on the future completion")
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		a.logger.Errorw("failed to get the future response", "error", err)
+		a.logger.Error(ctx, "failed to get the future response", "error", err)
 		return nil, fmt.Errorf("cannot get the AKS cluster create or update future response: %v", err)
 	}
 
@@ -127,11 +127,11 @@ func (a *AzureController) getCluster(ctx context.Context, req *proto.GetClusterR
 		return nil, errors.Wrap(err, "creaetAKSCluster: cannot to get AKS client")
 	}
 
-	a.logger.Infow("fetching cluster information", "cluster", clusterName)
+	a.logger.Info(ctx, "fetching cluster information", "cluster", clusterName)
 	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/get
 	clstr, err := aksClient.Get(ctx, groupName, clusterName)
 	if err != nil {
-		a.logger.Errorw("failed to get cluster ", "error", err)
+		a.logger.Error(ctx, "failed to get cluster ", "error", err)
 		return nil, err
 	}
 
@@ -182,13 +182,13 @@ func (a *AzureController) deleteCluster(ctx context.Context, req *proto.ClusterD
 	future, err := aksClient.Delete(ctx, groupName, clusterName)
 
 	if err != nil {
-		a.logger.Errorw("failed to delete the cluster ", "error", err, "cluster", clusterName)
+		a.logger.Error(ctx, "failed to delete the cluster ", "error", err, "cluster", clusterName)
 		return nil, err
 	}
 
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		a.logger.Errorw("failed to get the future response", "error", err)
+		a.logger.Error(ctx, "failed to get the future response", "error", err)
 		return nil, fmt.Errorf("cannot get the AKS cluster create or update future response: %v", err)
 	}
 
@@ -196,7 +196,7 @@ func (a *AzureController) deleteCluster(ctx context.Context, req *proto.ClusterD
 		return nil, fmt.Errorf("request resource '%s' not found", clusterName)
 	}
 
-	a.logger.Infow("cluster deleted successfully", "cluster", clusterName, "response", future.Status())
+	a.logger.Info(ctx, "cluster deleted successfully", "cluster", clusterName, "response", future.Status())
 
 	return &proto.ClusterDeleteResponse{}, nil
 
@@ -219,7 +219,7 @@ func (a *AzureController) getClusters(ctx context.Context, req *proto.GetCluster
 	result, err := aksClient.List(ctx)
 
 	if err != nil {
-		a.logger.Errorw("failed to list the cluster ", "error", err)
+		a.logger.Error(ctx, "failed to list the cluster ", "error", err)
 		return nil, err
 	}
 
@@ -284,11 +284,11 @@ func (a *AzureController) clusterStatus(ctx context.Context, req *proto.ClusterS
 		return nil, errors.Wrap(err, "creaetAKSCluster: cannot to get AKS client")
 	}
 
-	a.logger.Infow("fetching cluster information", "cluster", clusterName)
+	a.logger.Info(ctx, "fetching cluster information", "cluster", clusterName)
 	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/get
 	clstr, err := aksClient.Get(ctx, groupName, clusterName)
 	if err != nil {
-		a.logger.Errorw("failed to get cluster information", "error", err)
+		a.logger.Error(ctx, "failed to get cluster information", "error", err)
 		return nil, err
 	}
 

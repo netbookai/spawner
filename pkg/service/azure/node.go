@@ -45,21 +45,21 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 		return nil, errors.Wrap(err, "creaetAKSCluster: cannot to get AKS client")
 	}
 
-	a.logger.Infow("fetching cluster information", "cluster", clusterName)
+	a.logger.Info(ctx, "fetching cluster information", "cluster", clusterName)
 	clstr, err := aksClient.Get(ctx, groupName, clusterName)
 	if err != nil {
-		a.logger.Errorw("failed to get cluster ", "error", err)
+		a.logger.Error(ctx, "failed to get cluster ", "error", err)
 		return nil, err
 	}
 
 	apc, err := getAgentPoolClient(cred)
 	if err != nil {
-		a.logger.Errorw("failed to get agent pool client", "error", err)
+		a.logger.Error(ctx, "failed to get agent pool client", "error", err)
 		return nil, err
 	}
 	nodeName := req.NodeSpec.Name
 
-	a.logger.Infow("cluster found, adding new node", "cluster", clusterName, "node", nodeName)
+	a.logger.Info(ctx, "cluster found, adding new node", "cluster", clusterName, "node", nodeName)
 
 	nodeTags := labels.GetNodeLabel(req.NodeSpec)
 
@@ -107,14 +107,14 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 	)
 
 	if err != nil {
-		a.logger.Errorw("failed to add node", "error", err)
+		a.logger.Error(ctx, "failed to add node", "error", err)
 		return nil, errors.Wrapf(err, "failed to add node to the cluster")
 	}
 
-	a.logger.Infow("requested to add new node, waiting on completion")
+	a.logger.Info(ctx, "requested to add new node, waiting on completion")
 	err = future.WaitForCompletionRef(ctx, aksClient.Client)
 	if err != nil {
-		a.logger.Errorw("failed to add node", "error", err)
+		a.logger.Error(ctx, "failed to add node", "error", err)
 		return nil, errors.Wrapf(err, "failed to add node to the cluster")
 	}
 
@@ -132,7 +132,7 @@ func (a *AzureController) deleteNode(ctx context.Context, req *proto.NodeDeleteR
 	groupName := cred.ResourceGroup
 	apc, err := getAgentPoolClient(cred)
 	if err != nil {
-		a.logger.Errorw("failed to get agent pool client", "error", err)
+		a.logger.Error(ctx, "failed to get agent pool client", "error", err)
 		return nil, err
 	}
 
@@ -143,13 +143,13 @@ func (a *AzureController) deleteNode(ctx context.Context, req *proto.NodeDeleteR
 	future, err := apc.Delete(ctx, groupName, cluster, node)
 
 	if err != nil {
-		a.logger.Errorw("failed to delete the node pool", "error", err)
+		a.logger.Error(ctx, "failed to delete the node pool", "error", err)
 		return nil, err
 	}
 	err = future.WaitForCompletionRef(ctx, apc.Client)
 
 	if err != nil {
-		a.logger.Errorw("failed to delete the node pool", "error", err)
+		a.logger.Error(ctx, "failed to delete the node pool", "error", err)
 		return nil, err
 	}
 
@@ -157,6 +157,6 @@ func (a *AzureController) deleteNode(ctx context.Context, req *proto.NodeDeleteR
 		return nil, fmt.Errorf("request resource '%s' not found in cluster '%s'", node, cluster)
 	}
 
-	a.logger.Infow("delete node successfully", "status", future.Response().Status)
+	a.logger.Info(ctx, "delete node successfully", "status", future.Response().Status)
 	return &proto.NodeDeleteResponse{}, nil
 }

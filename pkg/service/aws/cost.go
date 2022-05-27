@@ -19,7 +19,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	session, err := NewSession(ctx, "", req.GetAccountName())
 
 	if err != nil {
-		svc.logger.Errorw("can't start AWS session", "error", err)
+		svc.logger.Error(ctx, "can't start AWS session", "error", err)
 		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get aws session")
 	}
 
@@ -28,13 +28,12 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	callerIdentity, err := stsClient.GetCallerIdentity(nil)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get identity", "error", err)
+		svc.logger.Error(ctx, "failed to get identity", "error", err)
 		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get callerIdentity")
 	}
 
 	account_id := callerIdentity.Account
-
-	svc.logger.Debugw("fetched accountId", "id", account_id)
+	svc.logger.Debug(ctx, "fetched accountId", "id", account_id)
 
 	groupFilter := ""
 
@@ -95,7 +94,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	result, err := client.GetCostAndUsage(&input)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get cost from aws", "error", err)
+		svc.logger.Error(ctx, "failed to get cost ", "error", err)
 		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get from aws")
 	}
 
@@ -126,7 +125,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 			decimalCost, err := decimal.NewFromString(*groupMetric.Amount)
 			if err != nil {
-				svc.logger.Errorw("error converting amount from str to decimal", "error", err)
+				svc.logger.Error(ctx, "error converting amount from str to deciaml", "error", err)
 				return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert amount to decimal")
 			}
 
@@ -137,7 +136,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	}
 
-	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
+	svc.logger.Info(ctx, "service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
 
 	// // skipping bool check if value in decimal and float are exactly same
 	// totalCostInFloat, _ := totalCost.Float64()
@@ -146,7 +145,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 
 	costMapInt, err := common.ConverDecimalCostMapToIntCostMap(costMap)
 	if err != nil {
-		svc.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		svc.logger.Error(ctx, "failed to convert cost from decimal to int", "error", err)
 		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert cost to integer")
 	}
 
@@ -248,11 +247,10 @@ func getCostMap(result *costexplorer.GetCostAndUsageOutput, costType string) (ma
 	return costMap, nil
 }
 func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
-
 	session, err := NewSession(ctx, "", req.GetAccountName())
 
 	if err != nil {
-		svc.logger.Errorw("can't start AWS session", "error", err)
+		svc.logger.Error(ctx, "can't start AWS session", "error", err)
 		return nil, err
 	}
 
@@ -261,13 +259,13 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 	callerIdentity, err := stsClient.GetCallerIdentity(nil)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get identity", "error", err)
+		svc.logger.Error(ctx, "failed to get identity", "error", err)
 		return nil, err
 	}
 
 	account_id := callerIdentity.Account
 
-	svc.logger.Debugw("fetched accountId", "id", account_id)
+	svc.logger.Debug(ctx, "fetched accountId", "id", account_id)
 
 	input := getCostAndUsageRequest(account_id, req)
 
@@ -276,7 +274,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 	result, err := client.GetCostAndUsage(&input)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get cost ", "error", err)
+		svc.logger.Error(ctx, "failed to get cost ", "error", err)
 		return nil, err
 	}
 
@@ -285,7 +283,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 	costMap, err := getCostMap(result, req.GetCostType())
 
 	if err != nil {
-		svc.logger.Errorw("failed to get costmap", "error", err)
+		svc.logger.Error(ctx, "failed to get costmap", "error", err)
 		return nil, err
 	}
 
@@ -293,7 +291,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 		totalCost = totalCost.Add(val)
 	}
 
-	svc.logger.Infow("service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
+	svc.logger.Info(ctx, "service-wise cost calculated", "costMap", costMap, "totalCost", totalCost)
 
 	// // skipping bool check if value in decimal and float are exactly same
 	// totalCostInFloat, _ := totalCost.Float64()
@@ -302,7 +300,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 
 	costMapInt, err := common.ConverDecimalCostMapToIntCostMap(costMap)
 	if err != nil {
-		svc.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		svc.logger.Error(ctx, "failed to convert cost from decimal to int", "error", err)
 		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to convert cost to integer")
 	}
 
@@ -319,7 +317,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 	session, err := NewSession(ctx, "", req.GetAccountName())
 
 	if err != nil {
-		svc.logger.Errorw("can't start AWS session", "error", err)
+		svc.logger.Error(ctx, "can't start AWS session", "error", err)
 		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws session")
 	}
 
@@ -328,13 +326,13 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 	callerIdentity, err := stsClient.GetCallerIdentity(nil)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get identity", "error", err)
+		svc.logger.Error(ctx, "failed to get identity", "error", err)
 		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws callerIdentity ")
 	}
 
 	account_id := callerIdentity.Account
 
-	svc.logger.Debugw("fetched accountId", "id", account_id)
+	svc.logger.Debug(ctx, "fetched accountId", "id", account_id)
 
 	filter := &costexplorer.Expression{
 		And: []*costexplorer.Expression{
@@ -387,7 +385,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 	result, err := client.GetCostAndUsage(&input)
 
 	if err != nil {
-		svc.logger.Errorw("failed to get cost from aws ", "error", err)
+		svc.logger.Error(ctx, "failed to get cost from aws ", "error", err)
 		return nil, errors.Wrap(err, "GetCostByTime:  failed to get cost from aws")
 	}
 
@@ -419,7 +417,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 
 			costInDecimal, err := decimal.NewFromString(*groupMetric.Amount)
 			if err != nil {
-				svc.logger.Errorw("error converting amount from str to decimal", "error", err)
+				svc.logger.Error(ctx, "error converting amount from str to decimal", "error", err)
 				return nil, err
 			}
 
@@ -436,11 +434,11 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 
 	}
 
-	svc.logger.Infow("cost calculated", "costMap", costMap)
+	svc.logger.Info(ctx, "cost calculated", "costMap", costMap)
 
 	costMapInt, err := common.ConverDecimalCostMapOfMapToIntCostMapOfMap(costMap)
 	if err != nil {
-		svc.logger.Errorw("failed to convert cost from decimal to int", "error", err)
+		svc.logger.Error(ctx, "failed to convert cost from decimal to int", "error", err)
 		return nil, errors.Wrap(err, "GetCostByTime: failed to convert cost to integer ")
 	}
 
