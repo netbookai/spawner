@@ -406,6 +406,18 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 		ctrl.logger.Error(ctx, "failed to delete nodegroup", "nodename", nodeName)
 		return &proto.NodeDeleteResponse{Error: err.Error()}, err
 	}
+	//wait for node to be deleted.
+
+	ctrl.logger.Info(ctx, "wait for node to be deleted", "node", nodeName, "cluster", clusterName)
+	err = client.WaitUntilNodegroupDeletedWithContext(ctx, &eks.DescribeNodegroupInput{
+		ClusterName:   &clusterName,
+		NodegroupName: &nodeName,
+	})
+
+	//we will ignore context cancelled error to avoid duplicate
+	if err != nil {
+		return nil, errors.Wrap(err, "DeleteNode: failed to wait until node deletion")
+	}
 
 	return &proto.NodeDeleteResponse{}, nil
 }
