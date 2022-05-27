@@ -1,11 +1,13 @@
 package labels
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Label string
 
 const (
-	SpawnerLabel             = "spawner"
+	Spawner                  = "spawner"
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
 )
 
@@ -33,4 +35,9 @@ func (l Label) Key() string {
 		return string(l)
 	}
 	return fmt.Sprintf("%s/%s", LabelNamespace, string(l))
+}
+
+func (l Label) KeyPtr() *string {
+	k := l.Key()
+	return &k
 }

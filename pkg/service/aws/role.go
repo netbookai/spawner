@@ -22,10 +22,6 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 
 	}
 
-	key := func(k labels.Label) *string {
-		return aws.String(k.Key())
-	}
-
 	//role not found, create it
 	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == iam.ErrCodeNoSuchEntityException {
 		svc.logger.Warn(ctx, "failed to get role, creating new role", "role", roleName)
@@ -37,15 +33,15 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 			Description:              &description,
 			Tags: []*iam.Tag{
 				{
-					Key:   key(labels.CreatorLabel),
-					Value: aws.String(labels.SpawnerLabel),
+					Key:   labels.CreatorLabel.KeyPtr(),
+					Value: aws.String(labels.Spawner),
 				},
 				{
-					Key:   key(labels.NameLabel),
+					Key:   labels.NameLabel.KeyPtr(),
 					Value: &roleName,
 				},
 				{
-					Key:   key(labels.Scope),
+					Key:   labels.Scope.KeyPtr(),
 					Value: aws.String( /*(internal)aws.*/ labels.ScopeTag()),
 				},
 			},
