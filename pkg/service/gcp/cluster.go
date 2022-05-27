@@ -113,6 +113,7 @@ func (g *GCPController) createCluster(ctx context.Context, req *proto.ClusterReq
 	}
 
 	g.logger.Info(ctx, "creating cluster in gcp", "name", req.ClusterName, "region", req.Region)
+	// Doc : https://pkg.go.dev/google.golang.org/genproto/googleapis/container/v1#UnimplementedClusterManagerServer.CreateCluster
 	res, err := client.CreateCluster(ctx, cr)
 	if err != nil {
 		g.logger.Error(ctx, "failed to create cluster in gcp", "error", err)
