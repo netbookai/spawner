@@ -22,8 +22,8 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 
 	}
 
-	key := func(k string) *string {
-		return aws.String(labels.TagKey(k))
+	key := func(k labels.Label) *string {
+		return aws.String(k.Key())
 	}
 
 	//role not found, create it

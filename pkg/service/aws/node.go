@@ -396,7 +396,7 @@ func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 		return nil, err
 	}
 
-	if scope, ok := nodeGroup.Nodegroup.Tags[labels.TagKey(labels.Scope)]; !ok || *scope != labels.ScopeTag() {
+	if scope, ok := nodeGroup.Nodegroup.Tags[labels.Scope.Key()]; !ok || *scope != labels.ScopeTag() {
 		ctrl.logger.Error(ctx, "nodegroup is not available in scope", "scope", labels.ScopeTag())
 		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, labels.ScopeTag())
 	}

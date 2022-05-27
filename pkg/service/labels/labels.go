@@ -20,10 +20,6 @@ func merge(maps ...map[string]*string) map[string]*string {
 	return m
 }
 
-func TagKey(k string) string {
-	return fmt.Sprintf("%s/%s", LabelNamespace, k)
-}
-
 func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 
 	instance := ""
@@ -37,10 +33,10 @@ func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	}
 
 	labels := map[string]*string{
-		TagKey(NodeNameLabel):          &nodeSpec.Name,
-		TagKey(InstanceLabel):          &instance,
-		TagKey(NodeLabelSelectorLabel): &nodeSpec.Name,
-		TagKey("type"):                 aws.String("nodegroup")}
+		NodeNameLabel.Key():          &nodeSpec.Name,
+		InstanceLabel.Key():          &instance,
+		NodeLabelSelectorLabel.Key(): &nodeSpec.Name,
+		ResourceType.Key():           aws.String("nodegroup")}
 
 	return merge(DefaultTags(), labels, aws.StringMap(nodeSpec.Labels))
 }
@@ -53,7 +49,7 @@ func ScopeTag() string {
 func DefaultTags() map[string]*string {
 	scope := ScopeTag()
 	return map[string]*string{
-		TagKey(Scope):        &scope,
-		TagKey(CreatorLabel): aws.String(SpawnerLabel),
+		Scope.Key():        &scope,
+		CreatorLabel.Key(): aws.String(SpawnerLabel),
 	}
 }

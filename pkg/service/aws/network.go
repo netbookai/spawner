@@ -38,11 +38,14 @@ var (
 	subnetUpto8Cidr = [8]string{"192.168.0.0/18", "192.168.64.0/18", "192.168.128.0/18"}
 )
 
-func tagName(k string) *string {
-	if k == labels.NameLabel {
-		return aws.String(fmt.Sprintf("tag:%s", k))
-	}
-	return aws.String(fmt.Sprintf("tag:%s", labels.TagKey(k)))
+//returns tag key pointer
+func key(l labels.Label) *string {
+	return aws.String(l.Key())
+}
+
+//returns tag label with `tag:`
+func tagName(k labels.Label) *string {
+	return aws.String(fmt.Sprintf("tag:%s", k.Key()))
 }
 
 func tagValue(val string) []*string {
@@ -528,11 +531,4 @@ func CreateSubnetStack(client *ec2.EC2, vpc *ec2.Vpc, vpcName string, name strin
 	}
 
 	return subnet, nil
-}
-
-func key(k string) *string {
-	if k == labels.NameLabel {
-		return aws.String(k)
-	}
-	return aws.String(labels.TagKey(k))
 }
