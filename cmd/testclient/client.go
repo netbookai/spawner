@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	clusterName = "gcp-cluster-test-1"
+	clusterName = "gcp-cluster-test-3"
 	region      = "us-central1" //"eastus2" //"us-west-2"
 	provider    = "gcp"
-	nodeName    = "rootnode-gcp"
+	nodeName    = "add-node-2"
 	instance    = "e2-medium"
-	volumeName  = "vol-20-20220404123522"
+	volumeName  = "vol-50-20220528175218"
 	accountName = "netbook-aws"
 )
 
@@ -114,9 +114,10 @@ func main() {
 
 	addNode := &proto.NodeSpec{
 		Name:          nodeName,
+		Count:         5,
 		Instance:      instance,
 		MigProfile:    proto.MIGProfile_MIG3g,
-		CapacityType:  proto.CapacityType_SPOT,
+		CapacityType:  proto.CapacityType_ONDEMAND,
 		MachineType:   "m",
 		SpotInstances: []string{"t2.small", "t3.small"},
 		DiskSize:      20,

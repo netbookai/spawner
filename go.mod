@@ -8,6 +8,7 @@ replace (
 )
 
 require (
+	cloud.google.com/go/compute v1.6.1
 	cloud.google.com/go/container v1.2.0
 	github.com/Azure/azure-sdk-for-go v62.2.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.19
@@ -17,6 +18,7 @@ require (
 	github.com/aws/aws-sdk-go v1.43.11
 	github.com/davecgh/go-spew v1.1.1
 	github.com/google/uuid v1.3.0
+	github.com/googleapis/gax-go/v2 v2.3.0
 	github.com/imdario/mergo v0.3.12
 	github.com/netbook-ai/interceptors v0.2.3
 	github.com/netbookai/log v0.4.0
@@ -41,7 +43,6 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.6.1 // indirect
 	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
 	github.com/Azure/azure-storage-blob-go v0.13.0 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
@@ -76,7 +77,6 @@ require (
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/go-containerregistry v0.7.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/googleapis/gax-go/v2 v2.3.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/gophercloud/gophercloud v0.24.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
