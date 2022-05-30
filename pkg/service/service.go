@@ -43,6 +43,8 @@ type SpawnerService interface {
 	ReadCredential(context.Context, *proto.ReadCredentialRequest) (*proto.ReadCredentialResponse, error)
 	AddRoute53Record(ctx context.Context, req *proto.AddRoute53RecordRequest) (*proto.AddRoute53RecordResponse, error)
 	GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error)
+
+	GetElasticRegistryAuth(ctx context.Context, in *proto.GetElasticRegistryAuthRequest) (*proto.GetElasticRegistryAuthResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -435,4 +437,13 @@ func (s *spawnerService) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 		return nil, err
 	}
 	return provider.GetCostByTime(ctx, req)
+}
+
+func (s *spawnerService) GetElasticRegistryAuth(ctx context.Context, req *proto.GetElasticRegistryAuthRequest) (*proto.GetElasticRegistryAuthResponse, error) {
+
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.GetElasticRegistryAuth(ctx, req)
 }

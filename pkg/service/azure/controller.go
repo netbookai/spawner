@@ -88,3 +88,7 @@ func (a *AzureController) TagNodeInstance(ctx context.Context, req *proto.TagNod
 func (a *AzureController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
 	return a.getCostByTime(ctx, req)
 }
+
+func (a *AzureController) GetElasticRegistryAuth(ctx context.Context, in *proto.GetElasticRegistryAuthRequest) (*proto.GetElasticRegistryAuthResponse, error) {
+	return &proto.GetElasticRegistryAuthResponse{}, nil
+}

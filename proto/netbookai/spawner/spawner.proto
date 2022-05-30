@@ -73,6 +73,9 @@ service SpawnerService {
       returns (TagNodeInstanceResponse) {}
 
   rpc GetCostByTime(GetCostByTimeRequest) returns (GetCostByTimeResponse) {}
+
+  rpc GetElasticRegistryAuth(GetElasticRegistryAuthRequest)
+      returns (GetElasticRegistryAuthResponse) {}
 }
 
 message Empty {}
@@ -455,4 +458,15 @@ message GetCostByTimeResponse {
 
 message costMap {
   map<string, int64> cost = 1;
+}
+
+message GetElasticRegistryAuthRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+}
+
+message GetElasticRegistryAuthResponse {
+  string url = 1;
+  string token = 2;
 }
