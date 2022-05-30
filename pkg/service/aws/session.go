@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/costexplorer"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
@@ -137,6 +138,10 @@ func (ses *Session) getKubeConfig(cluster *eks.Cluster) (*rest.Config, error) {
 
 func (ses *Session) getRoute53Client() *route53.Route53 {
 	return route53.New(ses.AwsSession)
+}
+
+func (ses *Session) getEcrClient() *ecr.ECR {
+	return ecr.New(ses.AwsSession)
 }
 
 func (ses *Session) getK8sDynamicClient(cluster *eks.Cluster) (dynamic.Interface, error) {
