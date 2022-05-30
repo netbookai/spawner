@@ -120,7 +120,7 @@ func (ses *Session) getCostExplorerClient() *costexplorer.CostExplorer {
 	return costexplorer.New(ses.AwsSession)
 }
 
-//deprecating, as the client usage is only for
+//deprecating, as the client usage is only for fetching the account id, we can have a function to get the account id
 func (ses *Session) _getSTSClient() *sts.STS {
 	return sts.New(ses.AwsSession)
 }
