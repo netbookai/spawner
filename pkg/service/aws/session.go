@@ -120,7 +120,8 @@ func (ses *Session) getCostExplorerClient() *costexplorer.CostExplorer {
 	return costexplorer.New(ses.AwsSession)
 }
 
-func (ses *Session) getSTSClient() *sts.STS {
+//deprecating, as the client usage is only for
+func (ses *Session) _getSTSClient() *sts.STS {
 	return sts.New(ses.AwsSession)
 }
 
@@ -155,4 +156,11 @@ func (ses *Session) getK8sDynamicClient(cluster *eks.Cluster) (dynamic.Interface
 		return nil, err
 	}
 	return dynamicClient, nil
+}
+
+func (ses *Session) getAccountId() (string, error) {
+
+	client := ses._getSTSClient()
+	callerIdentity, err := client.GetCallerIdentity(nil)
+	return *callerIdentity.Account, err
 }
