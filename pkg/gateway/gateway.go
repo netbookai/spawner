@@ -140,3 +140,7 @@ func (g *gateway) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanc
 func (g *gateway) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
 	return g.service.GetCostByTime(ctx, req)
 }
+
+func (g *gateway) GetElasticRegistryAuth(ctx context.Context, in *proto.GetElasticRegistryAuthRequest) (*proto.GetElasticRegistryAuthResponse, error) {
+	return g.service.GetElasticRegistryAuth(ctx, in)
+}
