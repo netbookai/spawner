@@ -9,15 +9,15 @@ import (
 	"text/tabwriter"
 	"time"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
 const (
-	clusterName = "clusterversion-test"
-	region      = "eastus2" //"us-west-2"
-	provider    = "azure"
+	clusterName = "kubeflow"
+	region      = "us-west-2" //"eastus2" //"us-west-2"
+	provider    = "aws"
 	accountName = "netbook-aws"
 	nodeName    = "rootnode"
 	instance    = "Standard_A2_v2"
@@ -115,7 +115,8 @@ func main() {
 		Name:          nodeName,
 		Instance:      instance,
 		MigProfile:    proto.MIGProfile_MIG3g,
-		CapacityType:  proto.CapacityType_ONDEMAND,
+		CapacityType:  proto.CapacityType_SPOT,
+		MachineType:   "m",
 		SpotInstances: []string{"t2.small", "t3.small"},
 		DiskSize:      20,
 		GpuEnabled:    false,
@@ -153,8 +154,9 @@ func main() {
 	createVolumeReq := &proto.CreateVolumeRequest{
 		Availabilityzone: region,
 		Volumetype:       "gp2",
-		Size:             20,
-		Snapshotid:       "",
+		Size:             50,
+		Snapshotid:       "vol-30-20220409151829-snapshot",
+		SnapshotUri:      "snapshot-uri",
 		Region:           region,
 		Provider:         provider,
 		AccountName:      accountName,
@@ -184,10 +186,10 @@ func main() {
 	getWorkspacesCost := &proto.GetWorkspacesCostRequest{
 		WorkspaceIds: []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
 		Provider:     "aws",
-		AccountName:  "netbook-aws",
-		StartDate:    "2021-08-01",
-		EndDate:      "2022-03-01",
-		Granularity:  "MONTHLY",
+		AccountName:  "netbook-aws-dev",
+		StartDate:    "2022-04-01",
+		EndDate:      "2022-05-01",
+		Granularity:  "DAILY",
 		CostType:     "BlendedCost",
 		GroupBy: &proto.GroupBy{
 			Type: "TAG",
@@ -195,11 +197,53 @@ func main() {
 		},
 	}
 
+	getApplicationsCost := &proto.GetApplicationsCostRequest{
+		ApplicationIds: []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
+		Provider:       "aws",
+		AccountName:    "netbook-aws-dev",
+		StartDate:      "2022-04-01",
+		EndDate:        "2022-05-01",
+		Granularity:    "DAILY",
+		CostType:       "BlendedCost",
+		GroupBy: &proto.GroupBy{
+			Type: "TAG",
+			Key:  "workspaceid",
+		},
+	}
+
+	//AWS cost request
+	getCostByTime := &proto.GetCostByTimeRequest{
+		Ids:         []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
+		Provider:    "aws",
+		AccountName: "netbook-aws-dev",
+		StartDate:   "2022-04-01",
+		EndDate:     "2022-05-01",
+		Granularity: "DAILY",
+		GroupBy: &proto.GroupBy{
+			Type: "TAG",
+			Key:  "workspaceid",
+		},
+	}
+
+	//Azure Cost Req
+	// getCostByTime := &proto.GetCostByTimeRequest{
+	// 	Ids:         []string{"24522d72-9b86-48c4-b66a-521a2f202413", "testid", "5d4eb7d8-9289-4740-a7f8-a9bfbdf06a16", "b5fbc7b6-e502-4093-81aa-d3efdce80afc"},
+	// 	Provider:    "azure",
+	// 	AccountName: "netbook-azure-dev",
+	// 	StartDate:   "2022-04-01",
+	// 	EndDate:     "2022-05-17",
+	// 	Granularity: "DAILY",
+	// 	GroupBy: &proto.GroupBy{
+	// 		Type: "TAG",
+	// 		Key:  "workspaceid",
+	// 	},
+	// }
+
 	switch *method {
 	case "Echo":
 		v, err := client.Echo(context.Background(), &proto.EchoRequest{Msg: "hello spawner"})
 
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("Echo", "error", err)
 			os.Exit(1)
 		}
@@ -208,7 +252,7 @@ func main() {
 	case "HealthCheck":
 		v, err := client.HealthCheck(context.Background(), &proto.Empty{})
 
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("HealthCheck", "error", err)
 			os.Exit(1)
 		}
@@ -216,21 +260,21 @@ func main() {
 
 	case "CreateCluster":
 		v, err := client.CreateCluster(context.Background(), createClusterReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error creating cluster", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("CreateCluster method", "response", v)
 	case "AddToken":
 		v, err := client.AddToken(context.Background(), addTokenReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error adding token", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("AddToken method", "reponse", v)
 	case "GetToken":
 		v, err := client.GetToken(context.Background(), getTokenReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error getting token", "error", err)
 			os.Exit(1)
 		}
@@ -239,42 +283,42 @@ func main() {
 		sugar.Infow("GetToken method", "response", v)
 	case "AddRoute53Record":
 		v, err := client.AddRoute53Record(context.Background(), addRoute53RecordReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error creating Alias record", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("AddRoute53Record method", "response", v)
 	case "GetCluster":
 		v, err := client.GetCluster(context.Background(), getClusterReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetCluster method", "response", v)
 	case "GetClusters":
 		v, err := client.GetClusters(context.Background(), getClustersReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetClusters method", "response", v)
 	case "ClusterStatus":
 		v, err := client.ClusterStatus(context.Background(), clusterStatusReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error fetching cluster status", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("ClusterStatus method", "response", v)
 	case "AddNode":
 		v, err := client.AddNode(context.Background(), addNodeReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error adding node", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("AddNode method", "response", v)
 	case "DeleteCluster":
 		v, err := client.DeleteCluster(context.Background(), deleteClusterReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error deleting cluster", "error", err)
 			os.Exit(1)
 		}
@@ -311,7 +355,7 @@ func main() {
 		sugar.Infow("Deleted all clusters", "account", getClustersReq.AccountName, "provider", getClustersReq.Provider, "region", getClustersReq.Region)
 	case "DeleteNode":
 		v, err := client.DeleteNode(context.Background(), deleteNodeReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error deleting node", "error", err)
 			os.Exit(1)
 		}
@@ -319,7 +363,7 @@ func main() {
 
 	case "CreateVolume":
 		v, err := client.CreateVolume(context.Background(), createVolumeReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error creating volume", "error", err)
 			os.Exit(1)
 		}
@@ -327,7 +371,7 @@ func main() {
 
 	case "DeleteVolume":
 		v, err := client.DeleteVolume(context.Background(), deleteVolumeReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error deleting volume", "error", err)
 			os.Exit(1)
 		}
@@ -335,7 +379,7 @@ func main() {
 
 	case "CreateSnapshot":
 		v, err := client.CreateSnapshot(context.Background(), createSnapshotReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error creating snapshot", "error", err)
 			os.Exit(1)
 		}
@@ -343,7 +387,7 @@ func main() {
 
 	case "CreateSnapshotAndDelete":
 		v, err := client.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error creating snapshot and deleting volume", "error", err)
 			os.Exit(1)
 		}
@@ -353,23 +397,29 @@ func main() {
 		v, err := client.RegisterWithRancher(context.Background(), &proto.RancherRegistrationRequest{
 			ClusterName: clusterName,
 		})
-		if err != nil && err.Error() != "" {
+		if err != nil {
 			sugar.Errorw("error registering cluster with rancher", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("RegisterWithRancher method", "response", v)
 	case "GetWorkspacesCost":
 		v, err := client.GetWorkspacesCost(context.Background(), getWorkspacesCost)
-		if err != nil && err.Error() != "" {
-			sugar.Errorw("error registering cluster with rancher", "error", err)
+		if err != nil {
+			sugar.Errorw("error getting workspaces cost", "error", err)
 			os.Exit(1)
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
-
+	case "GetApplicationsCost":
+		v, err := client.GetApplicationsCost(context.Background(), getApplicationsCost)
+		if err != nil {
+			sugar.Errorw("error getting applications cost", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetApplicationsCost method", "response", v)
 	case "ReadCredentialAws":
 		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
-			Account:  "alexis",
-			Provider: "aws",
+			Account: "alexis",
+			Type:    "aws",
 		})
 		if err != nil {
 			sugar.Errorw("error reading credentials", "error", err)
@@ -378,8 +428,8 @@ func main() {
 
 	case "WriteCredentialAws":
 		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
-			Account:  "alexis",
-			Provider: "aws",
+			Account: "alexis",
+			Type:    "aws",
 			Cred: &proto.WriteCredentialRequest_AwsCred{
 				AwsCred: &proto.AwsCredentials{
 					AccessKeyID:     "access_id",
@@ -394,8 +444,8 @@ func main() {
 		sugar.Infow("WriteCredentialAws", "response", v)
 	case "ReadCredentialAzure":
 		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
-			Account:  "netbook-azure-dev",
-			Provider: "azure",
+			Account: "netbook-azure-dev",
+			Type:    "azure",
 		})
 		if err != nil {
 			sugar.Errorw("error reading credentials", "error", err)
@@ -404,8 +454,8 @@ func main() {
 
 	case "WriteCredentialAzure":
 		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
-			Account:  "alex",
-			Provider: "azure",
+			Account: "alex",
+			Type:    "azure",
 			Cred: &proto.WriteCredentialRequest_AzureCred{
 				AzureCred: &proto.AzureCredentials{
 					SubscriptionID: "subscription",
@@ -418,9 +468,37 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error writing credentials", "error", err)
+			return
 		}
 		sugar.Infow("WriteCredentialAws", "response", v)
 
+	case "ReadCredentialGitPAT":
+		v, err := client.ReadCredential(context.Background(), &proto.ReadCredentialRequest{
+			Account: "nsp-dev",
+			Type:    "git-pat",
+		})
+
+		if err != nil {
+			sugar.Errorw("error reading Git PAT ", err)
+			return
+		}
+		sugar.Infow("ReadCredentialResponse_GitPat", "response", v)
+	case "WriteCredentialGitPAT":
+		v, err := client.WriteCredential(context.Background(), &proto.WriteCredentialRequest{
+			Account: "nsp-dev",
+			Type:    "git-pat",
+			Cred: &proto.WriteCredentialRequest_GitPat{
+				GitPat: &proto.GithubPersonalAccessToken{
+					Token: "this-is-very-secret-token-thats-why-you-see-this-message-when-reading",
+				},
+			},
+		})
+
+		if err != nil {
+			sugar.Errorw("error writing Git PAT ", err)
+			return
+		}
+		sugar.Infow("WriteCredentialResponse_GitPat", "response", v)
 	case "AddTag":
 		v, err := client.TagNodeInstance(context.Background(), &proto.TagNodeInstanceRequest{
 			Provider:    provider,
@@ -436,6 +514,25 @@ func main() {
 			sugar.Errorw("error adding tags to node", "error", err)
 		}
 		sugar.Infow("TagNodeInstane", "response", v)
+
+	case "GetCostByTime":
+		v, err := client.GetCostByTime(context.Background(), getCostByTime)
+		if err != nil {
+			sugar.Errorw("error getting cost by time", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetWorkspaceCost method", "response", v)
+	case "GetContainerRegistryAuth":
+		v, err := client.GetContainerRegistryAuth(context.Background(), &proto.GetContainerRegistryAuthRequest{
+			Provider:    "aws",
+			Region:      "us-west-2",
+			AccountName: accountName,
+		})
+		if err != nil {
+			sugar.Errorw("error getting ecr auth details", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetContainerRegistryAuth method", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "/spawnerservice";
+option go_package = "/spawner";
 
-package spawnerservice;
+package spawner;
 
 // The Spawner service definition
 service SpawnerService {
@@ -56,7 +56,12 @@ service SpawnerService {
       returns (RancherRegistrationResponse) {}
 
   rpc GetWorkspacesCost(GetWorkspacesCostRequest)
-      returns (GetWorkspacesCostResponse) {}
+      returns (GetWorkspacesCostResponse) {
+    option deprecated = true;
+  }
+
+  rpc GetApplicationsCost(GetApplicationsCostRequest)
+      returns (GetApplicationsCostResponse) {}
 
   rpc WriteCredential(WriteCredentialRequest)
       returns (WriteCredentialResponse) {}
@@ -66,6 +71,11 @@ service SpawnerService {
   rpc GetKubeConfig(GetKubeConfigRequest) returns (GetKubeConfigResponse) {}
   rpc TagNodeInstance(TagNodeInstanceRequest)
       returns (TagNodeInstanceResponse) {}
+
+  rpc GetCostByTime(GetCostByTimeRequest) returns (GetCostByTimeResponse) {}
+
+  rpc GetContainerRegistryAuth(GetContainerRegistryAuthRequest)
+      returns (GetContainerRegistryAuthResponse) {}
 }
 
 message Empty {}
@@ -109,6 +119,7 @@ message NodeSpec {
   int64 count = 14;
   CapacityType capacityType = 15;
   repeated string spotInstances = 16;
+  string machineType = 17;
 }
 
 message Issue {
@@ -255,6 +266,8 @@ message CreateVolumeRequest {
   int64 size = 6;
   string snapshotid = 7;
   map<string, string> labels = 8;
+  string snapshotUri = 9;
+  bool deleteSnapshot = 10;
 }
 
 message CreateVolumeResponse {
@@ -286,7 +299,9 @@ message CreateSnapshotRequest {
 
 message CreateSnapshotResponse {
   string snapshotid = 1;
-  string error = 2;
+  // must retain tag for backward compatibilty, left in commet for reference
+  // string error = 2;
+  string snapshotUri = 3;
 }
 
 message CreateSnapshotAndDeleteRequest {
@@ -300,7 +315,9 @@ message CreateSnapshotAndDeleteRequest {
 message CreateSnapshotAndDeleteResponse {
   string snapshotid = 1;
   bool deleted = 2;
-  string error = 3;
+  // must retain tag for backward compatibilty, left in commet for reference
+  // string error = 3;
+  string snapshotUri = 4;
 }
 
 message RancherRegistrationRequest {
@@ -308,14 +325,27 @@ message RancherRegistrationRequest {
 }
 
 message RancherRegistrationResponse {
-  string error = 1;
+  // must retain tag for backward compatibilty, left in commet for reference
+  // string error = 1;
   string clusterName = 2;
   string clusterID = 3;
   string manifestURL = 4;
 }
 
 message GetWorkspacesCostRequest {
+  option deprecated = true;
+  string provider = 2;
   repeated string workspaceIds = 1;
+  string accountName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string granularity = 6;
+  string costType = 7;
+  GroupBy groupBy = 8;
+}
+
+message GetApplicationsCostRequest {
+  repeated string applicationIds = 1;
   string provider = 2;
   string accountName = 3;
   string startDate = 4;
@@ -331,8 +361,13 @@ message GroupBy {
 }
 
 message GetWorkspacesCostResponse {
-  double totalCost = 1;
-  map<string, double> groupedCost = 2;
+  int64 totalCost = 1;
+  map<string, int64> groupedCost = 2;
+}
+
+message GetApplicationsCostResponse {
+  int64 totalCost = 1;
+  map<string, int64> groupedCost = 2;
 }
 
 message AwsCredentials {
@@ -349,12 +384,18 @@ message AzureCredentials {
   string resourceGroup = 5;
 }
 
+message GithubPersonalAccessToken {
+  string token = 1;
+}
+
 message WriteCredentialRequest {
   string account = 1;
-  string provider = 2;
+  string provider = 2 [deprecated = true];
+  string type = 5;
   oneof cred {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
+    GithubPersonalAccessToken gitPat = 6;
   }
 }
 
@@ -364,15 +405,18 @@ message WriteCredentialResponse {
 
 message ReadCredentialRequest {
   string account = 1;
-  string provider = 2;
+  string provider = 2 [deprecated = true];
+  string type = 3;
 }
 
 message ReadCredentialResponse {
   string account = 1;
-  string provider = 2;
+  string provider = 2 [deprecated = true];
+  string type = 5;
   oneof cred {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
+    GithubPersonalAccessToken gitPat = 6;
   }
 }
 
@@ -396,4 +440,33 @@ message TagNodeInstanceRequest {
   string clusterName = 4;
   string nodeGroup = 5;
   map<string, string> labels = 6;
+}
+
+message GetCostByTimeRequest {
+  string provider = 1;
+  repeated string Ids = 2;
+  string accountName = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string granularity = 6;
+  GroupBy groupBy = 7;
+}
+
+message GetCostByTimeResponse {
+  map<string, costMap> groupedCost = 1;
+}
+
+message costMap {
+  map<string, int64> cost = 1;
+}
+
+message GetContainerRegistryAuthRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+}
+
+message GetContainerRegistryAuthResponse {
+  string url = 1;
+  string token = 2;
 }

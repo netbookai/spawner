@@ -3,9 +3,9 @@ package aws
 import (
 	"context"
 
+	"github.com/netbookai/log"
 	"github.com/pkg/errors"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
-	"go.uber.org/zap"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 const (
@@ -30,11 +30,11 @@ var (
 )
 
 type AWSController struct {
-	logger *zap.SugaredLogger
+	logger log.Logger
 }
 
 //NewAWSController
-func NewAWSController(logger *zap.SugaredLogger) *AWSController {
+func NewAWSController(logger log.Logger) *AWSController {
 	return &AWSController{
 		logger: logger,
 	}

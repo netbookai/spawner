@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 //waitUntilClusterReady Wait until the give cluster return "ACTIVE" status

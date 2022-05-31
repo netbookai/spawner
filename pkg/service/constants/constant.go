@@ -21,6 +21,7 @@ var (
 	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
 	WorkspaceId              = "workspaceid"
 	AzureLabel               = "azure"
+	GcpLabel                 = "gcp"
 )
 
 type CloudProvider string
@@ -42,4 +43,13 @@ const (
 	CostUSD     = "CostUSD"
 	ServiceName = "ServiceName"
 	TagValue    = "TagValue"
+	UsageDate   = "UsageDate"
+)
+
+//cred type
+
+const (
+	CredAws    = "aws"
+	CredAzure  = "azure"
+	CredGitPat = "git-pat"
 )
