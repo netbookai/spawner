@@ -74,8 +74,8 @@ service SpawnerService {
 
   rpc GetCostByTime(GetCostByTimeRequest) returns (GetCostByTimeResponse) {}
 
-  rpc GetElasticRegistryAuth(GetElasticRegistryAuthRequest)
-      returns (GetElasticRegistryAuthResponse) {}
+  rpc GetContainerRegistryAuth(GetContainerRegistryAuthRequest)
+      returns (GetContainerRegistryAuthResponse) {}
 }
 
 message Empty {}
@@ -460,13 +460,13 @@ message costMap {
   map<string, int64> cost = 1;
 }
 
-message GetElasticRegistryAuthRequest {
+message GetContainerRegistryAuthRequest {
   string provider = 1;
   string region = 2;
   string accountName = 3;
 }
 
-message GetElasticRegistryAuthResponse {
+message GetContainerRegistryAuthResponse {
   string url = 1;
   string token = 2;
 }

@@ -89,6 +89,6 @@ func (a *AzureController) GetCostByTime(ctx context.Context, req *proto.GetCostB
 	return a.getCostByTime(ctx, req)
 }
 
-func (a *AzureController) GetElasticRegistryAuth(ctx context.Context, in *proto.GetElasticRegistryAuthRequest) (*proto.GetElasticRegistryAuthResponse, error) {
-	return &proto.GetElasticRegistryAuthResponse{}, nil
+func (a *AzureController) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
+	return &proto.GetContainerRegistryAuthResponse{}, nil
 }

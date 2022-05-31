@@ -141,6 +141,6 @@ func (g *gateway) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeReq
 	return g.service.GetCostByTime(ctx, req)
 }
 
-func (g *gateway) GetElasticRegistryAuth(ctx context.Context, in *proto.GetElasticRegistryAuthRequest) (*proto.GetElasticRegistryAuthResponse, error) {
-	return g.service.GetElasticRegistryAuth(ctx, in)
+func (g *gateway) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
+	return g.service.GetContainerRegistryAuth(ctx, in)
 }

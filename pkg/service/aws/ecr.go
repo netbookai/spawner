@@ -8,7 +8,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func (a *AWSController) GetElasticRegistryAuth(ctx context.Context, req *proto.GetElasticRegistryAuthRequest) (*proto.GetElasticRegistryAuthResponse, error) {
+func (a *AWSController) GetContainerRegistryAuth(ctx context.Context, req *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
 
 	session, err := NewSession(ctx, req.Region, req.GetAccountName())
 
@@ -47,7 +47,7 @@ func (a *AWSController) GetElasticRegistryAuth(ctx context.Context, req *proto.G
 	ad := res.AuthorizationData[0]
 
 	a.logger.Debug(ctx, "got the auth token for the ecr", "endpoint", *ad.ProxyEndpoint, "account", account_id)
-	return &proto.GetElasticRegistryAuthResponse{
+	return &proto.GetContainerRegistryAuthResponse{
 		Url:   *ad.ProxyEndpoint,
 		Token: *ad.AuthorizationToken,
 	}, nil
