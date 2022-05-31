@@ -9,9 +9,10 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func asEcrTags(label map[string]string) []*ecr.Tag {
+//asEcrTags generate the ecr.Tag{} from the labels and DefaultTags
+func asEcrTags(l map[string]string) []*ecr.Tag {
 	tags := []*ecr.Tag{}
-	for k, v := range label {
+	for k, v := range l {
 		key := k
 		val := v
 		tags = append(tags, &ecr.Tag{
