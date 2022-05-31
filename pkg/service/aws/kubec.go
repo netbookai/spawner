@@ -49,7 +49,7 @@ func (ctrl AWSController) GetKubeConfig(ctx context.Context, req *proto.GetKubeC
 	}
 
 	authinfos := make(map[string]*clientcmdapi.AuthInfo)
-	if req.GetRawToken {
+	if req.RawToken {
 		authinfos[defaultCluster] = &clientcmdapi.AuthInfo{
 			Token: kubeConfig.BearerToken,
 		}
