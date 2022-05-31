@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"os"
@@ -18,9 +19,9 @@ const (
 	region      = "us-west-2" //"eastus2" //"us-west-2"
 	provider    = "aws"
 	accountName = "netbook-aws"
-	nodeName    = "spotinstance-200"
-	instance    = "" //"Standard_A2_v2"
-	volumeName  = "vol-20-20220404123522"
+	nodeName    = "rootnode"
+	instance    = "Standard_A2_v2"
+	volumeName  = "vol-094f882e240396ed9"
 )
 
 func main() {
@@ -277,6 +278,8 @@ func main() {
 			sugar.Errorw("error getting token", "error", err)
 			os.Exit(1)
 		}
+		base64Ca := base64.StdEncoding.EncodeToString([]byte(v.CaData))
+		sugar.Infow("base64 token", "Ca", base64Ca)
 		sugar.Infow("GetToken method", "response", v)
 	case "AddRoute53Record":
 		v, err := client.AddRoute53Record(context.Background(), addRoute53RecordReq)
@@ -320,6 +323,35 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("DeleteCluster method", "response", v)
+	case "DeleteAllClustersInRegion":
+		v, err := client.GetClusters(context.Background(), getClustersReq)
+		if err != nil {
+			sugar.Errorw("error getting clusters", "account", getClustersReq.AccountName, "provider", getClustersReq.Provider, "region", getClustersReq.Region, "error", err)
+			os.Exit(1)
+		}
+		clusters := make([]string, 0)
+		for _, cluster := range v.Clusters {
+			clusters = append(clusters, cluster.Name)
+		}
+		logger.Sugar().Infow("deleting following clusters", "clusters", clusters)
+
+		for _, cluster := range clusters {
+			sugar.Infow("deleting cluster", "cluster", cluster)
+			req := &proto.ClusterDeleteRequest{
+				Provider:    provider,
+				Region:      region,
+				AccountName: accountName,
+				ClusterName: cluster,
+				ForceDelete: true,
+			}
+			v, err := client.DeleteCluster(context.Background(), req)
+			if err != nil {
+				sugar.Errorw("error deleting cluster", "cluster", cluster, "error", err)
+			}
+			sugar.Infow("DeleteCluster method", "cluster", cluster, "response", v)
+		}
+
+		sugar.Infow("Deleted all clusters", "account", getClustersReq.AccountName, "provider", getClustersReq.Provider, "region", getClustersReq.Region)
 	case "DeleteNode":
 		v, err := client.DeleteNode(context.Background(), deleteNodeReq)
 		if err != nil {
