@@ -162,5 +162,8 @@ func (ses *Session) getAccountId() (string, error) {
 
 	client := ses._getSTSClient()
 	callerIdentity, err := client.GetCallerIdentity(nil)
-	return *callerIdentity.Account, err
+	if err != nil {
+		return "", err
+	}
+	return *callerIdentity.Account, nil
 }

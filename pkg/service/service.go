@@ -45,6 +45,7 @@ type SpawnerService interface {
 	GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error)
 
 	GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error)
+	CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -446,4 +447,12 @@ func (s *spawnerService) GetContainerRegistryAuth(ctx context.Context, req *prot
 		return nil, err
 	}
 	return provider.GetContainerRegistryAuth(ctx, req)
+}
+
+func (s *spawnerService) CreateContainerRegistryRepo(ctx context.Context, req *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.CreateContainerRegistryRepo(ctx, req)
 }

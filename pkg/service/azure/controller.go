@@ -92,3 +92,7 @@ func (a *AzureController) GetCostByTime(ctx context.Context, req *proto.GetCostB
 func (a *AzureController) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
 	return &proto.GetContainerRegistryAuthResponse{}, nil
 }
+
+func (a *AzureController) CreateContainerRegistryRepo(ctx context.Context, req *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
+	return &proto.CreateContainerRegistryRepoResponse{}, nil
+}

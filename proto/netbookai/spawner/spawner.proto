@@ -76,6 +76,8 @@ service SpawnerService {
 
   rpc GetContainerRegistryAuth(GetContainerRegistryAuthRequest)
       returns (GetContainerRegistryAuthResponse) {}
+
+rpc CreateContainerRegistryRepo(CreateContainerRegistryRepoRequest) returns (CreateContainerRegistryRepoResponse) {}
 }
 
 message Empty {}
@@ -470,4 +472,16 @@ message GetContainerRegistryAuthRequest {
 message GetContainerRegistryAuthResponse {
   string url = 1;
   string token = 2;
+}
+
+message CreateContainerRegistryRepoResponse {
+  string registryId = 1;
+  string url = 2;
+}
+message CreateContainerRegistryRepoRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string name = 4;
+  map<string, string> tags = 5;
 }
