@@ -23,16 +23,13 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get aws session")
 	}
 
-	stsClient := session.getSTSClient()
-
-	callerIdentity, err := stsClient.GetCallerIdentity(nil)
+	account_id, err := session.getAccountId()
 
 	if err != nil {
-		svc.logger.Error(ctx, "failed to get identity", "error", err)
-		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get callerIdentity")
+		svc.logger.Error(ctx, "failed to get account id", "error", err)
+		return nil, errors.Wrap(err, "GetWorkspacesCost: failed to get account id")
 	}
 
-	account_id := callerIdentity.Account
 	svc.logger.Debug(ctx, "fetched accountId", "id", account_id)
 
 	groupFilter := ""
@@ -49,7 +46,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 			{
 				Dimensions: &costexplorer.DimensionValues{
 					Key:    aws.String("LINKED_ACCOUNT"),
-					Values: aws.StringSlice([]string{*account_id}),
+					Values: aws.StringSlice([]string{account_id}),
 				},
 			},
 			{
@@ -157,7 +154,7 @@ func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWo
 	return costResponse, nil
 }
 
-func getCostAndUsageRequest(account_id *string, req *proto.GetApplicationsCostRequest) costexplorer.GetCostAndUsageInput {
+func getCostAndUsageRequest(account_id string, req *proto.GetApplicationsCostRequest) costexplorer.GetCostAndUsageInput {
 
 	filter := &costexplorer.Expression{
 		And: []*costexplorer.Expression{
@@ -165,7 +162,7 @@ func getCostAndUsageRequest(account_id *string, req *proto.GetApplicationsCostRe
 			{
 				Dimensions: &costexplorer.DimensionValues{
 					Key:    aws.String("LINKED_ACCOUNT"),
-					Values: aws.StringSlice([]string{*account_id}),
+					Values: aws.StringSlice([]string{account_id}),
 				},
 			},
 			{
@@ -254,16 +251,12 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 		return nil, err
 	}
 
-	stsClient := session.getSTSClient()
-
-	callerIdentity, err := stsClient.GetCallerIdentity(nil)
+	account_id, err := session.getAccountId()
 
 	if err != nil {
-		svc.logger.Error(ctx, "failed to get identity", "error", err)
-		return nil, err
+		svc.logger.Error(ctx, "failed to get account id", "error", err)
+		return nil, errors.Wrap(err, "failed to get account id")
 	}
-
-	account_id := callerIdentity.Account
 
 	svc.logger.Debug(ctx, "fetched accountId", "id", account_id)
 
@@ -321,16 +314,11 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws session")
 	}
 
-	stsClient := session.getSTSClient()
-
-	callerIdentity, err := stsClient.GetCallerIdentity(nil)
-
+	account_id, err := session.getAccountId()
 	if err != nil {
-		svc.logger.Error(ctx, "failed to get identity", "error", err)
-		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws callerIdentity ")
+		svc.logger.Error(ctx, "failed to get account id", "error", err)
+		return nil, errors.Wrap(err, "GetCostByTime: failed to get aws account id")
 	}
-
-	account_id := callerIdentity.Account
 
 	svc.logger.Debug(ctx, "fetched accountId", "id", account_id)
 
@@ -340,7 +328,7 @@ func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostBy
 			{
 				Dimensions: &costexplorer.DimensionValues{
 					Key:    aws.String("LINKED_ACCOUNT"),
-					Values: aws.StringSlice([]string{*account_id}),
+					Values: aws.StringSlice([]string{account_id}),
 				},
 			},
 			{

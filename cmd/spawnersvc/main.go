@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var skipMethods = []string{"ReadCredential", "WriteCredential"}
+var skipMethods = []string{"ReadCredential", "WriteCredential", "GetContainerRegistryAuth"}
 
 func startHttpServer(ctx context.Context, g *group.Group, config config.Config, logger log.Logger) {
 

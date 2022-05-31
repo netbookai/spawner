@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/costexplorer"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
@@ -119,7 +120,8 @@ func (ses *Session) getCostExplorerClient() *costexplorer.CostExplorer {
 	return costexplorer.New(ses.AwsSession)
 }
 
-func (ses *Session) getSTSClient() *sts.STS {
+//deprecating, as the client usage is only for fetching the account id, we can have a function to get the account id
+func (ses *Session) _getSTSClient() *sts.STS {
 	return sts.New(ses.AwsSession)
 }
 
@@ -139,6 +141,10 @@ func (ses *Session) getRoute53Client() *route53.Route53 {
 	return route53.New(ses.AwsSession)
 }
 
+func (ses *Session) getEcrClient() *ecr.ECR {
+	return ecr.New(ses.AwsSession)
+}
+
 func (ses *Session) getK8sDynamicClient(cluster *eks.Cluster) (dynamic.Interface, error) {
 	config, err := newKubeConfig(ses.AwsSession, cluster)
 
@@ -150,4 +156,11 @@ func (ses *Session) getK8sDynamicClient(cluster *eks.Cluster) (dynamic.Interface
 		return nil, err
 	}
 	return dynamicClient, nil
+}
+
+func (ses *Session) getAccountId() (string, error) {
+
+	client := ses._getSTSClient()
+	callerIdentity, err := client.GetCallerIdentity(nil)
+	return *callerIdentity.Account, err
 }

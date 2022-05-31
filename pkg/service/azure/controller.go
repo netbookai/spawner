@@ -88,3 +88,7 @@ func (a *AzureController) TagNodeInstance(ctx context.Context, req *proto.TagNod
 func (a *AzureController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
 	return a.getCostByTime(ctx, req)
 }
+
+func (a *AzureController) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
+	return &proto.GetContainerRegistryAuthResponse{}, nil
+}

@@ -489,6 +489,17 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
+	case "GetContainerRegistryAuth":
+		v, err := client.GetContainerRegistryAuth(context.Background(), &proto.GetContainerRegistryAuthRequest{
+			Provider:    "aws",
+			Region:      "us-west-2",
+			AccountName: accountName,
+		})
+		if err != nil {
+			sugar.Errorw("error getting ecr auth details", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("GetContainerRegistryAuth method", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
