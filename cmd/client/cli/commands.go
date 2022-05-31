@@ -350,12 +350,13 @@ func kubeConfig() *cobra.Command {
 	addr := ""
 	provider := ""
 	region := ""
+	rawtoken := false
 
 	c := &cobra.Command{
 
 		Use:     "kubeconfig",
 		Short:   "get kubeconfig for the cluster",
-		Long:    "get kubeconfig for the cluster",
+		Long:    "get kubeconfig for the cluster, use rawtoken flag to get token instead of exec block",
 		Example: "kubeconfig clustername",
 		Args: func(cmd *cobra.Command, args []string) error {
 			return nil
@@ -374,6 +375,7 @@ func kubeConfig() *cobra.Command {
 			req.ClusterName = name
 			req.Provider = provider
 			req.Region = region
+			req.RawToken = rawtoken
 
 			conn, err := getSpawnerConn(addr)
 			if err != nil {
@@ -432,6 +434,7 @@ func kubeConfig() *cobra.Command {
 
 	c.Flags().StringVarP(&provider, "provider", "p", "", "cloud provider, one of ['aws', 'azure']")
 	c.Flags().StringVarP(&region, "region", "r", "", "cluster hosted region")
+	c.Flags().BoolVarP(&rawtoken, "rawtoken", "t", false, "create kube config with raw token or exec block, raw token has exipry")
 
 	return c
 }
