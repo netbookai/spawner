@@ -303,7 +303,6 @@ func main() {
 			v, err := client.DeleteCluster(context.Background(), req)
 			if err != nil && err.Error() != "" {
 				sugar.Errorw("error deleting cluster", "cluster", cluster, "error", err)
-				os.Exit(1)
 			}
 			sugar.Infow("DeleteCluster method", "cluster", cluster, "response", v)
 		}
