@@ -219,7 +219,7 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 		return &proto.CreateSnapshotResponse{}, err
 	}
 
-	logger.Infow("created snapshot", "snapshot-id", result.SnapshotId)
+	logger.Info(ctx, "created snapshot", "snapshot-id", result.SnapshotId)
 
 	err = ec2Client.WaitUntilSnapshotCompleted(&ec2.DescribeSnapshotsInput{
 		SnapshotIds: []*string{result.SnapshotId},

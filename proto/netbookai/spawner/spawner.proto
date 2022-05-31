@@ -425,6 +425,7 @@ message GetKubeConfigRequest {
   string region = 2;
   string accountName = 3;
   string clusterName = 4;
+  bool getRawToken = 5;
 }
 message GetKubeConfigResponse {
   string clusterName = 1;
