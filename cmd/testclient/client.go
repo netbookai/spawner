@@ -532,6 +532,19 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("GetContainerRegistryAuth method", "response", v)
+	case "CreateContainerRegistryRepo":
+		v, err := client.CreateContainerRegistryRepo(context.Background(), &proto.CreateContainerRegistryRepoRequest{
+			Provider:    "aws",
+			Region:      "us-west-2",
+			AccountName: accountName,
+			Name:        "nsp-test-2",
+		})
+		if err != nil {
+			sugar.Errorw("error creating container repo", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("CreateContainerRegistryRepo: created repo", "response", v)
+
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)

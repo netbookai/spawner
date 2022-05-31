@@ -27,4 +27,5 @@ type Controller interface {
 	TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error)
 	GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error)
 	GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error)
+	CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error)
 }

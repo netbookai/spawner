@@ -144,3 +144,7 @@ func (g *gateway) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeReq
 func (g *gateway) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
 	return g.service.GetContainerRegistryAuth(ctx, in)
 }
+
+func (g *gateway) CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
+	return g.service.CreateContainerRegistryRepo(ctx, in)
+}
