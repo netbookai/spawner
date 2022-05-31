@@ -279,7 +279,7 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("DeleteCluster method", "response", v)
-	case "DeleteAllClusters":
+	case "DeleteAllClustersInRegion":
 		v, err := client.GetClusters(context.Background(), getClustersReq)
 		if err != nil {
 			sugar.Errorw("error getting clusters", "account", getClustersReq.AccountName, "provider", getClustersReq.Provider, "region", getClustersReq.Region, "error", err)
