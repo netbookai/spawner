@@ -50,15 +50,7 @@ func (ctrl AWSController) GetKubeConfig(ctx context.Context, req *proto.GetKubeC
 
 	authinfos := make(map[string]*clientcmdapi.AuthInfo)
 	authinfos[defaultCluster] = &clientcmdapi.AuthInfo{
-		Exec: &clientcmdapi.ExecConfig{
-			Command: "aws",
-			Args: []string{
-				"--region", region,
-				"eks", "get-token",
-				"--cluster-name", clusterName,
-			},
-			APIVersion: "client.authentication.k8s.io/v1alpha1",
-		},
+		Token: kubeConfig.BearerToken,
 	}
 
 	clientConfig := clientcmdapi.Config{
