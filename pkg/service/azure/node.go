@@ -29,7 +29,7 @@ func getGPUProfile(profile proto.MIGProfile) containerservice.GPUInstanceProfile
 	return containerservice.GPUInstanceProfileMIG1g
 }
 
-func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
+func (a azureController) addNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
 
 	account := req.AccountName
 
@@ -121,7 +121,7 @@ func (a AzureController) addNode(ctx context.Context, req *proto.NodeSpawnReques
 	return &proto.NodeSpawnResponse{}, nil
 }
 
-func (a *AzureController) deleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
+func (a *azureController) deleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 
 	account := req.AccountName
 

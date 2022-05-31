@@ -14,7 +14,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (svc AWSController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
+func (svc awsController) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
 
 	session, err := NewSession(ctx, "", req.GetAccountName())
 
@@ -243,7 +243,7 @@ func getCostMap(result *costexplorer.GetCostAndUsageOutput, costType string) (ma
 
 	return costMap, nil
 }
-func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+func (svc awsController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
 	session, err := NewSession(ctx, "", req.GetAccountName())
 
 	if err != nil {
@@ -305,7 +305,7 @@ func (svc AWSController) GetApplicationsCost(ctx context.Context, req *proto.Get
 	return costResponse, nil
 }
 
-func (svc AWSController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+func (svc awsController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
 
 	session, err := NewSession(ctx, "", req.GetAccountName())
 

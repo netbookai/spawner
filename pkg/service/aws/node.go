@@ -15,7 +15,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func (ctrl AWSController) getNodeHealth(ctx context.Context, client *eks.EKS, cluster, nodeName string) (*eks.NodegroupHealth, error) {
+func (ctrl awsController) getNodeHealth(ctx context.Context, client *eks.EKS, cluster, nodeName string) (*eks.NodegroupHealth, error) {
 
 	node, err := client.DescribeNodegroupWithContext(ctx, &eks.DescribeNodegroupInput{
 		ClusterName:   &cluster,
@@ -50,7 +50,7 @@ func healthProto(health *eks.NodegroupHealth) *proto.Health {
 
 //getDefaultNode Get any existing node from the cluster as default node
 //if node with `newNode` exist return error
-func (ctrl AWSController) getDefaultNode(ctx context.Context, client *eks.EKS, clusterName, nodeName string) (*eks.Nodegroup, error) {
+func (ctrl awsController) getDefaultNode(ctx context.Context, client *eks.EKS, clusterName, nodeName string) (*eks.Nodegroup, error) {
 
 	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
 	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
@@ -108,7 +108,7 @@ func getInstance(nodeSpec *proto.NodeSpec) (string, []*string, error) {
 }
 
 //buildNodegroupInput build a new node group request
-func (a *AWSController) buildNodegroupInput(ctx context.Context, session *Session, clusterName *string, nodeSpec *proto.NodeSpec, subnetIds []*string, nodeRoleArn *string) (*eks.CreateNodegroupInput, error) {
+func (a *awsController) buildNodegroupInput(ctx context.Context, session *Session, clusterName *string, nodeSpec *proto.NodeSpec, subnetIds []*string, nodeRoleArn *string) (*eks.CreateNodegroupInput, error) {
 
 	diskSize := int64(nodeSpec.DiskSize)
 
@@ -158,7 +158,7 @@ func (a *AWSController) buildNodegroupInput(ctx context.Context, session *Sessio
 	}, nil
 }
 
-func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *Session, cluster *eks.Cluster, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
+func (ctrl awsController) getNewNodeGroupSpecFromCluster(ctx context.Context, session *Session, cluster *eks.Cluster, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
 
 	iamClient := session.getIAMClient()
 
@@ -202,7 +202,7 @@ func (ctrl AWSController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 
 }
 
-func (ctrl AWSController) getNodeSpecFromDefault(ctx context.Context, session *Session, defaultNode *eks.Nodegroup, clusterName string, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
+func (ctrl awsController) getNodeSpecFromDefault(ctx context.Context, session *Session, defaultNode *eks.Nodegroup, clusterName string, nodeSpec *proto.NodeSpec) (*eks.CreateNodegroupInput, error) {
 
 	input, err := ctrl.buildNodegroupInput(ctx, session, &clusterName, nodeSpec, defaultNode.Subnets, defaultNode.NodeRole)
 	if err != nil {
@@ -212,7 +212,7 @@ func (ctrl AWSController) getNodeSpecFromDefault(ctx context.Context, session *S
 }
 
 //AddNode adds new node group to the existing cluster, cluster atleast have 1 node group already present
-func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
+func (ctrl awsController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
 
 	//create a new node on the given cluster with the NodeSpec
 	clusterName := req.ClusterName
@@ -268,7 +268,7 @@ func (ctrl AWSController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 	return &proto.NodeSpawnResponse{}, err
 }
 
-func (ctrl AWSController) deleteAllNodegroups(ctx context.Context, client *eks.EKS, clusterName string) error {
+func (ctrl awsController) deleteAllNodegroups(ctx context.Context, client *eks.EKS, clusterName string) error {
 	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
 	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 	if err != nil {
@@ -292,7 +292,7 @@ func (ctrl AWSController) deleteAllNodegroups(ctx context.Context, client *eks.E
 
 //waitForAllNodegroupsDeletion wait until all attached node groups in the clusters are deleted.
 //Wait until all nodes are deleted or  configrNodeDeletionTimeout, whichever is earlier
-func (ctrl AWSController) waitForAllNodegroupsDeletion(ctx context.Context, client *eks.EKS, clusterName string) error {
+func (ctrl awsController) waitForAllNodegroupsDeletion(ctx context.Context, client *eks.EKS, clusterName string) error {
 	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
 	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 	if err != nil {
@@ -360,7 +360,7 @@ func (ctrl AWSController) waitForAllNodegroupsDeletion(ctx context.Context, clie
 	return nil
 }
 
-func (ctrl AWSController) deleteNode(ctx context.Context, client *eks.EKS, cluster, node string) error {
+func (ctrl awsController) deleteNode(ctx context.Context, client *eks.EKS, cluster, node string) error {
 	nodeDeleteOut, err := client.DeleteNodegroupWithContext(ctx, &eks.DeleteNodegroupInput{
 		ClusterName:   &cluster,
 		NodegroupName: &node,
@@ -375,7 +375,7 @@ func (ctrl AWSController) deleteNode(ctx context.Context, client *eks.EKS, clust
 }
 
 //DeleteNode delete nodes attched to cluster which is created by spawner
-func (ctrl AWSController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
+func (ctrl awsController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 	clusterName := req.ClusterName
 	nodeName := req.NodeGroupName
 	region := req.Region

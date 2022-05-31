@@ -34,7 +34,7 @@ func asEcrTags(l map[string]string) []*ecr.Tag {
 	return tags
 }
 
-func (a *AWSController) GetContainerRegistryAuth(ctx context.Context, req *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
+func (a *awsController) GetContainerRegistryAuth(ctx context.Context, req *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
 
 	session, err := NewSession(ctx, req.Region, req.GetAccountName())
 
@@ -79,7 +79,7 @@ func (a *AWSController) GetContainerRegistryAuth(ctx context.Context, req *proto
 	}, nil
 }
 
-func (a *AWSController) CreateContainerRegistryRepo(ctx context.Context, req *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
+func (a *awsController) CreateContainerRegistryRepo(ctx context.Context, req *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
 
 	repoName := req.Name
 	session, err := NewSession(ctx, req.Region, req.GetAccountName())

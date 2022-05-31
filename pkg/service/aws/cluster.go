@@ -23,7 +23,7 @@ func getClusterSpec(ctx context.Context, client *eks.EKS, name string) (*eks.Clu
 	return resp.Cluster, err
 }
 
-func (svc AWSController) createClusterInternal(ctx context.Context, session *Session, clusterName string, req *proto.ClusterRequest) (*eks.Cluster, error) {
+func (svc awsController) createClusterInternal(ctx context.Context, session *Session, clusterName string, req *proto.ClusterRequest) (*eks.Cluster, error) {
 
 	var subnetIds []*string
 	region := session.Region
@@ -131,7 +131,7 @@ func isExist(ctx context.Context, client *eks.EKS, name string) (bool, error) {
 }
 
 //CreateCluster Create new cluster with given specification, no op if cluster already exist
-func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
+func (ctrl awsController) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 
 	var clusterName string
 	if clusterName = req.ClusterName; len(clusterName) == 0 {
@@ -174,7 +174,7 @@ func (ctrl AWSController) CreateCluster(ctx context.Context, req *proto.ClusterR
 }
 
 //GetClusters return active, spawner created clusters
-func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
+func (ctrl awsController) GetClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
 
 	//get all clusters in given region
 	region := req.Region
@@ -266,7 +266,7 @@ func (ctrl AWSController) GetClusters(ctx context.Context, req *proto.GetCluster
 }
 
 //GetCluster Describe cluster with the given name and region
-func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
+func (ctrl awsController) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
 
 	response := &proto.ClusterSpec{}
 	region := req.Region
@@ -355,7 +355,7 @@ func (ctrl AWSController) GetCluster(ctx context.Context, req *proto.GetClusterR
 }
 
 //ClusterStatus get the cluster status
-func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
+func (ctrl awsController) ClusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	region := req.Region
 	clusterName := req.ClusterName
 	session, err := NewSession(ctx, region, req.AccountName)
@@ -381,7 +381,7 @@ func (ctrl AWSController) ClusterStatus(ctx context.Context, req *proto.ClusterS
 }
 
 //DeleteCluster delete empty cluster, cluster should not have any nodegroup attached.
-func (ctrl AWSController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
+func (ctrl awsController) DeleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
 
 	clusterName := req.ClusterName
 	region := req.Region

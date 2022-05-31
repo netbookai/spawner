@@ -25,7 +25,7 @@ const (
 	failedCostParsing     = "failed to parse the cost"
 )
 
-func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
+func (a azureController) getWorkspacesCost(ctx context.Context, req *proto.GetWorkspacesCostRequest) (*proto.GetWorkspacesCostResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -207,7 +207,7 @@ func (a AzureController) getWorkspacesCost(ctx context.Context, req *proto.GetWo
 	return costResponse, nil
 }
 
-func (a AzureController) getApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+func (a azureController) getApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -418,7 +418,7 @@ func getGrouping(groupBy *proto.GroupBy) (*[]costmanagement.QueryGrouping, error
 }
 
 // getCostByTime fetches the cost and returns datewise cost based on the startDate and endDate
-func (a AzureController) getCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+func (a azureController) getCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {

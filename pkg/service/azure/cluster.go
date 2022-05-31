@@ -15,7 +15,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func (a *AzureController) createCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
+func (a *azureController) createCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 
 	clusterName := req.ClusterName
 	account := req.AccountName
@@ -111,7 +111,7 @@ func (a *AzureController) createCluster(ctx context.Context, req *proto.ClusterR
 	return &proto.ClusterResponse{ClusterName: clusterName}, nil
 }
 
-func (a *AzureController) getCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
+func (a *azureController) getCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
 
 	clusterName := req.ClusterName
 	account := req.AccountName
@@ -161,7 +161,7 @@ func (a *AzureController) getCluster(ctx context.Context, req *proto.GetClusterR
 	return response, nil
 }
 
-func (a *AzureController) deleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
+func (a *azureController) deleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
 
 	clusterName := req.ClusterName
 
@@ -202,7 +202,7 @@ func (a *AzureController) deleteCluster(ctx context.Context, req *proto.ClusterD
 
 }
 
-func (a *AzureController) getClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
+func (a *azureController) getClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
 
 	account := req.AccountName
 
@@ -269,7 +269,7 @@ func (a *AzureController) getClusters(ctx context.Context, req *proto.GetCluster
 		Clusters: clusters}, nil
 }
 
-func (a *AzureController) clusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
+func (a *azureController) clusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 	clusterName := req.GetClusterName()
 
 	account := req.AccountName

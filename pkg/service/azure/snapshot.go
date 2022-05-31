@@ -12,7 +12,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func (a *AzureController) createDiskSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, name string, disk *compute.Disk, region string, tags map[string]*string) (string, error) {
+func (a *azureController) createDiskSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, name string, disk *compute.Disk, region string, tags map[string]*string) (string, error) {
 
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/snapshots/create-or-update
 	future, err := sc.CreateOrUpdate(
@@ -58,7 +58,7 @@ func (a *AzureController) createDiskSnapshot(ctx context.Context, sc *compute.Sn
 	return *res.ID, nil
 }
 
-func (a *AzureController) createSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
+func (a *azureController) createSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 
 	name := fmt.Sprintf("%s-snapshot", req.Volumeid)
 	region := req.Region
@@ -101,7 +101,7 @@ func (a *AzureController) createSnapshot(ctx context.Context, req *proto.CreateS
 	return &proto.CreateSnapshotResponse{Snapshotid: name, SnapshotUri: uri}, nil
 }
 
-func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
+func (a *azureController) createSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 
 	name := fmt.Sprintf("%s-snapshot", req.Volumeid)
 	region := req.Region
@@ -150,7 +150,7 @@ func (a *AzureController) createSnapshotAndDelete(ctx context.Context, req *prot
 	return &proto.CreateSnapshotAndDeleteResponse{Snapshotid: name, SnapshotUri: uri}, nil
 }
 
-func (a *AzureController) deleteSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
+func (a *azureController) deleteSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
 
 	future, err := sc.Delete(ctx, groupName, snapshotId)
 	a.logger.Debug(ctx, "waiting on the delete snapshot future response")

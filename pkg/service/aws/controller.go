@@ -29,18 +29,18 @@ var (
 	ERR_NO_NODEGROUP    = errors.New("no nodegroup exist in cluster")
 )
 
-type AWSController struct {
+type awsController struct {
 	logger log.Logger
 }
 
 //NewAWSController
-func NewAWSController(logger log.Logger) *AWSController {
-	return &AWSController{
+func NewAWSController(logger log.Logger) *awsController {
+	return &awsController{
 		logger: logger,
 	}
 }
 
 //AddToken deprecated
-func (ctrl AWSController) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
+func (ctrl awsController) AddToken(ctx context.Context, req *proto.AddTokenRequest) (*proto.AddTokenResponse, error) {
 	return &proto.AddTokenResponse{}, nil
 }
