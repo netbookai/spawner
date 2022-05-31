@@ -9,7 +9,7 @@ import (
 )
 
 //GetKubeConfig generates the kubeconfig from the session
-func (ctrl AWSController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
+func (ctrl awsController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
 
 	region := req.Region
 	clusterName := req.ClusterName
@@ -83,7 +83,7 @@ func (ctrl AWSController) GetKubeConfig(ctx context.Context, req *proto.GetKubeC
 }
 
 //GetToken get aws tokens and ca data for kube
-func (ctrl AWSController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
+func (ctrl awsController) GetToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
 
 	region := req.Region
 	clusterName := req.ClusterName

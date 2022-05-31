@@ -34,7 +34,7 @@ func asTags(label map[string]string) []*ec2.Tag {
 	return tags
 }
 
-func (a *AWSController) addTagToNodeInstances(ctx context.Context, region, clusterName, accountName, nodegroup string, label map[string]string) error {
+func (a *awsController) addTagToNodeInstances(ctx context.Context, region, clusterName, accountName, nodegroup string, label map[string]string) error {
 	session, err := NewSession(ctx, region, accountName)
 
 	a.logger.Debug(ctx, "fetching cluster status for '%s', region '%s'", clusterName, region)
@@ -105,7 +105,7 @@ func (a *AWSController) addTagToNodeInstances(ctx context.Context, region, clust
 }
 
 //TagNodeInstance tag underlying ec2 instances of a cluster node
-func (a *AWSController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
+func (a *awsController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
 	err := a.addTagToNodeInstances(ctx, req.Region, req.ClusterName, req.AccountName, req.NodeGroup, req.Labels)
 	if err != nil {
 		a.logger.Error(ctx, "failed to add tag to node instances in a cluster ", "error", err, "clustere", req.ClusterName)

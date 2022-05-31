@@ -11,7 +11,7 @@ import (
 )
 
 //createRoleOrGetExisting creates a role if it does not exist
-func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient *iam.IAM, roleName string, description string, assumeRoleDoc string) (*iam.Role, bool, error) {
+func (svc awsController) createRoleOrGetExisting(ctx context.Context, iamClient *iam.IAM, roleName string, description string, assumeRoleDoc string) (*iam.Role, bool, error) {
 
 	role, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
 		RoleName: &roleName,
@@ -61,7 +61,7 @@ func (svc AWSController) createRoleOrGetExisting(ctx context.Context, iamClient 
 }
 
 //attachPolicy attaches policy to given role
-func (svc AWSController) attachPolicy(ctx context.Context, iamClient *iam.IAM, roleName string, policyARN string) error {
+func (svc awsController) attachPolicy(ctx context.Context, iamClient *iam.IAM, roleName string, policyARN string) error {
 	//attach arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
 
 	attachPolicyInput := &iam.AttachRolePolicyInput{

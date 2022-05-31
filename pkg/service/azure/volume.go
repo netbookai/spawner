@@ -32,7 +32,7 @@ func getDiskSku(vt string) (*compute.DiskSku, error) {
 	return ds, nil
 }
 
-func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
+func (a *azureController) createVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 
 	account := req.AccountName
 
@@ -133,7 +133,7 @@ func (a *AzureController) createVolume(ctx context.Context, req *proto.CreateVol
 
 }
 
-func (a *AzureController) deleteDisk(ctx context.Context, dc *compute.DisksClient, groupName, name string) error {
+func (a *azureController) deleteDisk(ctx context.Context, dc *compute.DisksClient, groupName, name string) error {
 
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/delete
 	future, err := dc.Delete(
@@ -162,7 +162,7 @@ func (a *AzureController) deleteDisk(ctx context.Context, dc *compute.DisksClien
 	return nil
 }
 
-func (a *AzureController) deleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
+func (a *azureController) deleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
 
 	name := req.Volumeid
 

@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *AWSController) createSpotLaunchTemplate(ctx context.Context, client *ec2.EC2, amiId, price, instance, volumeType string, diskSize int64, label map[string]string) (string, error) {
+func (a *awsController) createSpotLaunchTemplate(ctx context.Context, client *ec2.EC2, amiId, price, instance, volumeType string, diskSize int64, label map[string]string) (string, error) {
 
 	//amiId = "ami-09dd25549dd970de5"
 	//fetch launch template ]

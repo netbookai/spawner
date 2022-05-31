@@ -45,7 +45,7 @@ func awsTags(label map[string]string) []*ec2.Tag {
 }
 
 //CreateVolume create aws volume
-func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
+func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 	//Creates an EBS volume
 
 	logger := svc.logger
@@ -131,7 +131,7 @@ func (svc AWSController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 }
 
 //DeleteVolume delete aws volume
-func (svc AWSController) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
+func (svc awsController) DeleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
 	//Deletes an EBS volume
 
 	logger := svc.logger
@@ -176,7 +176,7 @@ func (svc AWSController) DeleteVolume(ctx context.Context, req *proto.DeleteVolu
 }
 
 //CreateSnapshot create volume snapshot
-func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
+func (svc awsController) CreateSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 	//Creates a Snapshot of a volume
 
 	logger := svc.logger
@@ -237,7 +237,7 @@ func (svc AWSController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 }
 
 //CreateSnapshotAndDelete create a  snapshot of volume and delete the volume
-func (svc AWSController) CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
+func (svc awsController) CreateSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 	//First Creates the snapshot of the volume then deletes the volume
 
 	logger := svc.logger
