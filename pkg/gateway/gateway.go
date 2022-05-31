@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/service"
-	"gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 type gateway struct {
@@ -14,18 +13,18 @@ type gateway struct {
 	proto.UnimplementedSpawnerServiceServer
 }
 
-func New(s service.SpawnerService) spawnerservice.SpawnerServiceServer {
+func New(s service.SpawnerService) proto.SpawnerServiceServer {
 	return &gateway{
 		service: s,
 	}
 }
 
-func (g *gateway) HealthCheck(ctx context.Context, req *proto.Empty) (*spawnerservice.Empty, error) {
+func (g *gateway) HealthCheck(ctx context.Context, req *proto.Empty) (*proto.Empty, error) {
 
 	return &proto.Empty{}, nil
 }
 
-func (g *gateway) Echo(ctx context.Context, req *proto.EchoRequest) (*spawnerservice.EchoResponse, error) {
+func (g *gateway) Echo(ctx context.Context, req *proto.EchoRequest) (*proto.EchoResponse, error) {
 
 	return &proto.EchoResponse{
 		Msg: req.Msg,
@@ -33,7 +32,7 @@ func (g *gateway) Echo(ctx context.Context, req *proto.EchoRequest) (*spawnerser
 }
 
 //CreateCluster Spawn required cluster
-func (g *gateway) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*spawnerservice.ClusterResponse, error) {
+func (g *gateway) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 	return g.service.CreateCluster(ctx, req)
 }
 
@@ -112,6 +111,11 @@ func (g *gateway) GetWorkspacesCost(ctx context.Context, req *proto.GetWorkspace
 	return g.service.GetWorkspacesCost(ctx, req)
 }
 
+//GetApplicationsCost
+func (g *gateway) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+	return g.service.GetApplicationsCost(ctx, req)
+}
+
 //WriteCredential save user account credential
 func (g *gateway) WriteCredential(ctx context.Context, req *proto.WriteCredentialRequest) (*proto.WriteCredentialResponse, error) {
 	return g.service.WriteCredential(ctx, req)
@@ -130,4 +134,13 @@ func (g *gateway) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigReq
 //TagNodeInstance tag underlying vm instances for cluster nodes
 func (g *gateway) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
 	return g.service.TagNodeInstance(ctx, req)
+}
+
+//GetCostByTime
+func (g *gateway) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+	return g.service.GetCostByTime(ctx, req)
+}
+
+func (g *gateway) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
+	return g.service.GetContainerRegistryAuth(ctx, in)
 }

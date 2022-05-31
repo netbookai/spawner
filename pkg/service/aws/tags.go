@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
@@ -37,7 +37,7 @@ func asTags(label map[string]string) []*ec2.Tag {
 func (a *AWSController) addTagToNodeInstances(ctx context.Context, region, clusterName, accountName, nodegroup string, label map[string]string) error {
 	session, err := NewSession(ctx, region, accountName)
 
-	a.logger.Debugf("fetching cluster status for '%s', region '%s'", clusterName, region)
+	a.logger.Debug(ctx, "fetching cluster status for '%s', region '%s'", clusterName, region)
 	if err != nil {
 		return errors.Wrap(err, "addTag")
 	}
@@ -66,14 +66,14 @@ func (a *AWSController) addTagToNodeInstances(ctx context.Context, region, clust
 		}})
 
 	if err != nil {
-		a.logger.Errorw("get instance", "error", err)
+		a.logger.Error(ctx, "get instance", "error", err)
 		return err
 	}
 
 	//NOTE: keep an eye out on this field, dono why this is a list.
 
 	if len(res.Reservations) == 0 {
-		a.logger.Infow("no instances in cluster to tag")
+		a.logger.Info(ctx, "no instances in cluster to tag")
 		return errors.New("no instances in cluster to tag")
 	}
 
@@ -89,7 +89,7 @@ func (a *AWSController) addTagToNodeInstances(ctx context.Context, region, clust
 		return errors.New("no instances in cluster to tag")
 	}
 
-	a.logger.Infow("adding tags to the following resources", "id", rids)
+	a.logger.Info(ctx, "adding tags to the following resources", "id", rids)
 
 	tags := asTags(label)
 	_, err = ec.CreateTags(&ec2.CreateTagsInput{
@@ -108,7 +108,7 @@ func (a *AWSController) addTagToNodeInstances(ctx context.Context, region, clust
 func (a *AWSController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
 	err := a.addTagToNodeInstances(ctx, req.Region, req.ClusterName, req.AccountName, req.NodeGroup, req.Labels)
 	if err != nil {
-		a.logger.Errorw("failed to add tag to node instances in a cluster ", "error", err, "clustere", req.ClusterName)
+		a.logger.Error(ctx, "failed to add tag to node instances in a cluster ", "error", err, "clustere", req.ClusterName)
 		return nil, err
 	}
 

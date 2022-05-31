@@ -3,22 +3,22 @@ package azure
 import (
 	"context"
 
-	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookdevs/spawnerservice"
-	"go.uber.org/zap"
+	"github.com/netbookai/log"
+	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
 type AzureController struct {
-	logger *zap.SugaredLogger
+	logger log.Logger
 }
 
-func NewController(logger *zap.SugaredLogger) *AzureController {
+func NewController(logger log.Logger) *AzureController {
 	return &AzureController{
 		logger: logger,
 	}
 }
 
 func (a *AzureController) CreateCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
-	return a.createAKSCluster(ctx, req)
+	return a.createCluster(ctx, req)
 }
 
 func (a *AzureController) GetCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
@@ -73,10 +73,22 @@ func (a *AzureController) GetWorkspacesCost(ctx context.Context, req *proto.GetW
 	return a.getWorkspacesCost(ctx, req)
 }
 
+func (a *AzureController) GetApplicationsCost(ctx context.Context, req *proto.GetApplicationsCostRequest) (*proto.GetApplicationsCostResponse, error) {
+	return a.getApplicationsCost(ctx, req)
+}
+
 func (a *AzureController) GetKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
 	return a.getKubeConfig(ctx, req)
 }
 
 func (a *AzureController) TagNodeInstance(ctx context.Context, req *proto.TagNodeInstanceRequest) (*proto.TagNodeInstanceResponse, error) {
 	return &proto.TagNodeInstanceResponse{}, nil
+}
+
+func (a *AzureController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
+	return a.getCostByTime(ctx, req)
+}
+
+func (a *AzureController) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
+	return &proto.GetContainerRegistryAuthResponse{}, nil
 }
