@@ -41,6 +41,8 @@ spec:
           value: '{{ .Values.node_deletion_timeout_in_seconds }}'
         - name: AZURE_CLOUD_PROVIDER
           value: {{ .Values.azure_cloud_provider }}
+        - name: OPENID_ROLE
+          value: {{ .Values.openid_role }}
 
         ports:
           - containerPort: {{ .Values.grpc_port }} 
