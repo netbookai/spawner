@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -19,7 +21,7 @@ import (
 const trustPolicTemplate = `{
 			"Effect": "Allow",
 			"Principal": {
-				"Federated": "%s/%s"
+				"Federated": "%s"
 			},
 			"Action": "sts:AssumeRoleWithWebIdentity",
 			"Condition": {
@@ -31,7 +33,7 @@ const trustPolicTemplate = `{
 		}`
 
 func getTrustPolicyDocument(federatedPrefix, oidcUrl string) string {
-	return fmt.Sprintf(trustPolicTemplate, federatedPrefix, oidcUrl, oidcUrl, oidcUrl)
+	return fmt.Sprintf(trustPolicTemplate, federatedPrefix, oidcUrl, oidcUrl)
 }
 
 //generateTrustPolicyDocument read the current policy document as a map, create new policy using the template stringa and convert that to map
@@ -83,26 +85,50 @@ func (a *awsController) ConnectClusterOIDCToTrustPolicy(ctx context.Context, req
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the cluster")
 	}
+
+	if *cluster.Status != eks.ClusterStatusActive {
+		a.logger.Info(ctx, "cluster is not active yet", "status", *cluster.Status)
+		return nil, fmt.Errorf("cluster is not active, curent state: %s", *cluster.Status)
+	}
+	if cluster.Identity == nil {
+		a.logger.Info(ctx, "cluster doesnt have identity", "identity", nil)
+		return nil, errors.New("cluster identity is nil")
+	}
+
 	issuer := *cluster.Identity.Oidc.Issuer
 
 	a.logger.Info(ctx, "cluster found", "issuer", issuer)
 
 	iamClient := session.getIAMClient()
-
-	//	providerArn := "arn:aws:iam::965734315247:oidc-provider"
-	//TODO: where is this coming from ? @mani
-	thumbprint := "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
-	r, err := iamClient.CreateOpenIDConnectProviderWithContext(ctx, &iam.CreateOpenIDConnectProviderInput{
-
-		ClientIDList:   []*string{aws.String("sts.amazonaws.com")},
-		ThumbprintList: []*string{&thumbprint},
-		Url:            &issuer,
-	})
+	accountId, err := session.getAccountId()
 	if err != nil {
-		a.logger.Error(ctx, "failed to create open id connect provider", "error", err)
-		return nil, errors.Wrap(err, "CreateOpenIDConnectProvider ")
+		a.logger.Error(ctx, "failed to get the account id", "error", err)
+		return nil, errors.Wrap(err, "getAccountid")
 	}
-	providerArn := *r.OpenIDConnectProviderArn
+
+	clusterUrl := strings.Split(issuer, "https://")[1]
+	providerArn := fmt.Sprintf("arn:aws:iam::%s:oidc-provider/%s", accountId, clusterUrl)
+	//check if we already created a open id oidcProvider
+	_, err = iamClient.GetOpenIDConnectProviderWithContext(ctx, &iam.GetOpenIDConnectProviderInput{
+		OpenIDConnectProviderArn: &providerArn,
+	})
+
+	if err != nil {
+		a.logger.Error(ctx, "failed to fetch open id provider", "error", err)
+
+		//TODO: where is this coming from ? @mani
+		thumbprint := "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+		r, err := iamClient.CreateOpenIDConnectProviderWithContext(ctx, &iam.CreateOpenIDConnectProviderInput{
+			ClientIDList:   []*string{aws.String("sts.amazonaws.com")},
+			ThumbprintList: []*string{&thumbprint},
+			Url:            &issuer,
+		})
+		if err != nil {
+			a.logger.Error(ctx, "failed to create open id connect provider", "error", err)
+			return nil, errors.Wrap(err, "CreateOpenIDConnectProvider ")
+		}
+		providerArn = *r.OpenIDConnectProviderArn
+	}
 
 	role, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
 		RoleName: &roleName,
@@ -113,7 +139,7 @@ func (a *awsController) ConnectClusterOIDCToTrustPolicy(ctx context.Context, req
 	}
 
 	//get the current policy doc and append current cluster statement
-	newPolicy, err := generateTrustPolicyDocument(*role.Role.AssumeRolePolicyDocument, providerArn, issuer)
+	newPolicy, err := generateTrustPolicyDocument(*role.Role.AssumeRolePolicyDocument, providerArn, clusterUrl)
 	if err != nil {
 		a.logger.Error(ctx, "generateTrustPolicyDocument ")
 		return nil, errors.Wrap(err, "failed to generate the new policy doc")
