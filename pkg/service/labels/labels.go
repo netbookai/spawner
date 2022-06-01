@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
@@ -42,7 +43,7 @@ func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 }
 
 func ScopeTag() string {
-	return fmt.Sprintf("nb-%s", "dev")
+	return fmt.Sprintf("nb-%s", config.Get().Env)
 }
 
 //DefaultTags labels/tags which is added to all spawner resources
