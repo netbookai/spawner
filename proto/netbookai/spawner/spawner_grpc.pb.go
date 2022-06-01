@@ -62,6 +62,7 @@ type SpawnerServiceClient interface {
 	GetCostByTime(ctx context.Context, in *GetCostByTimeRequest, opts ...grpc.CallOption) (*GetCostByTimeResponse, error)
 	GetContainerRegistryAuth(ctx context.Context, in *GetContainerRegistryAuthRequest, opts ...grpc.CallOption) (*GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(ctx context.Context, in *CreateContainerRegistryRepoRequest, opts ...grpc.CallOption) (*CreateContainerRegistryRepoResponse, error)
+	ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *ConnectClusterOIDCToTrustPolicyRequest, opts ...grpc.CallOption) (*ConnectClusterOIDCToTrustPolicyResponse, error)
 }
 
 type spawnerServiceClient struct {
@@ -316,6 +317,15 @@ func (c *spawnerServiceClient) CreateContainerRegistryRepo(ctx context.Context, 
 	return out, nil
 }
 
+func (c *spawnerServiceClient) ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *ConnectClusterOIDCToTrustPolicyRequest, opts ...grpc.CallOption) (*ConnectClusterOIDCToTrustPolicyResponse, error) {
+	out := new(ConnectClusterOIDCToTrustPolicyResponse)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/ConnectClusterOIDCToTrustPolicy", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SpawnerServiceServer is the server API for SpawnerService service.
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
@@ -360,6 +370,7 @@ type SpawnerServiceServer interface {
 	GetCostByTime(context.Context, *GetCostByTimeRequest) (*GetCostByTimeResponse, error)
 	GetContainerRegistryAuth(context.Context, *GetContainerRegistryAuthRequest) (*GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(context.Context, *CreateContainerRegistryRepoRequest) (*CreateContainerRegistryRepoResponse, error)
+	ConnectClusterOIDCToTrustPolicy(context.Context, *ConnectClusterOIDCToTrustPolicyRequest) (*ConnectClusterOIDCToTrustPolicyResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -447,6 +458,9 @@ func (UnimplementedSpawnerServiceServer) GetContainerRegistryAuth(context.Contex
 }
 func (UnimplementedSpawnerServiceServer) CreateContainerRegistryRepo(context.Context, *CreateContainerRegistryRepoRequest) (*CreateContainerRegistryRepoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateContainerRegistryRepo not implemented")
+}
+func (UnimplementedSpawnerServiceServer) ConnectClusterOIDCToTrustPolicy(context.Context, *ConnectClusterOIDCToTrustPolicyRequest) (*ConnectClusterOIDCToTrustPolicyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectClusterOIDCToTrustPolicy not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
@@ -947,6 +961,24 @@ func _SpawnerService_CreateContainerRegistryRepo_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SpawnerService_ConnectClusterOIDCToTrustPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConnectClusterOIDCToTrustPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).ConnectClusterOIDCToTrustPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/spawner.SpawnerService/ConnectClusterOIDCToTrustPolicy",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).ConnectClusterOIDCToTrustPolicy(ctx, req.(*ConnectClusterOIDCToTrustPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SpawnerService_ServiceDesc is the grpc.ServiceDesc for SpawnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1061,6 +1093,10 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateContainerRegistryRepo",
 			Handler:    _SpawnerService_CreateContainerRegistryRepo_Handler,
+		},
+		{
+			MethodName: "ConnectClusterOIDCToTrustPolicy",
+			Handler:    _SpawnerService_ConnectClusterOIDCToTrustPolicy_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

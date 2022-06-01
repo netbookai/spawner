@@ -564,6 +564,18 @@ func main() {
 		}
 		sugar.Infow("CreateContainerRegistryRepo: created repo", "response", v)
 
+	case "ConnectClusterOIDCToTrustPolicy":
+		v, err := client.ConnectClusterOIDCToTrustPolicy(context.Background(), &proto.ConnectClusterOIDCToTrustPolicyRequest{
+			Provider:    "aws",
+			Region:      region,
+			AccountName: accountName,
+			ClusterName: clusterName,
+		})
+		if err != nil {
+			sugar.Errorw("error connecting cluster oidc to policy", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("ConnectClusterOIDCToTrustPolicy : connect cluster to oidc", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)

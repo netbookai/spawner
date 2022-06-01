@@ -152,3 +152,7 @@ func (g *gateway) CreateContainerRegistryRepo(ctx context.Context, in *proto.Cre
 func (g *gateway) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
 	return g.service.DeleteSnapshot(ctx, req)
 }
+
+func (g *gateway) ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *proto.ConnectClusterOIDCToTrustPolicyRequest) (*proto.ConnectClusterOIDCToTrustPolicyResponse, error) {
+	return g.service.ConnectClusterOIDCToTrustPolicy(ctx, in)
+}

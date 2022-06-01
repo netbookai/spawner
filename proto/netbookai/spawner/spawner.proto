@@ -81,6 +81,9 @@ service SpawnerService {
 
   rpc CreateContainerRegistryRepo(CreateContainerRegistryRepoRequest)
       returns (CreateContainerRegistryRepoResponse) {}
+
+  rpc ConnectClusterOIDCToTrustPolicy(ConnectClusterOIDCToTrustPolicyRequest)
+      returns (ConnectClusterOIDCToTrustPolicyResponse) {}
 }
 
 message Empty {}
@@ -496,3 +499,11 @@ message DeleteSnapshotRequest {
   string snapshotId = 4;
 }
 message DeleteSnapshotResponse {}
+
+message ConnectClusterOIDCToTrustPolicyRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+}
+message ConnectClusterOIDCToTrustPolicyResponse {}

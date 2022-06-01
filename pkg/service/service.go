@@ -47,6 +47,8 @@ type SpawnerService interface {
 
 	GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error)
+
+	ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *proto.ConnectClusterOIDCToTrustPolicyRequest) (*proto.ConnectClusterOIDCToTrustPolicyResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -464,4 +466,13 @@ func (s *spawnerService) DeleteSnapshot(ctx context.Context, req *proto.DeleteSn
 		return nil, err
 	}
 	return provider.DeleteSnapshot(ctx, req)
+}
+
+func (s *spawnerService) ConnectClusterOIDCToTrustPolicy(ctx context.Context, req *proto.ConnectClusterOIDCToTrustPolicyRequest) (*proto.ConnectClusterOIDCToTrustPolicyResponse, error) {
+
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.ConnectClusterOIDCToTrustPolicy(ctx, req)
 }
