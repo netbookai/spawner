@@ -12,6 +12,7 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -303,7 +304,10 @@ func main() {
 		}
 		sugar.Infow("GetClusters method", "response", v)
 	case "ClusterStatus":
-		v, err := client.ClusterStatus(context.Background(), clusterStatusReq)
+		ctx := context.Background()
+
+		ctx = metadata.AppendToOutgoingContext(ctx, "trace-id", "cafebabe-345678-xcvbn-345678-QWDFVBNJI")
+		v, err := client.ClusterStatus(ctx, clusterStatusReq)
 		if err != nil {
 			sugar.Errorw("error fetching cluster status", "error", err)
 			os.Exit(1)

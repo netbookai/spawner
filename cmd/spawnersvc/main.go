@@ -11,6 +11,7 @@ import (
 
 	"github.com/netbook-ai/interceptors"
 	"github.com/netbookai/log"
+	"github.com/netbookai/log/loggers"
 	"github.com/netbookai/log/loggers/zap"
 	"github.com/oklog/oklog/pkg/group"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -101,6 +102,9 @@ func main() {
 	err := config.Load(".")
 	logger := log.NewLogger(zap.NewLogger())
 
+	if config.Get().Env == "local" {
+		logger.SetLevel(loggers.DebugLevel)
+	}
 	if err != nil {
 		logger.Error(ctx, "failed to load config", "error", err)
 		return
