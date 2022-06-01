@@ -824,6 +824,8 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/netbook-ai/interceptors v0.2.2 h1:0k9H7iqybo3p/TcXc0DYNUCbF0dcRteLlsFvi918TkE=
 github.com/netbook-ai/interceptors v0.2.2/go.mod h1:1miFTuNM+cduMLvSamnkd/28gw3qwiPKL6adnrHnIGI=
+github.com/netbook-ai/interceptors v0.2.3 h1:CozJfP+Bers78a1PR5E1h8shX8CTIwSNgPTCtyz/ZRY=
+github.com/netbook-ai/interceptors v0.2.3/go.mod h1:1miFTuNM+cduMLvSamnkd/28gw3qwiPKL6adnrHnIGI=
 github.com/netbookai/log v0.4.0 h1:aS8EjjzSmywftjx8Ass7MPZVXBJAVAktCYjBLpxOYaI=
 github.com/netbookai/log v0.4.0/go.mod h1:C1DmY3OUFmVvknYzSI0y3LzuFysVLOfGdbssHGJPcNc=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
