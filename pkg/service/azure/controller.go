@@ -96,3 +96,7 @@ func (a *azureController) GetContainerRegistryAuth(ctx context.Context, in *prot
 func (a *azureController) CreateContainerRegistryRepo(ctx context.Context, req *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
 	return &proto.CreateContainerRegistryRepoResponse{}, nil
 }
+
+func (a *azureController) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
+	return a.deleteSnapshot(ctx, req)
+}

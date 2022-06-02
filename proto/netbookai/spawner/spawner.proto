@@ -49,6 +49,8 @@ service SpawnerService {
 
   rpc CreateSnapshot(CreateSnapshotRequest) returns (CreateSnapshotResponse) {}
 
+  rpc DeleteSnapshot(DeleteSnapshotRequest) returns (DeleteSnapshotResponse) {}
+
   rpc CreateSnapshotAndDelete(CreateSnapshotAndDeleteRequest)
       returns (CreateSnapshotAndDeleteResponse) {}
 
@@ -77,7 +79,8 @@ service SpawnerService {
   rpc GetContainerRegistryAuth(GetContainerRegistryAuthRequest)
       returns (GetContainerRegistryAuthResponse) {}
 
-rpc CreateContainerRegistryRepo(CreateContainerRegistryRepoRequest) returns (CreateContainerRegistryRepoResponse) {}
+  rpc CreateContainerRegistryRepo(CreateContainerRegistryRepoRequest)
+      returns (CreateContainerRegistryRepoResponse) {}
 }
 
 message Empty {}
@@ -485,3 +488,11 @@ message CreateContainerRegistryRepoRequest {
   string name = 4;
   map<string, string> tags = 5;
 }
+
+message DeleteSnapshotRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string snapshotId = 4;
+}
+message DeleteSnapshotResponse {}

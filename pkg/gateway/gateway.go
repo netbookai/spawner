@@ -148,3 +148,7 @@ func (g *gateway) GetContainerRegistryAuth(ctx context.Context, in *proto.GetCon
 func (g *gateway) CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
 	return g.service.CreateContainerRegistryRepo(ctx, in)
 }
+
+func (g *gateway) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
+	return g.service.DeleteSnapshot(ctx, req)
+}

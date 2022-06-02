@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/netbookai/log"
+	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
@@ -313,4 +314,27 @@ func (svc awsController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 	}
 
 	return res, nil
+}
+
+func (a *awsController) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
+
+	session, err := NewSession(ctx, req.Region, req.AccountName)
+
+	if err != nil {
+		a.logger.Error(ctx, "Can't start AWS session", "error", err)
+		return nil, err
+	}
+
+	ec2Client := session.getEC2Client()
+	_, err = ec2Client.DeleteSnapshotWithContext(ctx, &ec2.DeleteSnapshotInput{
+		SnapshotId: &req.SnapshotId,
+	})
+
+	if err != nil {
+		a.logger.Error(ctx, "failed to delete snapshot", "error", err, "snapshotid", req.SnapshotId)
+		return nil, errors.Wrap(err, "DeleteSnapshot")
+	}
+	a.logger.Info(ctx, "snapshot deleted", "snapshotid", req.SnapshotId)
+
+	return &proto.DeleteSnapshotResponse{}, nil
 }

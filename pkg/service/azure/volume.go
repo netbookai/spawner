@@ -120,7 +120,7 @@ func (a *azureController) createVolume(ctx context.Context, req *proto.CreateVol
 				return
 			}
 
-			err = a.deleteSnapshot(ctx, sc, cred.ResourceGroup, req.Snapshotid)
+			err = a.deleteSnapshotInternal(ctx, sc, cred.ResourceGroup, req.Snapshotid)
 			if err != nil {
 				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
 				a.logger.Error(ctx, "failed to delete the snapshot", "error", err)
