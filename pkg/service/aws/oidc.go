@@ -2,9 +2,15 @@ package aws
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -34,6 +40,102 @@ const trustPolicTemplate = `{
 
 func getTrustPolicyDocument(federatedPrefix, oidcUrl string) string {
 	return fmt.Sprintf(trustPolicTemplate, federatedPrefix, oidcUrl, oidcUrl)
+}
+
+type partialOIDCConfig struct {
+	JwksURI string `json:"jwks_uri"`
+}
+
+func getJwksURL(ctx context.Context, openidConfigURL string) (string, error) {
+
+	req, err := http.NewRequestWithContext(ctx, "GET", openidConfigURL, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var partialOIDCConfig partialOIDCConfig
+	if err := json.Unmarshal(body, &partialOIDCConfig); err != nil {
+		return "", err
+	}
+
+	return partialOIDCConfig.JwksURI, nil
+}
+
+// getThumbprint will get the root CA from TLS certificate chain for the FQDN of the JWKS URL.
+func getThumbprint(jwksURL string) (string, error) {
+	parsedURL, err := url.Parse(jwksURL)
+	if err != nil {
+		return "", err
+	}
+	hostname := parsedURL.Host
+	if parsedURL.Port() == "" {
+		hostname = net.JoinHostPort(hostname, "443")
+	}
+
+	resp, err := http.Get("https://" + hostname)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	peerCerts := resp.TLS.PeerCertificates
+	numCerts := len(peerCerts)
+	if numCerts == 0 {
+		return "", fmt.Errorf("could not find any peer certificates for URL %s", jwksURL)
+	}
+
+	// root CA certificate is the last one in the list
+	root := peerCerts[numCerts-1]
+	return sha1Hash(root.Raw), nil
+}
+
+// sha1Hash computes the SHA1 of the byte array and returns the hex encoding as a string.
+func sha1Hash(data []byte) string {
+	hasher := sha1.New()
+	hasher.Write(data)
+	hashed := hasher.Sum(nil)
+	return hex.EncodeToString(hashed)
+}
+
+// getOIDCConfigURL constructs the URL where you can retrieve the OIDC Config information for a given OIDC provider.
+func getOIDCConfigURL(issuerURL string) (string, error) {
+	parsedURL, err := url.Parse(issuerURL)
+	if err != nil {
+		return "", err
+	}
+
+	parsedURL.Path = path.Join(parsedURL.Path, ".well-known", "openid-configuration")
+	openidConfigURL := parsedURL.String()
+	return openidConfigURL, nil
+}
+
+// getOIDCThumbprint will retrieve the thumbprint of the root CA for the OIDC Provider identified by the issuer URL.
+// This is done by first looking up the domain where the keys are provided, and then looking up the TLS certificate
+// chain for that domain.
+func getOIDCThumbprint(ctx context.Context, issuerURL string) (string, error) {
+
+	openidConfigURL, err := getOIDCConfigURL(issuerURL)
+	if err != nil {
+		return "", errors.Wrap(err, "getOIDCConfigURL")
+	}
+
+	jwksURL, err := getJwksURL(ctx, openidConfigURL)
+	if err != nil {
+		return "", errors.Wrap(err, "getJwksURL")
+	}
+
+	return getThumbprint(jwksURL)
 }
 
 //generateTrustPolicyDocument read the current policy document as a map, create new policy using the template stringa and convert that to map
@@ -121,8 +223,12 @@ func (a *awsController) RegisterClusterOIDC(ctx context.Context, req *proto.Regi
 	if err != nil {
 		a.logger.Error(ctx, "failed to fetch open id provider", "error", err)
 
-		//TODO: where is this coming from ? @mani
-		thumbprint := "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+		a.logger.Info(ctx, "generating OIDC thumbprint ", "issuer", issuer)
+		thumbprint, err := getOIDCThumbprint(ctx, issuer) //sample: "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+		if err != nil {
+			a.logger.Error(ctx, "failed to get oidc thumbprint", "error", err, "issuer", issuer)
+			return nil, errors.Wrap(err, "getOIDCThumbprint")
+		}
 		r, err := iamClient.CreateOpenIDConnectProviderWithContext(ctx, &iam.CreateOpenIDConnectProviderInput{
 			ClientIDList:   []*string{aws.String("sts.amazonaws.com")},
 			ThumbprintList: []*string{&thumbprint},
