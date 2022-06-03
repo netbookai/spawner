@@ -68,7 +68,7 @@ func generateTrustPolicyDocument(currentPolicyDoc, oidcproviderArn, oidcIssuer s
 
 // fetch OIDC from the cluster and attach it to role policy
 
-func (a *awsController) ConnectClusterOIDCToTrustPolicy(ctx context.Context, req *proto.ConnectClusterOIDCToTrustPolicyRequest) (*proto.ConnectClusterOIDCToTrustPolicyResponse, error) {
+func (a *awsController) RegisterClusterOIDC(ctx context.Context, req *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
 	//get the oidc endpoint from the cluster spec
 
 	roleName := config.Get().OpenIDRole
@@ -93,6 +93,11 @@ func (a *awsController) ConnectClusterOIDCToTrustPolicy(ctx context.Context, req
 	if cluster.Identity == nil {
 		a.logger.Info(ctx, "cluster doesnt have identity", "identity", nil)
 		return nil, errors.New("cluster identity is nil")
+	}
+
+	if cluster.Identity.Oidc == nil {
+		a.logger.Info(ctx, "cluster doesnt have oidc identity", "identity.oidc", nil)
+		return nil, errors.New("cluster oidc identity is nil")
 	}
 
 	issuer := *cluster.Identity.Oidc.Issuer
@@ -141,7 +146,7 @@ func (a *awsController) ConnectClusterOIDCToTrustPolicy(ctx context.Context, req
 	//get the current policy doc and append current cluster statement
 	newPolicy, err := generateTrustPolicyDocument(*role.Role.AssumeRolePolicyDocument, providerArn, clusterUrl)
 	if err != nil {
-		a.logger.Error(ctx, "generateTrustPolicyDocument ")
+		a.logger.Error(ctx, "failed to generate trust policyDocument", "error", err)
 		return nil, errors.Wrap(err, "failed to generate the new policy doc")
 	}
 
@@ -155,5 +160,5 @@ func (a *awsController) ConnectClusterOIDCToTrustPolicy(ctx context.Context, req
 	}
 
 	a.logger.Info(ctx, "updated role policy document")
-	return &proto.ConnectClusterOIDCToTrustPolicyResponse{}, nil
+	return &proto.RegisterClusterOIDCResponse{}, nil
 }

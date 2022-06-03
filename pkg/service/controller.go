@@ -30,5 +30,5 @@ type Controller interface {
 	GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error)
 
-	ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *proto.ConnectClusterOIDCToTrustPolicyRequest) (*proto.ConnectClusterOIDCToTrustPolicyResponse, error)
+	RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error)
 }

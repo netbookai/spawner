@@ -104,7 +104,7 @@ func (a *azureController) DeleteSnapshot(ctx context.Context, req *proto.DeleteS
 ||||||| parent of b6242be (implement oidc connect to iam role)
 =======
 
-func (a *azureController) ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *proto.ConnectClusterOIDCToTrustPolicyRequest) (*proto.ConnectClusterOIDCToTrustPolicyResponse, error) {
-	return &proto.ConnectClusterOIDCToTrustPolicyResponse{}, nil
+func (a *azureController) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
+	return &proto.RegisterClusterOIDCResponse{}, nil
 }
 >>>>>>> b6242be (implement oidc connect to iam role)

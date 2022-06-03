@@ -62,7 +62,7 @@ type SpawnerServiceClient interface {
 	GetCostByTime(ctx context.Context, in *GetCostByTimeRequest, opts ...grpc.CallOption) (*GetCostByTimeResponse, error)
 	GetContainerRegistryAuth(ctx context.Context, in *GetContainerRegistryAuthRequest, opts ...grpc.CallOption) (*GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(ctx context.Context, in *CreateContainerRegistryRepoRequest, opts ...grpc.CallOption) (*CreateContainerRegistryRepoResponse, error)
-	ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *ConnectClusterOIDCToTrustPolicyRequest, opts ...grpc.CallOption) (*ConnectClusterOIDCToTrustPolicyResponse, error)
+	RegisterClusterOIDC(ctx context.Context, in *RegisterClusterOIDCRequest, opts ...grpc.CallOption) (*RegisterClusterOIDCResponse, error)
 }
 
 type spawnerServiceClient struct {
@@ -317,9 +317,9 @@ func (c *spawnerServiceClient) CreateContainerRegistryRepo(ctx context.Context, 
 	return out, nil
 }
 
-func (c *spawnerServiceClient) ConnectClusterOIDCToTrustPolicy(ctx context.Context, in *ConnectClusterOIDCToTrustPolicyRequest, opts ...grpc.CallOption) (*ConnectClusterOIDCToTrustPolicyResponse, error) {
-	out := new(ConnectClusterOIDCToTrustPolicyResponse)
-	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/ConnectClusterOIDCToTrustPolicy", in, out, opts...)
+func (c *spawnerServiceClient) RegisterClusterOIDC(ctx context.Context, in *RegisterClusterOIDCRequest, opts ...grpc.CallOption) (*RegisterClusterOIDCResponse, error) {
+	out := new(RegisterClusterOIDCResponse)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/RegisterClusterOIDC", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +370,7 @@ type SpawnerServiceServer interface {
 	GetCostByTime(context.Context, *GetCostByTimeRequest) (*GetCostByTimeResponse, error)
 	GetContainerRegistryAuth(context.Context, *GetContainerRegistryAuthRequest) (*GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(context.Context, *CreateContainerRegistryRepoRequest) (*CreateContainerRegistryRepoResponse, error)
-	ConnectClusterOIDCToTrustPolicy(context.Context, *ConnectClusterOIDCToTrustPolicyRequest) (*ConnectClusterOIDCToTrustPolicyResponse, error)
+	RegisterClusterOIDC(context.Context, *RegisterClusterOIDCRequest) (*RegisterClusterOIDCResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -459,8 +459,8 @@ func (UnimplementedSpawnerServiceServer) GetContainerRegistryAuth(context.Contex
 func (UnimplementedSpawnerServiceServer) CreateContainerRegistryRepo(context.Context, *CreateContainerRegistryRepoRequest) (*CreateContainerRegistryRepoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateContainerRegistryRepo not implemented")
 }
-func (UnimplementedSpawnerServiceServer) ConnectClusterOIDCToTrustPolicy(context.Context, *ConnectClusterOIDCToTrustPolicyRequest) (*ConnectClusterOIDCToTrustPolicyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ConnectClusterOIDCToTrustPolicy not implemented")
+func (UnimplementedSpawnerServiceServer) RegisterClusterOIDC(context.Context, *RegisterClusterOIDCRequest) (*RegisterClusterOIDCResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterClusterOIDC not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
@@ -961,20 +961,20 @@ func _SpawnerService_CreateContainerRegistryRepo_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SpawnerService_ConnectClusterOIDCToTrustPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConnectClusterOIDCToTrustPolicyRequest)
+func _SpawnerService_RegisterClusterOIDC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterClusterOIDCRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SpawnerServiceServer).ConnectClusterOIDCToTrustPolicy(ctx, in)
+		return srv.(SpawnerServiceServer).RegisterClusterOIDC(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawner.SpawnerService/ConnectClusterOIDCToTrustPolicy",
+		FullMethod: "/spawner.SpawnerService/RegisterClusterOIDC",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SpawnerServiceServer).ConnectClusterOIDCToTrustPolicy(ctx, req.(*ConnectClusterOIDCToTrustPolicyRequest))
+		return srv.(SpawnerServiceServer).RegisterClusterOIDC(ctx, req.(*RegisterClusterOIDCRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1095,8 +1095,8 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SpawnerService_CreateContainerRegistryRepo_Handler,
 		},
 		{
-			MethodName: "ConnectClusterOIDCToTrustPolicy",
-			Handler:    _SpawnerService_ConnectClusterOIDCToTrustPolicy_Handler,
+			MethodName: "RegisterClusterOIDC",
+			Handler:    _SpawnerService_RegisterClusterOIDC_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
