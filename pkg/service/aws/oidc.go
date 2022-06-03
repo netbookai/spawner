@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
@@ -32,14 +33,14 @@ const trustPolicTemplate = `{
 			"Action": "sts:AssumeRoleWithWebIdentity",
 			"Condition": {
 				"StringEquals": {
-					"%s:sub": "system:serviceaccount:oidc:awskube2iam",
+					"%s:sub": "system:serviceaccount:%s:%s",
 					"%s:aud": "sts.amazonaws.com"
 				}
 			}
 		}`
 
 func getTrustPolicyDocument(federatedPrefix, oidcUrl string) string {
-	return fmt.Sprintf(trustPolicTemplate, federatedPrefix, oidcUrl, oidcUrl)
+	return fmt.Sprintf(trustPolicTemplate, federatedPrefix, oidcUrl, oidcUrl, constants.OIDCNamespace, constants.OIDCServiceAccount)
 }
 
 type partialOIDCConfig struct {
