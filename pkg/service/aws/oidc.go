@@ -74,7 +74,7 @@ func getJwksURL(ctx context.Context, openidConfigURL string) (string, error) {
 }
 
 // getThumbprint will get the root CA from TLS certificate chain for the FQDN of the JWKS URL.
-func getThumbprint(jwksURL string) (string, error) {
+func getThumbprint(ctx context.Context, jwksURL string) (string, error) {
 	parsedURL, err := url.Parse(jwksURL)
 	if err != nil {
 		return "", err
@@ -84,7 +84,13 @@ func getThumbprint(jwksURL string) (string, error) {
 		hostname = net.JoinHostPort(hostname, "443")
 	}
 
-	resp, err := http.Get("https://" + hostname)
+	url := "https://" + hostname
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +142,7 @@ func getOIDCThumbprint(ctx context.Context, issuerURL string) (string, error) {
 		return "", errors.Wrap(err, "getJwksURL")
 	}
 
-	return getThumbprint(jwksURL)
+	return getThumbprint(ctx, jwksURL)
 }
 
 //generateTrustPolicyDocument read the current policy document as a map, create new policy using the template stringa and convert that to map
@@ -201,6 +207,11 @@ func (a *awsController) RegisterClusterOIDC(ctx context.Context, req *proto.Regi
 	if cluster.Identity.Oidc == nil {
 		a.logger.Info(ctx, "cluster doesnt have oidc identity", "identity.oidc", nil)
 		return nil, errors.New("cluster oidc identity is nil")
+	}
+
+	if cluster.Identity.Oidc.Issuer == nil {
+		a.logger.Info(ctx, "cluster oidc identity issuer is nil", "identity.oidc.issuer", nil)
+		return nil, errors.New("cluster oidc identity issuer is nil")
 	}
 
 	issuer := *cluster.Identity.Oidc.Issuer
