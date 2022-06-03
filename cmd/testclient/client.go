@@ -17,12 +17,12 @@ import (
 
 const (
 	clusterName = "kubeflow"
-	region      = "us-west-2" //"eastus2" //"us-west-2"
-	provider    = "aws"
+	region      = "eastus2" //"us-west-2"
+	provider    = "azure"
 	accountName = "netbook-aws"
 	nodeName    = "rootnode"
 	instance    = "Standard_A2_v2"
-	volumeName  = "vol-094f882e240396ed9"
+	volumeName  = "vol-50-20220603121711"
 )
 
 func main() {
@@ -154,13 +154,13 @@ func main() {
 
 	createVolumeReq := &proto.CreateVolumeRequest{
 		Availabilityzone: region,
-		Volumetype:       "gp2",
+		Volumetype:       "StandardSSD_LRS", //"gp2",
 		Size:             50,
-		Snapshotid:       "vol-30-20220409151829-snapshot",
-		SnapshotUri:      "snapshot-uri",
-		Region:           region,
-		Provider:         provider,
-		AccountName:      accountName,
+		//	Snapshotid:       "vol-30-20220409151829-snapshot",
+		//SnapshotUri: "snapshot-uri",
+		Region:      region,
+		Provider:    provider,
+		AccountName: accountName,
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
@@ -387,6 +387,21 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("CreateSnapshot method", "response", v)
+
+	case "DeleteSnapshot":
+		v, err := client.DeleteSnapshot(context.Background(), &proto.DeleteSnapshotRequest{
+			Provider:    provider,
+			Region:      region,
+			AccountName: accountName,
+			SnapshotId:  "vol-50-20220603121711-snapshot",
+		})
+
+		if err != nil {
+			sugar.Errorw("error deleting snapshot", "error", err)
+
+			return
+		}
+		sugar.Info("snapshot deleted", "response", v)
 
 	case "CreateSnapshotAndDelete":
 		v, err := client.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)

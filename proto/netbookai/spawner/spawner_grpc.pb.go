@@ -49,6 +49,7 @@ type SpawnerServiceClient interface {
 	// Delete Vol
 	DeleteVolume(ctx context.Context, in *DeleteVolumeRequest, opts ...grpc.CallOption) (*DeleteVolumeResponse, error)
 	CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error)
+	DeleteSnapshot(ctx context.Context, in *DeleteSnapshotRequest, opts ...grpc.CallOption) (*DeleteSnapshotResponse, error)
 	CreateSnapshotAndDelete(ctx context.Context, in *CreateSnapshotAndDeleteRequest, opts ...grpc.CallOption) (*CreateSnapshotAndDeleteResponse, error)
 	RegisterWithRancher(ctx context.Context, in *RancherRegistrationRequest, opts ...grpc.CallOption) (*RancherRegistrationResponse, error)
 	// Deprecated: Do not use.
@@ -206,6 +207,15 @@ func (c *spawnerServiceClient) CreateSnapshot(ctx context.Context, in *CreateSna
 	return out, nil
 }
 
+func (c *spawnerServiceClient) DeleteSnapshot(ctx context.Context, in *DeleteSnapshotRequest, opts ...grpc.CallOption) (*DeleteSnapshotResponse, error) {
+	out := new(DeleteSnapshotResponse)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/DeleteSnapshot", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *spawnerServiceClient) CreateSnapshotAndDelete(ctx context.Context, in *CreateSnapshotAndDeleteRequest, opts ...grpc.CallOption) (*CreateSnapshotAndDeleteResponse, error) {
 	out := new(CreateSnapshotAndDeleteResponse)
 	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/CreateSnapshotAndDelete", in, out, opts...)
@@ -337,6 +347,7 @@ type SpawnerServiceServer interface {
 	// Delete Vol
 	DeleteVolume(context.Context, *DeleteVolumeRequest) (*DeleteVolumeResponse, error)
 	CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error)
+	DeleteSnapshot(context.Context, *DeleteSnapshotRequest) (*DeleteSnapshotResponse, error)
 	CreateSnapshotAndDelete(context.Context, *CreateSnapshotAndDeleteRequest) (*CreateSnapshotAndDeleteResponse, error)
 	RegisterWithRancher(context.Context, *RancherRegistrationRequest) (*RancherRegistrationResponse, error)
 	// Deprecated: Do not use.
@@ -400,6 +411,9 @@ func (UnimplementedSpawnerServiceServer) DeleteVolume(context.Context, *DeleteVo
 }
 func (UnimplementedSpawnerServiceServer) CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshot not implemented")
+}
+func (UnimplementedSpawnerServiceServer) DeleteSnapshot(context.Context, *DeleteSnapshotRequest) (*DeleteSnapshotResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSnapshot not implemented")
 }
 func (UnimplementedSpawnerServiceServer) CreateSnapshotAndDelete(context.Context, *CreateSnapshotAndDeleteRequest) (*CreateSnapshotAndDeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshotAndDelete not implemented")
@@ -717,6 +731,24 @@ func _SpawnerService_CreateSnapshot_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SpawnerService_DeleteSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).DeleteSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/spawner.SpawnerService/DeleteSnapshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).DeleteSnapshot(ctx, req.(*DeleteSnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SpawnerService_CreateSnapshotAndDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateSnapshotAndDeleteRequest)
 	if err := dec(in); err != nil {
@@ -981,6 +1013,10 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateSnapshot",
 			Handler:    _SpawnerService_CreateSnapshot_Handler,
+		},
+		{
+			MethodName: "DeleteSnapshot",
+			Handler:    _SpawnerService_DeleteSnapshot_Handler,
 		},
 		{
 			MethodName: "CreateSnapshotAndDelete",

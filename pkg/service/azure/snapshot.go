@@ -150,7 +150,7 @@ func (a *azureController) createSnapshotAndDelete(ctx context.Context, req *prot
 	return &proto.CreateSnapshotAndDeleteResponse{Snapshotid: name, SnapshotUri: uri}, nil
 }
 
-func (a *azureController) deleteSnapshot(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
+func (a *azureController) deleteSnapshotInternal(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
 
 	future, err := sc.Delete(ctx, groupName, snapshotId)
 	a.logger.Debug(ctx, "waiting on the delete snapshot future response")
@@ -169,4 +169,28 @@ func (a *azureController) deleteSnapshot(ctx context.Context, sc *compute.Snapsh
 	}
 
 	return nil
+}
+
+func (a *azureController) deleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
+
+	account := req.AccountName
+
+	cred, err := getCredentials(ctx, account)
+	if err != nil {
+		a.logger.Error(ctx, "failed to get the azure credentials", "error", err)
+		return nil, errors.Wrap(err, "deleteSnapshot")
+	}
+
+	sc, err := getSnapshotClient(cred)
+	if err != nil {
+		a.logger.Error(ctx, "faied to get the snapshot client", "error", err)
+		return nil, errors.Wrap(err, "deleteSnapshot")
+	}
+	err = a.deleteSnapshotInternal(ctx, sc, cred.ResourceGroup, req.SnapshotId)
+	if err != nil {
+		a.logger.Error(ctx, "failed to delete snapshot", "error", err, "snapshotid", req.SnapshotId)
+		return nil, errors.Wrap(err, "deleteSnapshot")
+	}
+	a.logger.Info(ctx, "snapshot deleted", "snapshotid", req.SnapshotId)
+	return &proto.DeleteSnapshotResponse{}, nil
 }
