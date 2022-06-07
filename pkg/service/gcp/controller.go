@@ -91,3 +91,7 @@ func (g *GCPController) DeleteSnapshot(ctx context.Context, req *proto.DeleteSna
 func (g *GCPController) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
 	return &proto.GetContainerRegistryAuthResponse{}, nil
 }
+
+func (g *GCPController) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
+	return &proto.RegisterClusterOIDCResponse{}, nil
+}

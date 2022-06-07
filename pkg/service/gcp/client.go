@@ -6,6 +6,7 @@ import (
 	compute "cloud.google.com/go/compute/apiv1"
 	container "cloud.google.com/go/container/apiv1"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
+	auth "golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
 
@@ -31,4 +32,14 @@ func getSnapshotClient(ctx context.Context, cred *system.GCPCredential) (*comput
 	sa_cred := []byte(cred.Certificate)
 	opt := option.WithCredentialsJSON(sa_cred)
 	return compute.NewSnapshotsRESTClient(ctx, opt)
+}
+
+//getAuthClient
+func getAuthClient(ctx context.Context, cred *system.GCPCredential) (*auth.Credentials, error) {
+
+	sa_cred := []byte(cred.Certificate)
+	scopes := []string{
+		"https://www.googleapis.com/auth/cloud-platform",
+	}
+	return auth.CredentialsFromJSON(ctx, sa_cred, scopes...)
 }

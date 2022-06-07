@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
@@ -92,12 +93,7 @@ func (g *GCPController) createCluster(ctx context.Context, req *proto.ClusterReq
 	}, nil
 }
 
-func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
-
-	cred, err := getCredentials(ctx, req.AccountName)
-	if err != nil {
-		return nil, errors.Wrap(err, "getCluster:")
-	}
+func (g *GCPController) getClusterInternal(ctx context.Context, cred *system.GCPCredential, region, clusterName string) (*container_proto.Cluster, error) {
 
 	client, err := getClusterManagerClient(ctx, cred)
 	if err != nil {
@@ -105,7 +101,7 @@ func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterReq
 	}
 	defer client.Close()
 
-	name := getClusterFQName(cred.ProjectId, req.Region, req.ClusterName)
+	name := getClusterFQName(cred.ProjectId, region, clusterName)
 	cluster, err := client.GetCluster(ctx, &container_proto.GetClusterRequest{
 		Name: name,
 	})
@@ -114,7 +110,7 @@ func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterReq
 
 		if e, ok := err.(*apierror.APIError); ok {
 			st := e.GRPCStatus()
-			g.logger.Error(ctx, "cluster not found", "cluster", req.ClusterName, "code", st.Code(), "reason", st.Details())
+			g.logger.Error(ctx, "cluster not found", "cluster", clusterName, "code", st.Code(), "reason", st.Details())
 			if st.Code() == codes.NotFound {
 				return nil, errors.New("cluster not found")
 			}
@@ -123,8 +119,23 @@ func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterReq
 		}
 		return nil, errors.Wrap(err, "getCluster:")
 	}
-	g.logger.Info(ctx, "cluster found")
 
+	return cluster, nil
+}
+
+func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
+
+	cred, err := getCredentials(ctx, req.AccountName)
+	if err != nil {
+		return nil, errors.Wrap(err, "getCluster:")
+	}
+	cluster, err := g.getClusterInternal(ctx, cred, req.Region, req.ClusterName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	g.logger.Info(ctx, "cluster found", "id", cluster.Id)
 	return &proto.ClusterSpec{
 		Name:      cluster.GetName(),
 		ClusterId: cluster.Id,
