@@ -2,10 +2,12 @@ package system
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/google/uuid"
+	"github.com/libdns/libdns"
 	"github.com/pkg/errors"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -128,4 +130,65 @@ func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 	}
 
 	return *result.ChangeInfo.Id, nil
+}
+
+func GetRoute53Record(ctx context.Context, dnsName, recordName, regionName string) ([]libdns.Record, error) {
+
+	hostedZoneId := config.Get().AwsRoute53HostedZoneID
+
+	// Creating AWS Route53 session
+	route53Client, err := getRoute53Sess(regionName)
+	if err != nil {
+		return nil, errors.Wrap(err, "AddRoute53Record: failed to create route53 session")
+	}
+
+	getRecordsInput := &route53.ListResourceRecordSetsInput{
+		HostedZoneId: aws.String(hostedZoneId),
+		MaxItems:     aws.String("1000"),
+	}
+
+	hostedZoneOutput, err := route53Client.GetHostedZone(&route53.GetHostedZoneInput{
+		Id: &hostedZoneId,
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "AddRoute53Record: failed to get route53 hostedZone ")
+	}
+
+	hostedZone := hostedZoneOutput.HostedZone.Name
+
+	var records []libdns.Record
+	var recordSets []*route53.ResourceRecordSet
+
+	for {
+		getRecordResult, err := route53Client.ListResourceRecordSetsWithContext(ctx, getRecordsInput)
+		if err != nil {
+			return nil, errors.Wrap(err, "AddRoute53Record: failed to get route53 records")
+		}
+
+		recordSets = append(recordSets, getRecordResult.ResourceRecordSets...)
+		if *getRecordResult.IsTruncated {
+			getRecordsInput.StartRecordName = getRecordResult.NextRecordName
+			getRecordsInput.StartRecordType = getRecordResult.NextRecordType
+			getRecordsInput.StartRecordIdentifier = getRecordResult.NextRecordIdentifier
+		} else {
+			break
+		}
+	}
+
+	for _, rrset := range recordSets {
+		for _, rrsetRecord := range rrset.ResourceRecords {
+			record := libdns.Record{
+				Name:  libdns.AbsoluteName(*rrset.Name, *hostedZone),
+				Value: *rrsetRecord.Value,
+				Type:  *rrset.Type,
+				TTL:   time.Duration(*rrset.TTL) * time.Second,
+			}
+
+			records = append(records, record)
+		}
+	}
+
+	return records, nil
+
 }
