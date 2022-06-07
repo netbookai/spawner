@@ -21,7 +21,7 @@ const (
 	provider    = "gcp"
 	nodeName    = "add-node-2"
 	instance    = "e2-medium"
-	volumeName  = "vol-50-20220528175218"
+	volumeName  = "vol-50-20220607164454"
 	accountName = "netbook-aws"
 )
 
@@ -157,11 +157,12 @@ func main() {
 		Availabilityzone: region,
 		Volumetype:       "StandardSSD_LRS", //"gp2",
 		Size:             50,
-		//	Snapshotid:       "vol-30-20220409151829-snapshot",
+		Snapshotid:       "vol-50-20220607152827-snapshot",
 		//SnapshotUri: "snapshot-uri",
-		Region:      region,
-		Provider:    provider,
-		AccountName: accountName,
+		Region:         region,
+		Provider:       provider,
+		AccountName:    accountName,
+		DeleteSnapshot: true,
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
@@ -394,7 +395,7 @@ func main() {
 			Provider:    provider,
 			Region:      region,
 			AccountName: accountName,
-			SnapshotId:  "vol-50-20220603121711-snapshot",
+			SnapshotId:  fmt.Sprintf("%s-snapshot", volumeName),
 		})
 
 		if err != nil {

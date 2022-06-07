@@ -24,3 +24,11 @@ func getDiskClient(ctx context.Context, cred *system.GCPCredential) (*compute.Di
 	opt := option.WithCredentialsJSON(sa_cred)
 	return compute.NewDisksRESTClient(ctx, opt)
 }
+
+//getSnapshotClient
+func getSnapshotClient(ctx context.Context, cred *system.GCPCredential) (*compute.SnapshotsClient, error) {
+
+	sa_cred := []byte(cred.Certificate)
+	opt := option.WithCredentialsJSON(sa_cred)
+	return compute.NewSnapshotsRESTClient(ctx, opt)
+}

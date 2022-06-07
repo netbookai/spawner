@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 	disk_proto "google.golang.org/genproto/googleapis/cloud/compute/v1"
 )
@@ -24,7 +25,7 @@ func diskType(projectId, zone, typ string) string {
 func (g *GCPController) createVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, errors.Wrap(err, "createCluster ")
+		return nil, errors.Wrap(err, "createVolume ")
 	}
 
 	client, err := getDiskClient(ctx, cred)
@@ -52,12 +53,18 @@ func (g *GCPController) createVolume(ctx context.Context, req *proto.CreateVolum
 			Name:   &name,
 			SizeGb: &size,
 			Type:   &diskType,
-			//SourceSnapshot:              new(string),
 		},
 		Project: cred.ProjectId,
 		//create from snapshot ?
 		//SourceImage:  new(string),
 		Zone: zone,
+	}
+
+	if req.Snapshotid != "" {
+
+		g.logger.Info(ctx, "creating disk from snapshot", "snapshot", req.Snapshotid)
+		source := fmt.Sprintf("global/snapshots/%s", req.Snapshotid)
+		idr.DiskResource.SourceSnapshot = &source
 	}
 	g.logger.Info(ctx, "creating volume", "name", name, "size", size)
 	// Doc : https://cloud.google.com/compute/docs/reference/rest/v1/disks/insert
@@ -72,9 +79,56 @@ func (g *GCPController) createVolume(ctx context.Context, req *proto.CreateVolum
 		g.logger.Error(ctx, "wait on volume create failed")
 		return nil, errors.Wrap(err, "create volume wait failed")
 	}
+
+	g.logger.Info(ctx, "disk created", "name", name, "zone", zone)
+
+	if req.DeleteSnapshot {
+		go func() {
+
+			deleteSnapshotTimeout := time.Duration(10) * time.Second
+			deleteCtx, cancel := context.WithTimeout(context.Background(), deleteSnapshotTimeout)
+			defer cancel()
+
+			g.logger.Info(deleteCtx, "deleting snapshot", "ID", req.Snapshotid)
+			err := g.deleteSnapshotInternal(deleteCtx, cred, req.Snapshotid)
+
+			if err != nil {
+				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
+				g.logger.Error(deleteCtx, "failed to delete the snapshot", "error", err)
+				return
+			}
+			g.logger.Info(deleteCtx, "snapshot deleted", "ID", req.Snapshotid)
+		}()
+	}
 	return &proto.CreateVolumeResponse{
 		Volumeid: name,
 	}, nil
+}
+
+func (g *GCPController) deleteVolumeInternal(ctx context.Context, cred *system.GCPCredential, disk, zone string) error {
+
+	client, err := getDiskClient(ctx, cred)
+	if err != nil {
+		g.logger.Error(ctx, "failed to get disk client", "error", err)
+		return errors.Wrap(err, "failed to get disk client")
+	}
+	r, err := client.Delete(ctx, &disk_proto.DeleteDiskRequest{
+		Disk:    disk,
+		Project: cred.ProjectId,
+		Zone:    zone,
+	})
+
+	if err != nil {
+		g.logger.Error(ctx, "failed to delete volume", "error", err)
+		return errors.Wrap(err, "failed to delete volume")
+	}
+	g.logger.Debug(ctx, "wait for volume to be deleted")
+	err = r.Wait(ctx)
+	if err != nil {
+		g.logger.Error(ctx, "wait on volume delete failed")
+		return errors.Wrap(err, "delete volume wait failed")
+	}
+	return nil
 }
 
 func (g *GCPController) deleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
@@ -83,30 +137,13 @@ func (g *GCPController) deleteVolume(ctx context.Context, req *proto.DeleteVolum
 		return nil, errors.Wrap(err, "createCluster ")
 	}
 
-	client, err := getDiskClient(ctx, cred)
-	if err != nil {
-		g.logger.Error(ctx, "failed to get disk client", "error", err)
-		return nil, errors.Wrap(err, "failed to get disk client")
-	}
 	zone := fmt.Sprintf("%s-a", req.Region)
-
-	g.logger.Info(ctx, "deleting volume", "volume", req.Volumeid)
-	r, err := client.Delete(ctx, &disk_proto.DeleteDiskRequest{
-		Disk:    req.Volumeid,
-		Project: cred.ProjectId,
-		Zone:    zone,
-	})
+	err = g.deleteVolumeInternal(ctx, cred, req.Volumeid, zone)
 
 	if err != nil {
-		g.logger.Error(ctx, "failed to delete volume", "error", err)
-		return nil, errors.Wrap(err, "failed to delete volume")
+		return nil, err
 	}
-	g.logger.Debug(ctx, "wait for volume to be deleted")
-	err = r.Wait(ctx)
-	if err != nil {
-		g.logger.Error(ctx, "wait on volume delete failed")
-		return nil, errors.Wrap(err, "delete volume wait failed")
-	}
+	g.logger.Info(ctx, "volume deleted", "volume", req.Volumeid)
 
 	return &proto.DeleteVolumeResponse{}, nil
 }
