@@ -20,7 +20,6 @@ func New(s service.SpawnerService) proto.SpawnerServiceServer {
 }
 
 func (g *gateway) HealthCheck(ctx context.Context, req *proto.Empty) (*proto.Empty, error) {
-
 	return &proto.Empty{}, nil
 }
 
@@ -151,4 +150,8 @@ func (g *gateway) CreateContainerRegistryRepo(ctx context.Context, in *proto.Cre
 
 func (g *gateway) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
 	return g.service.DeleteSnapshot(ctx, req)
+}
+
+func (g *gateway) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
+	return g.service.RegisterClusterOIDC(ctx, in)
 }

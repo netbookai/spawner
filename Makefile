@@ -8,13 +8,16 @@ TAG ?= $(CI_COMMIT_SHORT_SHA)
 
 tidy:
 	go mod tidy -compat=$(GO_VERSION)
+
 run:
 	go run cmd/spawnersvc/main.go
+
 test:
 	go test ./...
 
 clean:
 	go clean ./...
+	rm spawner
 
 .PHONY: proto
 proto:

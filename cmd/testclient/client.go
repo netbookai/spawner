@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	clusterName = "kubeflow"
-	region      = "eastus2" //"us-west-2"
-	provider    = "azure"
+	clusterName = "oidc_cluster"
+	region      = "us-west-2" //"eastus2" //"us-west-2"
+	provider    = "aws"
 	accountName = "netbook-aws"
 	nodeName    = "rootnode"
 	instance    = "Standard_A2_v2"
@@ -564,6 +564,19 @@ func main() {
 		}
 		sugar.Infow("CreateContainerRegistryRepo: created repo", "response", v)
 
+	case "RegisterClusterOIDC":
+		v, err := client.RegisterClusterOIDC(context.Background(), &proto.RegisterClusterOIDCRequest{
+			Provider:    "aws",
+			Region:      region,
+			AccountName: accountName,
+			ClusterName: clusterName,
+		})
+
+		if err != nil {
+			sugar.Errorw("error connecting cluster oidc to policy", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("ConnectClusterOIDCToTrustPolicy : connect cluster to oidc", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)
