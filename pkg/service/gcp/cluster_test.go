@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/netbookai/log"
 	"github.com/stretchr/testify/assert"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
-	"go.uber.org/zap"
 )
 
 func Test_createCluster(t *testing.T) {
-	gcp := NewController(zap.L().Sugar())
+	gcp := NewController(log.GetLogger())
 
 	req := &proto.ClusterRequest{
 		Provider:    "gcp",

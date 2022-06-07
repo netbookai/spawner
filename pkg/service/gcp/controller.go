@@ -79,3 +79,15 @@ func (g *GCPController) GetApplicationsCost(context.Context, *proto.GetApplicati
 func (g *GCPController) GetCostByTime(ctx context.Context, req *proto.GetCostByTimeRequest) (*proto.GetCostByTimeResponse, error) {
 	return nil, nil
 }
+
+func (g *GCPController) CreateContainerRegistryRepo(ctx context.Context, req *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error) {
+	return &proto.CreateContainerRegistryRepoResponse{}, nil
+}
+
+func (g *GCPController) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
+	return g.deleteSnapshot(ctx, req)
+}
+
+func (g *GCPController) GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error) {
+	return &proto.GetContainerRegistryAuthResponse{}, nil
+}
