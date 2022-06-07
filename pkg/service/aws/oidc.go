@@ -215,6 +215,10 @@ func (a *awsController) RegisterClusterOIDC(ctx context.Context, req *proto.Regi
 	}
 
 	issuer := *cluster.Identity.Oidc.Issuer
+	if issuer == "" {
+		a.logger.Info(ctx, "cluster oidc identity issuer is empty", "identity.oidc.issuer", "")
+		return nil, errors.New("cluster oidc identity issuer is empty")
+	}
 
 	a.logger.Info(ctx, "cluster found", "issuer", issuer)
 
