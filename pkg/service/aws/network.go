@@ -1,12 +1,14 @@
 package aws
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/netbookai/log"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
@@ -47,12 +49,12 @@ func tagValue(val string) []*string {
 	return aws.StringSlice([]string{val})
 }
 
-func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, error) {
+func GetRegionWkspNetworkStack(ctx context.Context, session *Session, logger log.Logger) (*AwsWkspRegionNetworkStack, error) {
 	sess := session.getEC2Client()
 	region := session.Region
 	vpcName := fmt.Sprintf(vpcNameFmt, region)
 
-	rv := &AwsWkspRegionNetworkStack{}
+	netStack := &AwsWkspRegionNetworkStack{}
 
 	vpcOut, err := sess.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{
@@ -79,16 +81,19 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 		},
 	})
 	if err != nil {
-		return rv, errors.Wrapf(err, "error getting vpcs from aws with name %s", vpcName)
+		//not really error for spawner, as it will attempt to create a new VPC, its not a error in terms of system
+		logger.Warn(ctx, "failed to get the VPC in the region", "region", region, "vpc-name", vpcName, "error", err.Error())
+		return netStack, errors.Wrapf(err, "error getting vpcs from aws with name %s", vpcName)
 	}
 
 	var vpc *ec2.Vpc
 	if len(vpcOut.Vpcs) > 0 {
 		vpc = vpcOut.Vpcs[0]
 	} else {
-		return rv, nil
+		logger.Warn(ctx, "total of 0 vpc returned for the given request filter", "vpc-name", vpcName)
+		return netStack, fmt.Errorf("vpc '%s' is not found in region", vpcName)
 	}
-	rv.Vpc = vpc
+	netStack.Vpc = vpc
 
 	igwOut, err := sess.DescribeInternetGateways(&ec2.DescribeInternetGatewaysInput{
 		Filters: []*ec2.Filter{
@@ -104,11 +109,14 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 	})
 
 	if err != nil {
-		return rv, errors.Wrapf(err, "error getting internet gateway from aws attached to vpc %s", *vpc.VpcId)
+		logger.Warn(ctx, "error getting internet gateway from aws attached to vpc", "vpc-id", *vpc.VpcId, "error", err.Error())
+		return netStack, errors.Wrapf(err, "error getting internet gateway from aws attached to vpc %s", *vpc.VpcId)
 	}
 
 	if len(igwOut.InternetGateways) > 0 {
-		rv.Gateway = igwOut.InternetGateways[0]
+		netStack.Gateway = igwOut.InternetGateways[0]
+	} else {
+		logger.Warn(ctx, "internet gateway is not attached to vpc", "vpc-id", *vpc.VpcId)
 	}
 
 	routeTblOut, err := sess.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
@@ -124,10 +132,13 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 		},
 	})
 	if err != nil {
-		return rv, errors.Wrapf(err, "error getting route table from aws attached to vpc %s", *vpc.VpcId)
+		logger.Warn(ctx, "error getting route table from aws attached to vpc", "vpc-id", *vpc.VpcId, "error", err.Error())
+		return netStack, errors.Wrapf(err, "error getting route table from aws attached to vpc %s", *vpc.VpcId)
 	}
 	if len(routeTblOut.RouteTables) > 0 {
-		rv.RouteTables = routeTblOut.RouteTables
+		netStack.RouteTables = routeTblOut.RouteTables
+	} else {
+		logger.Warn(ctx, "no route tables attached to vpc", "vpc-id", *vpc.VpcId)
 	}
 
 	subnetOut, err := sess.DescribeSubnets(&ec2.DescribeSubnetsInput{
@@ -143,16 +154,18 @@ func GetRegionWkspNetworkStack(session *Session) (*AwsWkspRegionNetworkStack, er
 		},
 	})
 	if err != nil {
-		return rv, errors.Wrapf(err, "error getting subnets from aws for vpc with name %s", *vpc.VpcId)
+		logger.Warn(ctx, "failed to get the subents attached to vpc", "vpc-id", *vpc.VpcId, "error", err.Error())
+		return netStack, errors.Wrapf(err, "error getting subnets from aws for vpc with name %s", *vpc.VpcId)
 	}
 
 	if len(subnetOut.Subnets) > 0 {
-		rv.Subnets = subnetOut.Subnets
+		netStack.Subnets = subnetOut.Subnets
 	} else {
-		return rv, fmt.Errorf("subnets not associated with vpc %s", *vpc.VpcId)
+		logger.Warn(ctx, "no subnets associated with the vpc", "vpc-id", *vpc.VpcId)
+		return netStack, fmt.Errorf("subnets not associated with vpc %s", *vpc.VpcId)
 	}
 
-	return rv, nil
+	return netStack, nil
 }
 
 func DeleteRegionWkspNetworkStack(session *Session, netStk AwsWkspRegionNetworkStack) error {
