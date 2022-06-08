@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	clusterName = "kubeflow"
-	region      = "eastus2" //"us-west-2"
-	provider    = "azure"
-	accountName = "netbook-aws"
+	clusterName = "us-west-1-netbook-aws-dev-1654580598"
+	region      = "us-west-1"
+	provider    = "aws"
+	accountName = "netbook-aws-dev"
 	nodeName    = "rootnode"
 	instance    = "Standard_A2_v2"
 	volumeName  = "vol-50-20220603121711"
@@ -33,7 +33,7 @@ func main() {
 
 	fs := flag.NewFlagSet("testclient", flag.ExitOnError)
 	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of spawner")
-	method := fs.String("method", "HealthCheck", "default HealthCheck")
+	method := fs.String("method", "GetRoute53TXTRecords", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
 
@@ -90,6 +90,10 @@ func main() {
 		Provider:    provider,
 		AccountName: accountName,
 		// RegionIdentifier: "Oregon region",
+	}
+
+	getRoute53Req := &proto.GetRoute53TXTRecordsRequest{
+		Region: "us-west-1",
 	}
 
 	clusterStatusReq := &proto.ClusterStatusRequest{
@@ -185,11 +189,11 @@ func main() {
 	}
 
 	getWorkspacesCost := &proto.GetWorkspacesCostRequest{
-		WorkspaceIds: []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
+		WorkspaceIds: []string{"f9eaab5e-77b8-4822-8825-5f1576db6ffa", "c463c9ac-e71a-4ed8-95f8-6c6301c8b871"},
 		Provider:     "aws",
 		AccountName:  "netbook-aws-dev",
-		StartDate:    "2022-04-01",
-		EndDate:      "2022-05-01",
+		StartDate:    "2021-08-01",
+		EndDate:      "2022-05-19",
 		Granularity:  "DAILY",
 		CostType:     "BlendedCost",
 		GroupBy: &proto.GroupBy{
@@ -213,32 +217,32 @@ func main() {
 	}
 
 	//AWS cost request
-	getCostByTime := &proto.GetCostByTimeRequest{
-		Ids:         []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
-		Provider:    "aws",
-		AccountName: "netbook-aws-dev",
-		StartDate:   "2022-04-01",
-		EndDate:     "2022-05-01",
-		Granularity: "DAILY",
-		GroupBy: &proto.GroupBy{
-			Type: "TAG",
-			Key:  "workspaceid",
-		},
-	}
-
-	//Azure Cost Req
 	// getCostByTime := &proto.GetCostByTimeRequest{
-	// 	Ids:         []string{"24522d72-9b86-48c4-b66a-521a2f202413", "testid", "5d4eb7d8-9289-4740-a7f8-a9bfbdf06a16", "b5fbc7b6-e502-4093-81aa-d3efdce80afc"},
-	// 	Provider:    "azure",
-	// 	AccountName: "netbook-azure-dev",
+	// 	Ids:         []string{"d1411352-c14a-4a78-a1d6-44d4c199ba3a", "18638c97-7352-426e-a79e-241956188fed", "dceaf501-1775-4339-ba7b-ec6d98569d11"},
+	// 	Provider:    "aws",
+	// 	AccountName: "netbook-aws-dev",
 	// 	StartDate:   "2022-04-01",
-	// 	EndDate:     "2022-05-17",
+	// 	EndDate:     "2022-05-01",
 	// 	Granularity: "DAILY",
 	// 	GroupBy: &proto.GroupBy{
 	// 		Type: "TAG",
 	// 		Key:  "workspaceid",
 	// 	},
 	// }
+
+	// Azure Cost Req
+	getCostByTime := &proto.GetCostByTimeRequest{
+		Ids:         []string{"24522d72-9b86-48c4-b66a-521a2f202413", "testid", "5d4eb7d8-9289-4740-a7f8-a9bfbdf06a16", "b5fbc7b6-e502-4093-81aa-d3efdce80afc"},
+		Provider:    "azure",
+		AccountName: "netbook-azure-dev",
+		StartDate:   "2022-04-01",
+		EndDate:     "2022-05-17",
+		Granularity: "DAILY",
+		GroupBy: &proto.GroupBy{
+			Type: "TAG",
+			Key:  "workspaceid",
+		},
+	}
 
 	switch *method {
 	case "Echo":
@@ -563,6 +567,14 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("CreateContainerRegistryRepo: created repo", "response", v)
+
+	case "GetRoute53TXTRecords":
+		v, err := client.GetRoute53TXTRecords(context.Background(), getRoute53Req)
+		if err != nil {
+			sugar.Errorw("error getting route53 records", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Route53 Records", "response", v)
 
 	default:
 		sugar.Infow("error: invalid method", "method", *method)

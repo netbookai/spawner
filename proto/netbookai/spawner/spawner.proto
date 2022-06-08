@@ -81,6 +81,15 @@ service SpawnerService {
 
   rpc CreateContainerRegistryRepo(CreateContainerRegistryRepoRequest)
       returns (CreateContainerRegistryRepoResponse) {}
+
+  rpc AppendRoute53Records(AppendRoute53RecordsRequest)
+      returns (AppendRoute53RecordsResponse) {}
+
+  rpc GetRoute53TXTRecords(GetRoute53TXTRecordsRequest)
+      returns (GetRoute53TXTRecordsResponse) {}
+
+  rpc DeleteRoute53Records(DeleteRoute53RecordsRequest)
+      returns (DeleteRoute53RecordsResponse) {}
 }
 
 message Empty {}
@@ -496,3 +505,38 @@ message DeleteSnapshotRequest {
   string snapshotId = 4;
 }
 message DeleteSnapshotResponse {}
+
+message LibdnsRecord {
+  string id = 1;
+  string type = 2;
+  string name = 3;
+  string value = 4;
+  int64 ttlInSeconds = 5;
+  int64 priority = 6;
+}
+
+message AppendRoute53RecordsRequest {
+  string region = 1;
+  repeated LibdnsRecord records = 2;
+}
+
+message AppendRoute53RecordsResponse {
+  repeated LibdnsRecord records = 1;
+}
+
+message GetRoute53TXTRecordsRequest {
+  string region = 1;
+}
+
+message GetRoute53TXTRecordsResponse {
+  repeated LibdnsRecord records = 1;
+}
+
+message DeleteRoute53RecordsRequest {
+  string region = 1;
+  repeated LibdnsRecord records = 2;
+}
+
+message DeleteRoute53RecordsResponse {
+  repeated LibdnsRecord records = 2;
+}

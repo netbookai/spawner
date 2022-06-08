@@ -12,6 +12,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/rancher"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
+	"gitlab.com/netbook-devs/spawner-service/pkg/types"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
@@ -47,6 +48,10 @@ type SpawnerService interface {
 
 	GetContainerRegistryAuth(ctx context.Context, in *proto.GetContainerRegistryAuthRequest) (*proto.GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error)
+
+	AppendRoute53Records(ctx context.Context, req *proto.AppendRoute53RecordsRequest) (*proto.AppendRoute53RecordsResponse, error)
+	GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error)
+	DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -464,4 +469,107 @@ func (s *spawnerService) DeleteSnapshot(ctx context.Context, req *proto.DeleteSn
 		return nil, err
 	}
 	return provider.DeleteSnapshot(ctx, req)
+}
+
+func (s *spawnerService) GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error) {
+	records, err := s.getRoute53TXTRecords(ctx, req.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &proto.GetRoute53TXTRecordsResponse{
+		Records: make([]*proto.LibdnsRecord, 0, len(records)),
+	}
+
+	for _, r := range records {
+		response.Records = append(response.Records, &proto.LibdnsRecord{
+			Id:           r.ID,
+			Type:         r.Type,
+			Name:         r.Name,
+			Value:        r.Value,
+			TtlInSeconds: r.TTLInSeconds,
+			Priority:     int64(r.Priority),
+		})
+	}
+
+	return response, nil
+
+}
+
+func (s *spawnerService) AppendRoute53Records(ctx context.Context, req *proto.AppendRoute53RecordsRequest) (*proto.AppendRoute53RecordsResponse, error) {
+
+	recordsToAppend := make([]types.Route53Record, 0, len(req.Records))
+
+	for _, r := range req.Records {
+		recordsToAppend = append(recordsToAppend, types.Route53Record{
+			ID:           r.Id,
+			Type:         r.Type,
+			Name:         r.Name,
+			Value:        r.Value,
+			TTLInSeconds: r.TtlInSeconds,
+			Priority:     r.Priority,
+		})
+	}
+
+	records, err := s.appendRoute53Records(ctx, req.Region, recordsToAppend)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &proto.AppendRoute53RecordsResponse{
+		Records: make([]*proto.LibdnsRecord, 0, len(records)),
+	}
+
+	for _, r := range records {
+		response.Records = append(response.Records, &proto.LibdnsRecord{
+			Id:           r.ID,
+			Type:         r.Type,
+			Name:         r.Name,
+			Value:        r.Value,
+			TtlInSeconds: r.TTLInSeconds,
+			Priority:     r.Priority,
+		})
+	}
+
+	return response, nil
+
+}
+
+func (s *spawnerService) DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error) {
+
+	recordsToDelete := make([]types.Route53Record, 0, len(req.Records))
+
+	for _, r := range req.Records {
+		recordsToDelete = append(recordsToDelete, types.Route53Record{
+			ID:           r.Id,
+			Type:         r.Type,
+			Name:         r.Name,
+			Value:        r.Value,
+			TTLInSeconds: r.TtlInSeconds,
+			Priority:     r.Priority,
+		})
+	}
+
+	records, err := s.deleteRoute53Records(ctx, req.Region, recordsToDelete)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &proto.DeleteRoute53RecordsResponse{
+		Records: make([]*proto.LibdnsRecord, 0, len(records)),
+	}
+
+	for _, r := range records {
+		response.Records = append(response.Records, &proto.LibdnsRecord{
+			Id:           r.ID,
+			Type:         r.Type,
+			Name:         r.Name,
+			Value:        r.Value,
+			TtlInSeconds: r.TTLInSeconds,
+			Priority:     int64(r.Priority),
+		})
+	}
+
+	return response, nil
+
 }

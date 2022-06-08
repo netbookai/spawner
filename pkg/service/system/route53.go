@@ -3,7 +3,6 @@ package system
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
@@ -12,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
+	"gitlab.com/netbook-devs/spawner-service/pkg/types"
 )
 
 var regionClassicLoadBalancerHostedID = map[string]string{
@@ -165,20 +165,21 @@ func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 	return *result.ChangeInfo.Id, nil
 }
 
-func GetRoute53Record(ctx context.Context, dnsName, recordName, regionName string) ([]libdns.Record, error) {
+// GetRoute53TXTRecords will return TXT records only
+func GetRoute53TXTRecords(ctx context.Context, regionName string) ([]types.Route53Record, error) {
 
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
 	// Creating AWS Route53 session
 	route53Client, err := getRoute53Sess(regionName)
 	if err != nil {
-		return nil, errors.Wrap(err, "AddRoute53Record: failed to create route53 session")
+		return nil, errors.Wrap(err, "GetRoute53Records: failed to create route53 session")
 	}
 
 	hostedZone, err := getHostedZoneFromZoneId(route53Client, hostedZoneId)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "AddRoute53Record: failed to get route53 hostedZone ")
+		return nil, errors.Wrap(err, "GetRoute53Records: failed to get route53 hostedZone ")
 	}
 
 	getRecordsInput := &route53.ListResourceRecordSetsInput{
@@ -186,13 +187,13 @@ func GetRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 		MaxItems:     aws.String("1000"),
 	}
 
-	var records []libdns.Record
+	var records []types.Route53Record
 	var recordSets []*route53.ResourceRecordSet
 
 	for {
 		getRecordResult, err := route53Client.ListResourceRecordSetsWithContext(ctx, getRecordsInput)
 		if err != nil {
-			return nil, errors.Wrap(err, "AddRoute53Record: failed to get route53 records")
+			return nil, errors.Wrap(err, "GetRoute53Records: failed to get route53 records")
 		}
 
 		recordSets = append(recordSets, getRecordResult.ResourceRecordSets...)
@@ -205,13 +206,18 @@ func GetRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 		}
 	}
 
-	for _, rrset := range recordSets {
-		for _, rrsetRecord := range rrset.ResourceRecords {
-			record := libdns.Record{
-				Name:  libdns.AbsoluteName(*rrset.Name, hostedZone),
-				Value: *rrsetRecord.Value,
-				Type:  *rrset.Type,
-				TTL:   time.Duration(*rrset.TTL) * time.Second,
+	for _, recordSet := range recordSets {
+		// filtering txt records only
+		if *recordSet.Type != route53.RRTypeTxt {
+			continue
+		}
+
+		for _, resourceRecord := range recordSet.ResourceRecords {
+			record := types.Route53Record{
+				Name:         libdns.AbsoluteName(*recordSet.Name, hostedZone),
+				Value:        *resourceRecord.Value,
+				Type:         *recordSet.Type,
+				TTLInSeconds: int64(*recordSet.TTL),
 			}
 
 			records = append(records, record)
@@ -222,7 +228,7 @@ func GetRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 
 }
 
-func deleteRoute53Record(ctx context.Context, route53Client *route53.Route53, record libdns.Record, hostedZoneId, hostedZone string) error {
+func deleteRoute53Record(ctx context.Context, route53Client *route53.Route53, record types.Route53Record, hostedZoneId, hostedZone string) error {
 
 	deleteInput := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{
@@ -236,7 +242,7 @@ func deleteRoute53Record(ctx context.Context, route53Client *route53.Route53, re
 								Value: aws.String(record.Value),
 							},
 						},
-						TTL:  aws.Int64(int64(record.TTL.Seconds())),
+						TTL:  aws.Int64(int64(record.TTLInSeconds)),
 						Type: aws.String(record.Type),
 					},
 				},
@@ -255,25 +261,25 @@ func deleteRoute53Record(ctx context.Context, route53Client *route53.Route53, re
 
 }
 
-// DeleteRecords deletes the records from the zone. If a record does not have an ID,
+// DeleteRoute53Records deletes the records from the zone. If a record does not have an ID,
 // it will be looked up. It returns the records that were deleted.
-func DeleteRecords(ctx context.Context, regionName string, records []libdns.Record) ([]libdns.Record, error) {
+func DeleteRoute53Records(ctx context.Context, regionName string, records []types.Route53Record) ([]types.Route53Record, error) {
 
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
 	// Creating AWS Route53 session
 	route53Client, err := getRoute53Sess(regionName)
 	if err != nil {
-		return nil, errors.Wrap(err, "AddRoute53Record: failed to create route53 session")
+		return nil, errors.Wrap(err, "DeleteRoute53Records: failed to create route53 session")
 	}
 
 	hostedZone, err := getHostedZoneFromZoneId(route53Client, hostedZoneId)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "AddRoute53Record: failed to get route53 hostedZone ")
+		return nil, errors.Wrap(err, "DeleteRoute53Records: failed to get route53 hostedZone ")
 	}
 
-	var deletedRecords []libdns.Record
+	var deletedRecords []types.Route53Record
 
 	for _, record := range records {
 		err := deleteRoute53Record(ctx, route53Client, record, hostedZoneId, hostedZone)
@@ -286,9 +292,9 @@ func DeleteRecords(ctx context.Context, regionName string, records []libdns.Reco
 	return deletedRecords, nil
 }
 
-func createRecord(ctx context.Context, route53Client *route53.Route53, zoneID string, record libdns.Record, zone string) (libdns.Record, error) {
+func createRoute53Record(ctx context.Context, route53Client *route53.Route53, zoneID string, record types.Route53Record, zone string) (types.Route53Record, error) {
 	// AWS Route53 TXT record value must be enclosed in quotation marks on create
-	if record.Type == "TXT" {
+	if record.Type == route53.RRTypeTxt {
 		record.Value = strconv.Quote(record.Value)
 	}
 
@@ -304,7 +310,7 @@ func createRecord(ctx context.Context, route53Client *route53.Route53, zoneID st
 								Value: aws.String(record.Value),
 							},
 						},
-						TTL:  aws.Int64(int64(record.TTL.Seconds())),
+						TTL:  aws.Int64(int64(record.TTLInSeconds)),
 						Type: aws.String(record.Type),
 					},
 				},
@@ -321,8 +327,8 @@ func createRecord(ctx context.Context, route53Client *route53.Route53, zoneID st
 	return record, nil
 }
 
-// AppendRecords adds records to the zone. It returns the records that were added.
-func AppendRecords(ctx context.Context, regionName string, records []libdns.Record) ([]libdns.Record, error) {
+// AppendRoute53Records adds records to the zone. It returns the records that were added.
+func AppendRoute53Records(ctx context.Context, regionName string, records []types.Route53Record) ([]types.Route53Record, error) {
 
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
@@ -338,14 +344,13 @@ func AppendRecords(ctx context.Context, regionName string, records []libdns.Reco
 		return nil, errors.Wrap(err, "AddRoute53Record: failed to get route53 hostedZone ")
 	}
 
-	var createdRecords []libdns.Record
+	var createdRecords []types.Route53Record
 
 	for _, record := range records {
-		newRecord, err := createRecord(ctx, route53Client, hostedZoneId, record, hostedZone)
+		newRecord, err := createRoute53Record(ctx, route53Client, hostedZoneId, record, hostedZone)
 		if err != nil {
 			return createdRecords, err
 		}
-		newRecord.TTL = time.Duration(newRecord.TTL) * time.Second
 		createdRecords = append(createdRecords, newRecord)
 	}
 
