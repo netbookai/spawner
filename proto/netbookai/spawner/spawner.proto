@@ -528,15 +528,12 @@ message Route53Record {
 }
 
 message AppendRoute53RecordsRequest {
-  repeated Route53Record records = 2;
-}
-
-message AppendRoute53RecordsResponse {
   repeated Route53Record records = 1;
 }
 
-message GetRoute53TXTRecordsRequest {
-}
+message AppendRoute53RecordsResponse {}
+
+message GetRoute53TXTRecordsRequest {}
 
 message GetRoute53TXTRecordsResponse {
   repeated Route53Record records = 1;
@@ -546,6 +543,4 @@ message DeleteRoute53RecordsRequest {
   repeated Route53Record records = 1;
 }
 
-message DeleteRoute53RecordsResponse {
-  repeated Route53Record records = 1;
-}
+message DeleteRoute53RecordsResponse {}

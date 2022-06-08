@@ -27,22 +27,22 @@ func (svc *spawnerService) getRoute53TXTRecords(ctx context.Context) ([]types.Ro
 	return records, nil
 }
 
-func (svc *spawnerService) appendRoute53Records(ctx context.Context, records []types.Route53Record) ([]types.Route53Record, error) {
-	appendedRecords, err := system.AppendRoute53Records(ctx, records)
+func (svc *spawnerService) appendRoute53Records(ctx context.Context, records []types.Route53Record) error {
+	err := system.AppendRoute53Records(ctx, records)
 	if err != nil {
 		svc.logger.Error(ctx, "failed to append route53 record", "error", err)
-		return nil, err
+		return err
 	}
 
-	return appendedRecords, nil
+	return nil
 }
 
-func (svc *spawnerService) deleteRoute53Records(ctx context.Context, records []types.Route53Record) ([]types.Route53Record, error) {
-	deletedRecords, err := system.DeleteRoute53Records(ctx, records)
+func (svc *spawnerService) deleteRoute53Records(ctx context.Context, records []types.Route53Record) error {
+	err := system.DeleteRoute53Records(ctx, records)
 	if err != nil {
 		svc.logger.Error(ctx, "failed to delete route53 record", "error", err)
-		return nil, err
+		return err
 	}
 
-	return deletedRecords, nil
+	return nil
 }

@@ -17,7 +17,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/google/uuid v1.3.0
 	github.com/imdario/mergo v0.3.12
-	github.com/libdns/libdns v0.2.1
 	github.com/netbook-ai/interceptors v0.2.3
 	github.com/netbookai/log v0.4.0
 	github.com/oklog/oklog v0.3.2

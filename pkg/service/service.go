@@ -521,25 +521,12 @@ func (s *spawnerService) AppendRoute53Records(ctx context.Context, req *proto.Ap
 		})
 	}
 
-	records, err := s.appendRoute53Records(ctx, recordsToAppend)
+	err := s.appendRoute53Records(ctx, recordsToAppend)
 	if err != nil {
 		return nil, err
 	}
 
-	response := &proto.AppendRoute53RecordsResponse{
-		Records: make([]*proto.Route53Record, 0, len(records)),
-	}
-
-	for _, r := range records {
-		response.Records = append(response.Records, &proto.Route53Record{
-			Id:           r.ID,
-			Type:         r.Type,
-			Name:         r.Name,
-			Value:        r.Value,
-			TtlInSeconds: r.TTLInSeconds,
-			Priority:     r.Priority,
-		})
-	}
+	response := &proto.AppendRoute53RecordsResponse{}
 
 	return response, nil
 
@@ -560,25 +547,12 @@ func (s *spawnerService) DeleteRoute53Records(ctx context.Context, req *proto.De
 		})
 	}
 
-	records, err := s.deleteRoute53Records(ctx, recordsToDelete)
+	err := s.deleteRoute53Records(ctx, recordsToDelete)
 	if err != nil {
 		return nil, err
 	}
 
-	response := &proto.DeleteRoute53RecordsResponse{
-		Records: make([]*proto.Route53Record, 0, len(records)),
-	}
-
-	for _, r := range records {
-		response.Records = append(response.Records, &proto.Route53Record{
-			Id:           r.ID,
-			Type:         r.Type,
-			Name:         r.Name,
-			Value:        r.Value,
-			TtlInSeconds: r.TTLInSeconds,
-			Priority:     int64(r.Priority),
-		})
-	}
+	response := &proto.DeleteRoute53RecordsResponse{}
 
 	return response, nil
 

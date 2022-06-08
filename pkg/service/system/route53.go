@@ -97,7 +97,7 @@ func getHostedZoneFromZoneId(route53Client *route53.Route53, zoneId string) (str
 func applyChange(ctx context.Context, route53Client *route53.Route53, input *route53.ChangeResourceRecordSetsInput) error {
 	changeResult, err := route53Client.ChangeResourceRecordSetsWithContext(ctx, input)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "applyChange")
 	}
 
 	changeInput := &route53.GetChangeInput{
@@ -106,7 +106,7 @@ func applyChange(ctx context.Context, route53Client *route53.Route53, input *rou
 
 	err = route53Client.WaitUntilResourceRecordSetsChangedWithContext(ctx, changeInput)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "applyChange")
 	}
 
 	return nil
@@ -240,136 +240,118 @@ func GetRoute53TXTRecords(ctx context.Context) ([]types.Route53Record, error) {
 
 }
 
-func deleteRoute53Record(ctx context.Context, route53Client *route53.Route53, record types.Route53Record, hostedZoneId, hostedZone string) error {
-
-	// AWS Route53 TXT record value must be enclosed in quotation marks on create
-	if record.Type == route53.RRTypeTxt {
-		record.Value = strconv.Quote(record.Value)
-	}
-
-	deleteInput := &route53.ChangeResourceRecordSetsInput{
-		ChangeBatch: &route53.ChangeBatch{
-			Changes: []*route53.Change{
-				{
-					Action: aws.String("DELETE"),
-					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(absoluteName(record.Name, hostedZone)),
-						ResourceRecords: []*route53.ResourceRecord{
-							{
-								Value: aws.String(record.Value),
-							},
-						},
-						TTL:  aws.Int64(int64(record.TTLInSeconds)),
-						Type: aws.String(record.Type),
-					},
-				},
-			},
-		},
-		HostedZoneId: aws.String(hostedZoneId),
-	}
-
-	err := applyChange(ctx, route53Client, deleteInput)
-
-	if err != nil {
-		return errors.Wrap(err, "deleteRoute53Record: failed to delete record")
-	}
-
-	return nil
-
-}
-
-// DeleteRoute53Records deletes the records from the zone. If a record does not have an ID,
-// it will be looked up. It returns the records that were deleted.
-func DeleteRoute53Records(ctx context.Context, records []types.Route53Record) ([]types.Route53Record, error) {
+// AppendRoute53Records adds records to the zone. It returns the records that were added.
+func AppendRoute53Records(ctx context.Context, records []types.Route53Record) error {
 
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
 	// Creating AWS Route53 session
 	route53Client, err := getRoute53Sess(defaultRegion)
 	if err != nil {
-		return nil, errors.Wrap(err, "DeleteRoute53Records: failed to create route53 session")
+		return errors.Wrap(err, "AddRoute53Record: failed to create route53 session")
 	}
 
 	hostedZone, err := getHostedZoneFromZoneId(route53Client, hostedZoneId)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "DeleteRoute53Records: failed to get route53 hostedZone ")
-	}
-
-	var deletedRecords []types.Route53Record
-
-	for _, record := range records {
-		err := deleteRoute53Record(ctx, route53Client, record, hostedZoneId, hostedZone)
-		if err != nil {
-			return deletedRecords, err
-		}
-		deletedRecords = append(deletedRecords, record)
-	}
-
-	return deletedRecords, nil
-}
-
-func createRoute53Record(ctx context.Context, route53Client *route53.Route53, zoneID string, record types.Route53Record, hostedZone string) (types.Route53Record, error) {
-	// AWS Route53 TXT record value must be enclosed in quotation marks on create
-	if record.Type == route53.RRTypeTxt {
-		record.Value = strconv.Quote(record.Value)
+		return errors.Wrap(err, "AddRoute53Record: failed to get route53 hostedZone ")
 	}
 
 	createInput := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{
-			Changes: []*route53.Change{
-				{
-					Action: aws.String("CREATE"),
-					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(absoluteName(record.Name, hostedZone)),
-						ResourceRecords: []*route53.ResourceRecord{
-							{
-								Value: aws.String(record.Value),
-							},
-						},
-						TTL:  aws.Int64(int64(record.TTLInSeconds)),
-						Type: aws.String(record.Type),
+			Changes: make([]*route53.Change, 0, len(records)),
+		},
+		HostedZoneId: aws.String(hostedZoneId),
+	}
+
+	for _, record := range records {
+
+		// AWS Route53 TXT record value must be enclosed in quotation marks on create
+		if record.Type == route53.RRTypeTxt {
+			record.Value = strconv.Quote(record.Value)
+		}
+
+		changeRequest := &route53.Change{
+			Action: aws.String("CREATE"),
+			ResourceRecordSet: &route53.ResourceRecordSet{
+				Name: aws.String(absoluteName(record.Name, hostedZone)),
+				ResourceRecords: []*route53.ResourceRecord{
+					{
+						Value: aws.String(record.Value),
 					},
 				},
+				TTL:  aws.Int64(int64(record.TTLInSeconds)),
+				Type: aws.String(record.Type),
 			},
-		},
-		HostedZoneId: aws.String(zoneID),
+		}
+
+		createInput.ChangeBatch.Changes = append(createInput.ChangeBatch.Changes, changeRequest)
+
 	}
 
-	err := applyChange(ctx, route53Client, createInput)
+	err = applyChange(ctx, route53Client, createInput)
+
 	if err != nil {
-		return record, err
+		return errors.Wrap(err, "AppendRoute53Records: failed to create record")
 	}
 
-	return record, nil
+	return nil
 }
 
-// AppendRoute53Records adds records to the zone. It returns the records that were added.
-func AppendRoute53Records(ctx context.Context, records []types.Route53Record) ([]types.Route53Record, error) {
+// DeleteRoute53Records deletes the records from the zone. If a record does not have an ID,
+// it will be looked up. It returns the records that were deleted.
+func DeleteRoute53Records(ctx context.Context, records []types.Route53Record) error {
 
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
 	// Creating AWS Route53 session
 	route53Client, err := getRoute53Sess(defaultRegion)
 	if err != nil {
-		return nil, errors.Wrap(err, "AddRoute53Record: failed to create route53 session")
+		return errors.Wrap(err, "DeleteRoute53Records: failed to create route53 session")
 	}
 
 	hostedZone, err := getHostedZoneFromZoneId(route53Client, hostedZoneId)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "AddRoute53Record: failed to get route53 hostedZone ")
+		return errors.Wrap(err, "DeleteRoute53Records: failed to get route53 hostedZone ")
 	}
 
-	var createdRecords []types.Route53Record
+	deleteInput := &route53.ChangeResourceRecordSetsInput{
+		ChangeBatch: &route53.ChangeBatch{
+			Changes: make([]*route53.Change, 0, len(records)),
+		},
+		HostedZoneId: aws.String(hostedZoneId),
+	}
 
 	for _, record := range records {
-		newRecord, err := createRoute53Record(ctx, route53Client, hostedZoneId, record, hostedZone)
-		if err != nil {
-			return createdRecords, err
+
+		if record.Type == route53.RRTypeTxt {
+			record.Value = strconv.Quote(record.Value)
 		}
-		createdRecords = append(createdRecords, newRecord)
+
+		changeRequest := &route53.Change{
+			Action: aws.String("DELETE"),
+			ResourceRecordSet: &route53.ResourceRecordSet{
+				Name: aws.String(absoluteName(record.Name, hostedZone)),
+				ResourceRecords: []*route53.ResourceRecord{
+					{
+						Value: aws.String(record.Value),
+					},
+				},
+				TTL:  aws.Int64(int64(record.TTLInSeconds)),
+				Type: aws.String(record.Type),
+			},
+		}
+
+		deleteInput.ChangeBatch.Changes = append(deleteInput.ChangeBatch.Changes, changeRequest)
+
 	}
 
-	return createdRecords, nil
+	err = applyChange(ctx, route53Client, deleteInput)
+
+	if err != nil {
+		return errors.Wrap(err, "DeleteRoute53Records: failed to delete records")
+	}
+
+	return nil
 }
