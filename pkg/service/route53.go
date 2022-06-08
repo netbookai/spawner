@@ -17,8 +17,8 @@ func (svc *spawnerService) addRoute53Record(ctx context.Context, dnsName, record
 	return changeId, nil
 }
 
-func (svc *spawnerService) getRoute53TXTRecords(ctx context.Context, regionName string) ([]types.Route53Record, error) {
-	records, err := system.GetRoute53TXTRecords(ctx, regionName)
+func (svc *spawnerService) getRoute53TXTRecords(ctx context.Context) ([]types.Route53Record, error) {
+	records, err := system.GetRoute53TXTRecords(ctx)
 	if err != nil {
 		svc.logger.Error(ctx, "failed to get route53 record", "error", err)
 		return nil, err
@@ -27,8 +27,8 @@ func (svc *spawnerService) getRoute53TXTRecords(ctx context.Context, regionName 
 	return records, nil
 }
 
-func (svc *spawnerService) appendRoute53Records(ctx context.Context, regionName string, records []types.Route53Record) ([]types.Route53Record, error) {
-	appendedRecords, err := system.AppendRoute53Records(ctx, regionName, records)
+func (svc *spawnerService) appendRoute53Records(ctx context.Context, records []types.Route53Record) ([]types.Route53Record, error) {
+	appendedRecords, err := system.AppendRoute53Records(ctx, records)
 	if err != nil {
 		svc.logger.Error(ctx, "failed to append route53 record", "error", err)
 		return nil, err
@@ -37,8 +37,8 @@ func (svc *spawnerService) appendRoute53Records(ctx context.Context, regionName 
 	return appendedRecords, nil
 }
 
-func (svc *spawnerService) deleteRoute53Records(ctx context.Context, regionName string, records []types.Route53Record) ([]types.Route53Record, error) {
-	deletedRecords, err := system.DeleteRoute53Records(ctx, regionName, records)
+func (svc *spawnerService) deleteRoute53Records(ctx context.Context, records []types.Route53Record) ([]types.Route53Record, error) {
+	deletedRecords, err := system.DeleteRoute53Records(ctx, records)
 	if err != nil {
 		svc.logger.Error(ctx, "failed to delete route53 record", "error", err)
 		return nil, err

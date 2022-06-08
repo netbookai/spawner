@@ -33,7 +33,7 @@ func main() {
 
 	fs := flag.NewFlagSet("testclient", flag.ExitOnError)
 	grpcAddr := fs.String("grpc-addr", ":8083", "gRPC address of spawner")
-	method := fs.String("method", "GetRoute53TXTRecords", "default HealthCheck")
+	method := fs.String("method", "DeleteRoute53Records", "default HealthCheck")
 	fs.Usage = usageFor(fs, os.Args[0]+" [flags] <a> <b>")
 	fs.Parse(os.Args[1:])
 
@@ -92,8 +92,28 @@ func main() {
 		// RegionIdentifier: "Oregon region",
 	}
 
-	getRoute53Req := &proto.GetRoute53TXTRecordsRequest{
-		Region: "us-west-1",
+	getRoute53Req := &proto.GetRoute53TXTRecordsRequest{}
+
+	deleteRoute53Req := &proto.DeleteRoute53RecordsRequest{
+		Records: []*proto.Route53Record{
+			{
+				Type:         "TXT",
+				Name:         "ash123",
+				Value:        "ash-test",
+				TtlInSeconds: 250,
+			},
+		},
+	}
+
+	appendRoute53Req := &proto.AppendRoute53RecordsRequest{
+		Records: []*proto.Route53Record{
+			{
+				Type:         "TXT",
+				Name:         "ash123",
+				Value:        "ash-test",
+				TtlInSeconds: 250,
+			},
+		},
 	}
 
 	clusterStatusReq := &proto.ClusterStatusRequest{
@@ -575,6 +595,22 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("Route53 Records", "response", v)
+
+	case "DeleteRoute53Records":
+		v, err := client.DeleteRoute53Records(context.Background(), deleteRoute53Req)
+		if err != nil {
+			sugar.Errorw("error deleting route53 records", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Route53 deleted records", "response", v)
+
+	case "AppendRoute53Records":
+		v, err := client.AppendRoute53Records(context.Background(), appendRoute53Req)
+		if err != nil {
+			sugar.Errorw("error appending route53 records", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Route53 appended records", "response", v)
 
 	default:
 		sugar.Infow("error: invalid method", "method", *method)

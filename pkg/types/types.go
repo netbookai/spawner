@@ -5,7 +5,7 @@ type Route53Record struct {
 	// provider-specific metadata
 	ID           string
 	Type         string
-	Name         string // fully-qualified
+	Name         string
 	Value        string
 	TTLInSeconds int64
 	// type-dependent record fields

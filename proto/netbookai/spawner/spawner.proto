@@ -506,7 +506,7 @@ message DeleteSnapshotRequest {
 }
 message DeleteSnapshotResponse {}
 
-message LibdnsRecord {
+message Route53Record {
   string id = 1;
   string type = 2;
   string name = 3;
@@ -516,27 +516,24 @@ message LibdnsRecord {
 }
 
 message AppendRoute53RecordsRequest {
-  string region = 1;
-  repeated LibdnsRecord records = 2;
+  repeated Route53Record records = 2;
 }
 
 message AppendRoute53RecordsResponse {
-  repeated LibdnsRecord records = 1;
+  repeated Route53Record records = 1;
 }
 
 message GetRoute53TXTRecordsRequest {
-  string region = 1;
 }
 
 message GetRoute53TXTRecordsResponse {
-  repeated LibdnsRecord records = 1;
+  repeated Route53Record records = 1;
 }
 
 message DeleteRoute53RecordsRequest {
-  string region = 1;
-  repeated LibdnsRecord records = 2;
+  repeated Route53Record records = 1;
 }
 
 message DeleteRoute53RecordsResponse {
-  repeated LibdnsRecord records = 2;
+  repeated Route53Record records = 1;
 }

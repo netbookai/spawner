@@ -472,17 +472,17 @@ func (s *spawnerService) DeleteSnapshot(ctx context.Context, req *proto.DeleteSn
 }
 
 func (s *spawnerService) GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error) {
-	records, err := s.getRoute53TXTRecords(ctx, req.Region)
+	records, err := s.getRoute53TXTRecords(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	response := &proto.GetRoute53TXTRecordsResponse{
-		Records: make([]*proto.LibdnsRecord, 0, len(records)),
+		Records: make([]*proto.Route53Record, 0, len(records)),
 	}
 
 	for _, r := range records {
-		response.Records = append(response.Records, &proto.LibdnsRecord{
+		response.Records = append(response.Records, &proto.Route53Record{
 			Id:           r.ID,
 			Type:         r.Type,
 			Name:         r.Name,
@@ -511,17 +511,17 @@ func (s *spawnerService) AppendRoute53Records(ctx context.Context, req *proto.Ap
 		})
 	}
 
-	records, err := s.appendRoute53Records(ctx, req.Region, recordsToAppend)
+	records, err := s.appendRoute53Records(ctx, recordsToAppend)
 	if err != nil {
 		return nil, err
 	}
 
 	response := &proto.AppendRoute53RecordsResponse{
-		Records: make([]*proto.LibdnsRecord, 0, len(records)),
+		Records: make([]*proto.Route53Record, 0, len(records)),
 	}
 
 	for _, r := range records {
-		response.Records = append(response.Records, &proto.LibdnsRecord{
+		response.Records = append(response.Records, &proto.Route53Record{
 			Id:           r.ID,
 			Type:         r.Type,
 			Name:         r.Name,
@@ -550,17 +550,17 @@ func (s *spawnerService) DeleteRoute53Records(ctx context.Context, req *proto.De
 		})
 	}
 
-	records, err := s.deleteRoute53Records(ctx, req.Region, recordsToDelete)
+	records, err := s.deleteRoute53Records(ctx, recordsToDelete)
 	if err != nil {
 		return nil, err
 	}
 
 	response := &proto.DeleteRoute53RecordsResponse{
-		Records: make([]*proto.LibdnsRecord, 0, len(records)),
+		Records: make([]*proto.Route53Record, 0, len(records)),
 	}
 
 	for _, r := range records {
-		response.Records = append(response.Records, &proto.LibdnsRecord{
+		response.Records = append(response.Records, &proto.Route53Record{
 			Id:           r.ID,
 			Type:         r.Type,
 			Name:         r.Name,
