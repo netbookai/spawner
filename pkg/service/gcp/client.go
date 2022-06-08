@@ -35,11 +35,9 @@ func getSnapshotClient(ctx context.Context, cred *system.GCPCredential) (*comput
 }
 
 //getAuthClient
-func getAuthClient(ctx context.Context, cred *system.GCPCredential) (*auth.Credentials, error) {
+func getAuthClient(ctx context.Context, cred *system.GCPCredential, scopes []string) (*auth.Credentials, error) {
 
 	sa_cred := []byte(cred.Certificate)
-	scopes := []string{
-		"https://www.googleapis.com/auth/cloud-platform",
-	}
+	scopes = append(scopes, "https://www.googleapis.com/auth/cloud-platform")
 	return auth.CredentialsFromJSON(ctx, sa_cred, scopes...)
 }
