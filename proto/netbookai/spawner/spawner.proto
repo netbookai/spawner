@@ -90,6 +90,8 @@ service SpawnerService {
 
   rpc DeleteRoute53Records(DeleteRoute53RecordsRequest)
       returns (DeleteRoute53RecordsResponse) {}
+  rpc RegisterClusterOIDC(RegisterClusterOIDCRequest)
+      returns (RegisterClusterOIDCResponse) {}
 }
 
 message Empty {}
@@ -537,3 +539,10 @@ message DeleteRoute53RecordsRequest {
 message DeleteRoute53RecordsResponse {
   repeated Route53Record records = 1;
 }
+message RegisterClusterOIDCRequest {
+  string provider = 1;
+  string region = 2;
+  string accountName = 3;
+  string clusterName = 4;
+}
+message RegisterClusterOIDCResponse {}

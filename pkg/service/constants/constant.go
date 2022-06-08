@@ -53,3 +53,8 @@ const (
 	CredAzure  = "azure"
 	CredGitPat = "git-pat"
 )
+
+const (
+	OIDCNamespace      = "oidc"
+	OIDCServiceAccount = "awskube2iam"
+)

@@ -65,6 +65,7 @@ type SpawnerServiceClient interface {
 	AppendRoute53Records(ctx context.Context, in *AppendRoute53RecordsRequest, opts ...grpc.CallOption) (*AppendRoute53RecordsResponse, error)
 	GetRoute53TXTRecords(ctx context.Context, in *GetRoute53TXTRecordsRequest, opts ...grpc.CallOption) (*GetRoute53TXTRecordsResponse, error)
 	DeleteRoute53Records(ctx context.Context, in *DeleteRoute53RecordsRequest, opts ...grpc.CallOption) (*DeleteRoute53RecordsResponse, error)
+	RegisterClusterOIDC(ctx context.Context, in *RegisterClusterOIDCRequest, opts ...grpc.CallOption) (*RegisterClusterOIDCResponse, error)
 }
 
 type spawnerServiceClient struct {
@@ -346,6 +347,15 @@ func (c *spawnerServiceClient) DeleteRoute53Records(ctx context.Context, in *Del
 	return out, nil
 }
 
+func (c *spawnerServiceClient) RegisterClusterOIDC(ctx context.Context, in *RegisterClusterOIDCRequest, opts ...grpc.CallOption) (*RegisterClusterOIDCResponse, error) {
+	out := new(RegisterClusterOIDCResponse)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/RegisterClusterOIDC", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SpawnerServiceServer is the server API for SpawnerService service.
 // All implementations must embed UnimplementedSpawnerServiceServer
 // for forward compatibility
@@ -393,6 +403,7 @@ type SpawnerServiceServer interface {
 	AppendRoute53Records(context.Context, *AppendRoute53RecordsRequest) (*AppendRoute53RecordsResponse, error)
 	GetRoute53TXTRecords(context.Context, *GetRoute53TXTRecordsRequest) (*GetRoute53TXTRecordsResponse, error)
 	DeleteRoute53Records(context.Context, *DeleteRoute53RecordsRequest) (*DeleteRoute53RecordsResponse, error)
+	RegisterClusterOIDC(context.Context, *RegisterClusterOIDCRequest) (*RegisterClusterOIDCResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
 }
 
@@ -489,6 +500,9 @@ func (UnimplementedSpawnerServiceServer) GetRoute53TXTRecords(context.Context, *
 }
 func (UnimplementedSpawnerServiceServer) DeleteRoute53Records(context.Context, *DeleteRoute53RecordsRequest) (*DeleteRoute53RecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRoute53Records not implemented")
+}
+func (UnimplementedSpawnerServiceServer) RegisterClusterOIDC(context.Context, *RegisterClusterOIDCRequest) (*RegisterClusterOIDCResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterClusterOIDC not implemented")
 }
 func (UnimplementedSpawnerServiceServer) mustEmbedUnimplementedSpawnerServiceServer() {}
 
@@ -1043,6 +1057,24 @@ func _SpawnerService_DeleteRoute53Records_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SpawnerService_RegisterClusterOIDC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterClusterOIDCRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpawnerServiceServer).RegisterClusterOIDC(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/spawner.SpawnerService/RegisterClusterOIDC",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpawnerServiceServer).RegisterClusterOIDC(ctx, req.(*RegisterClusterOIDCRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SpawnerService_ServiceDesc is the grpc.ServiceDesc for SpawnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1169,6 +1201,10 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteRoute53Records",
 			Handler:    _SpawnerService_DeleteRoute53Records_Handler,
+		},
+		{
+			MethodName: "RegisterClusterOIDC",
+			Handler:    _SpawnerService_RegisterClusterOIDC_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

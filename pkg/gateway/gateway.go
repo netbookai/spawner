@@ -20,7 +20,6 @@ func New(s service.SpawnerService) proto.SpawnerServiceServer {
 }
 
 func (g *gateway) HealthCheck(ctx context.Context, req *proto.Empty) (*proto.Empty, error) {
-
 	return &proto.Empty{}, nil
 }
 
@@ -153,17 +152,21 @@ func (g *gateway) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotR
 	return g.service.DeleteSnapshot(ctx, req)
 }
 
-//GetRoute53TXTRecords Get Route53 record for Caddy
+//GetRoute53TXTRecords Get Route53 record
 func (g *gateway) GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error) {
 	return g.service.GetRoute53TXTRecords(ctx, req)
 }
 
-//AppendRoute53Records append Route53 record for Caddy
+//AppendRoute53Records append Route53 record
 func (g *gateway) AppendRoute53Records(ctx context.Context, req *proto.AppendRoute53RecordsRequest) (*proto.AppendRoute53RecordsResponse, error) {
 	return g.service.AppendRoute53Records(ctx, req)
 }
 
-//DeleteRoute53Records append Route53 record for Caddy
+//DeleteRoute53Records append Route53 record
 func (g *gateway) DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error) {
 	return g.service.DeleteRoute53Records(ctx, req)
+}
+
+func (g *gateway) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
+	return g.service.RegisterClusterOIDC(ctx, in)
 }

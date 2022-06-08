@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	clusterName = "us-west-1-netbook-aws-dev-1654580598"
-	region      = "us-west-1"
+	clusterName = "oidc_cluster"
+	region      = "us-west-2" //"eastus2" //"us-west-2"
 	provider    = "aws"
-	accountName = "netbook-aws-dev"
+	accountName = "netbook-aws"
 	nodeName    = "rootnode"
 	instance    = "Standard_A2_v2"
 	volumeName  = "vol-50-20220603121711"
@@ -612,6 +612,19 @@ func main() {
 		}
 		sugar.Infow("Route53 appended records", "response", v)
 
+	case "RegisterClusterOIDC":
+		v, err := client.RegisterClusterOIDC(context.Background(), &proto.RegisterClusterOIDCRequest{
+			Provider:    "aws",
+			Region:      region,
+			AccountName: accountName,
+			ClusterName: clusterName,
+		})
+
+		if err != nil {
+			sugar.Errorw("error connecting cluster oidc to policy", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("ConnectClusterOIDCToTrustPolicy : connect cluster to oidc", "response", v)
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)

@@ -28,7 +28,7 @@ func (svc awsController) createClusterInternal(ctx context.Context, session *Ses
 	var subnetIds []*string
 	region := session.Region
 
-	awsRegionNetworkStack, err := GetRegionWkspNetworkStack(session)
+	awsRegionNetworkStack, err := GetRegionWkspNetworkStack(ctx, session, svc.logger)
 	if err != nil {
 		svc.logger.Error(ctx, "error getting network stack for region", "region", region, "error", err)
 		return nil, err
@@ -40,6 +40,7 @@ func (svc awsController) createClusterInternal(ctx context.Context, session *Ses
 		}
 		svc.logger.Info(ctx, "got network stack for region", "vpc", awsRegionNetworkStack.Vpc.VpcId, "subnets", subnetIds)
 	} else {
+		svc.logger.Info(ctx, "did not find any network stack in region", "region", region)
 		awsRegionNetworkStack, err = CreateRegionWkspNetworkStack(session)
 		if err != nil {
 			svc.logger.Error(ctx, "error creating network stack for region with no clusters", "region", region, "error", err)

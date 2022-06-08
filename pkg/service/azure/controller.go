@@ -100,3 +100,7 @@ func (a *azureController) CreateContainerRegistryRepo(ctx context.Context, req *
 func (a *azureController) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
 	return a.deleteSnapshot(ctx, req)
 }
+
+func (a *azureController) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
+	return &proto.RegisterClusterOIDCResponse{}, nil
+}
