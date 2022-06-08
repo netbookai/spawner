@@ -86,12 +86,12 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, errors.Wrap(err, "createCluster ")
+		return nil, errors.Wrap(err, "AddNode ")
 	}
 
 	client, err := getClusterManagerClient(ctx, cred)
 	if err != nil {
-		return nil, errors.Wrap(err, "createCluster")
+		return nil, errors.Wrap(err, "AddNode")
 	}
 
 	defer client.Close()
@@ -133,7 +133,7 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 	r, err := client.CreateNodePool(ctx, &nodeReq)
 	if err != nil {
 		g.logger.Error(ctx, "failed to create a nodepool", "error", err)
-		return nil, errors.Wrap(err, "CreateNodePool ")
+		return nil, errors.Wrap(err, "AddNode: create node pool failed")
 	}
 
 	g.logger.Info(ctx, "nodepool created", "status", r.Status)
@@ -143,12 +143,12 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 func (g *GCPController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, errors.Wrap(err, "createCluster ")
+		return nil, errors.Wrap(err, "delete node ")
 	}
 
 	client, err := getClusterManagerClient(ctx, cred)
 	if err != nil {
-		return nil, errors.Wrap(err, "createCluster")
+		return nil, errors.Wrap(err, "delete node")
 	}
 
 	defer client.Close()

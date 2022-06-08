@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -16,12 +17,12 @@ func (g *GCPController) getToken(ctx context.Context, req *proto.GetTokenRequest
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, errors.Wrap(err, "getCluster:")
+		return nil, errors.Wrap(err, "getToken")
 	}
 	cluster, err := g.getClusterInternal(ctx, cred, req.Region, req.ClusterName)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "GetToken")
 	}
 
 	if cluster.Status != container.Cluster_RUNNING {
@@ -41,12 +42,14 @@ func (g *GCPController) getToken(ctx context.Context, req *proto.GetTokenRequest
 	auth, err := getAuthClient(ctx, cred, scopes)
 	if err != nil {
 		g.logger.Error(ctx, "failed to get auth2 client", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetToken")
+
 	}
 
 	t, err := auth.TokenSource.Token()
 	if err != nil {
-		return nil, err
+		g.logger.Error(ctx, "failed to get token from token source", "error", err)
+		return nil, errors.Wrap(err, "GetToken")
 	}
 	token := t.AccessToken
 	return &proto.GetTokenResponse{
@@ -60,7 +63,7 @@ func (g *GCPController) getKubeConfig(ctx context.Context, req *proto.GetKubeCon
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
-		return nil, errors.Wrap(err, "getCluster:")
+		return nil, errors.Wrap(err, "getToken:")
 	}
 	cluster, err := g.getClusterInternal(ctx, cred, req.Region, req.ClusterName)
 
@@ -85,22 +88,31 @@ func (g *GCPController) getKubeConfig(ctx context.Context, req *proto.GetKubeCon
 	auth, err := getAuthClient(ctx, cred, scopes)
 	if err != nil {
 		g.logger.Error(ctx, "failed to get auth2 client", "error", err)
-		return nil, err
+		return nil, errors.Wrap(err, "GetKubeConfig")
 	}
 
 	t, err := auth.TokenSource.Token()
 	if err != nil {
-		return nil, err
+		g.logger.Error(ctx, "failed to get token from token source", "error", err)
+		return nil, errors.Wrap(err, "GetKubeConfig")
+
 	}
 	token := t.AccessToken
 	name := cluster.Name
 
 	defaultCluster := name
 
+	caCert, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.GetClusterCaCertificate())
+	if err != nil {
+		g.logger.Error(ctx, "failed to decode ca certificate", "error", err)
+		return nil, errors.Wrap(err, "GetKubeConfig")
+
+	}
+
 	clusters := make(map[string]*clientcmdapi.Cluster)
 	clusters[defaultCluster] = &clientcmdapi.Cluster{
 		Server:                   server,
-		CertificateAuthorityData: []byte(cluster.MasterAuth.GetClusterCaCertificate()),
+		CertificateAuthorityData: caCert,
 	}
 
 	contexts := make(map[string]*clientcmdapi.Context)

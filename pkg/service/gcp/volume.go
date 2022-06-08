@@ -55,9 +55,7 @@ func (g *GCPController) createVolume(ctx context.Context, req *proto.CreateVolum
 			Type:   &diskType,
 		},
 		Project: cred.ProjectId,
-		//create from snapshot ?
-		//SourceImage:  new(string),
-		Zone: zone,
+		Zone:    zone,
 	}
 
 	if req.Snapshotid != "" {
