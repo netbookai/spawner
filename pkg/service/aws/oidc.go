@@ -40,7 +40,7 @@ const trustPolicTemplate = `{
 		}`
 
 func getTrustPolicyDocument(federatedPrefix, oidcUrl string) string {
-	return fmt.Sprintf(trustPolicTemplate, federatedPrefix, oidcUrl, oidcUrl, constants.OIDCNamespace, constants.OIDCServiceAccount)
+	return fmt.Sprintf(trustPolicTemplate, federatedPrefix, oidcUrl, constants.OIDCNamespace, constants.OIDCServiceAccount, oidcUrl)
 }
 
 type partialOIDCConfig struct {
