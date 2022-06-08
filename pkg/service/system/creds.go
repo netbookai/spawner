@@ -89,7 +89,7 @@ func (g *GithubPersonalAccessToken) GetAws() *AwsCredential {
 }
 
 func (g *GithubPersonalAccessToken) AsSecretValue() string {
-	return fmt.Sprintf("%s", g.Token)
+	return g.Token
 }
 
 //NewAwsCredential recieves comma separated list of credential parts and creates a AwsCredential

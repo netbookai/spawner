@@ -84,6 +84,15 @@ service SpawnerService {
 
   rpc RegisterClusterOIDC(RegisterClusterOIDCRequest)
       returns (RegisterClusterOIDCResponse) {}
+
+  rpc AppendRoute53Records(AppendRoute53RecordsRequest)
+      returns (AppendRoute53RecordsResponse) {}
+
+  rpc GetRoute53TXTRecords(GetRoute53TXTRecordsRequest)
+      returns (GetRoute53TXTRecordsResponse) {}
+
+  rpc DeleteRoute53Records(DeleteRoute53RecordsRequest)
+      returns (DeleteRoute53RecordsResponse) {}
 }
 
 message Empty {}
@@ -506,4 +515,37 @@ message RegisterClusterOIDCRequest {
   string accountName = 3;
   string clusterName = 4;
 }
+
 message RegisterClusterOIDCResponse {}
+
+message Route53Record {
+  string id = 1;
+  string type = 2;
+  string name = 3;
+  string value = 4;
+  int64 ttlInSeconds = 5;
+  int64 priority = 6;
+}
+
+message AppendRoute53RecordsRequest {
+  repeated Route53Record records = 2;
+}
+
+message AppendRoute53RecordsResponse {
+  repeated Route53Record records = 1;
+}
+
+message GetRoute53TXTRecordsRequest {
+}
+
+message GetRoute53TXTRecordsResponse {
+  repeated Route53Record records = 1;
+}
+
+message DeleteRoute53RecordsRequest {
+  repeated Route53Record records = 1;
+}
+
+message DeleteRoute53RecordsResponse {
+  repeated Route53Record records = 1;
+}
