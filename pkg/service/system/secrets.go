@@ -77,7 +77,26 @@ func createSession(region string) (*session.Session, error) {
 
 	if conf.Env == "local" {
 		log.Println("running in dev mode, using ", conf.AWSAccessID)
-		cred = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+
+		if conf.AWSAccessID != "" {
+			// creating creds from config variables
+			cred = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+		} else {
+
+			log.Println("AWSAccessID is empty, using 'default' profile from user's home directory")
+			// looking for creds in user's home directory with "default" profile
+			sess, err := session.NewSessionWithOptions(
+				session.Options{
+					Profile: "default",
+				},
+			)
+			if err != nil {
+				log.Println("ERROR: provide AWS creds in config file")
+				return nil, err
+			}
+
+			return sess, nil
+		}
 
 	} else {
 		stsCreds, stserr := getSystemCredential()
