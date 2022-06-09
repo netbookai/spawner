@@ -43,7 +43,7 @@ var regionClassicLoadBalancerHostedID = map[string]string{
 	"us-gov-west-1":  "Z33AYJ8TM3BH4J",
 }
 
-const defaultRegion = "us-west-1"
+const emptyRegion = ""
 
 func getLbHosterID(regionName string) (string, error) {
 	id, ok := regionClassicLoadBalancerHostedID[regionName]
@@ -189,7 +189,7 @@ func GetRoute53TXTRecords(ctx context.Context) ([]types.Route53Record, error) {
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
 	// Creating AWS Route53 session
-	route53Client, err := getRoute53Sess(defaultRegion)
+	route53Client, err := getRoute53Sess(emptyRegion)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRoute53Records: failed to create route53 session")
 	}
@@ -202,6 +202,9 @@ func GetRoute53TXTRecords(ctx context.Context) ([]types.Route53Record, error) {
 	var records []types.Route53Record
 	var recordSets []*route53.ResourceRecordSet
 
+	// running this loop until we get all the records, getRecordResult.IsTruncated will be false
+	// when we get the last records, route53 returns records in sets of size we mention
+	// in this case we have mentioned value 1000 in input
 	for {
 		getRecordResult, err := route53Client.ListResourceRecordSetsWithContext(ctx, getRecordsInput)
 		if err != nil {
@@ -246,7 +249,7 @@ func AppendRoute53Records(ctx context.Context, records []types.Route53Record) er
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
 	// Creating AWS Route53 session
-	route53Client, err := getRoute53Sess(defaultRegion)
+	route53Client, err := getRoute53Sess(emptyRegion)
 	if err != nil {
 		return errors.Wrap(err, "AddRoute53Record: failed to create route53 session")
 	}
@@ -305,7 +308,7 @@ func DeleteRoute53Records(ctx context.Context, records []types.Route53Record) er
 	hostedZoneId := config.Get().AwsRoute53HostedZoneID
 
 	// Creating AWS Route53 session
-	route53Client, err := getRoute53Sess(defaultRegion)
+	route53Client, err := getRoute53Sess(emptyRegion)
 	if err != nil {
 		return errors.Wrap(err, "DeleteRoute53Records: failed to create route53 session")
 	}
