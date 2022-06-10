@@ -69,53 +69,54 @@ func getSystemCredential() (*sts.Credentials, error) {
 	return result.Credentials, nil
 }
 
-func GetLocalEnvSession(region string) (*session.Session, error) {
+func getSessionUsingAwsAccessKey(region string) (*session.Session, error) {
 
 	conf := config.Get()
 
-	var (
-		sess *session.Session
-		err  error
+	cred := credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: cred,
+	})
+
+	return sess, err
+}
+
+func getSessionUsingAwsProfile(profile string) (*session.Session, error) {
+
+	sess, err := session.NewSessionWithOptions(
+		session.Options{
+			Profile: profile,
+		},
 	)
 
-	if conf.AWSAccessID != "" {
-		// creating creds from config variables
-		cred := credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find the credential config in system")
+	}
 
-		sess, err = session.NewSession(&aws.Config{
-			Region:      aws.String(region),
-			Credentials: cred,
-		})
+	//NewSessionWithOptions doesn't return error if we pass the invalid profile, checking here
+	// if we got the credentials correctly
+	_, err = sess.Config.Credentials.Get()
 
-		if err != nil {
-			return nil, errors.Wrap(err, "invalid credentials in config.env")
-		}
-
-	} else {
-
-		log.Println("AWSAccessID is empty, using 'default' profile from user's home directory")
-		// looking for creds in user's home directory with "default" profile
-		sess, err = session.NewSessionWithOptions(
-			session.Options{
-				Profile: "default",
-			},
-		)
-
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to find the credential config in system")
-		}
-
-		//NewSessionWithOptions doesn't return error if we pass the invalid profile, checking here
-		// if we got the credentials correctly
-		_, err := sess.Config.Credentials.Get()
-
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to find the credential config in system")
-		}
-
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find the credential config in system")
 	}
 
 	return sess, nil
+
+}
+
+func getLocalEnvSession(region string) (*session.Session, error) {
+
+	if config.Get().AWSAccessID != "" {
+		// creating creds from config variables
+		return getSessionUsingAwsAccessKey(region)
+
+	}
+
+	log.Println("AWSAccessID is empty, using 'default' profile from user's home directory")
+	return getSessionUsingAwsProfile("default")
 
 }
 
@@ -127,7 +128,7 @@ func createSession(region string) (*session.Session, error) {
 
 	if conf.Env == "local" {
 
-		sess, err := GetLocalEnvSession(region)
+		sess, err := getLocalEnvSession(region)
 
 		if err != nil {
 			return nil, err
