@@ -3,7 +3,6 @@ package aws
 import (
 	"context"
 	"encoding/base64"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -40,32 +39,17 @@ func NewSession(ctx context.Context, region string, accountName string) (*Sessio
 
 	conf := config.Get()
 	if conf.Env == "local" {
-		log.Println("running in dev mode, using ", conf.AWSAccessID)
+		sess, err := system.GetLocalEnvSession(region)
 
-		if conf.AWSAccessID != "" {
-			// creating creds from config variables
-			awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
-
-		} else {
-
-			log.Println("AWS_ACCESS_ID is empty, using 'default' profile from user's home directory")
-			// looking for creds in user's home directory with "default" profile
-			sess, err := session.NewSessionWithOptions(
-				session.Options{
-					Profile: "default",
-				},
-			)
-			if err != nil {
-				log.Println("ERROR: provide AWS creds in config file")
-				return nil, err
-			}
-
-			return &Session{
-				AwsSession: sess,
-				Region:     region,
-				TeamId:     accountName,
-			}, nil
+		if err != nil {
+			return nil, err
 		}
+
+		return &Session{
+			AwsSession: sess,
+			Region:     region,
+			TeamId:     accountName,
+		}, nil
 
 	} else {
 		//secret manager is hosted in particular region, all writes happen to the same region
