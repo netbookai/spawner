@@ -95,22 +95,36 @@ func main() {
 	getRoute53Req := &proto.GetRoute53TXTRecordsRequest{}
 
 	deleteRoute53Req := &proto.DeleteRoute53RecordsRequest{
-		Records: []*proto.Route53Record{
+		Records: []*proto.Route53ResourceRecordSet{
 			{
-				Type:         "TXT",
-				Name:         "ash123",
-				Value:        "ash-test",
+				Type: "TXT",
+				Name: "ash1234.app.dev.netbook.ai",
+				ResourceRecords: []*proto.Route53ResourceRecord{
+					{
+						Value: "test1",
+					},
+					{
+						Value: "test2",
+					},
+				},
 				TtlInSeconds: 250,
 			},
 		},
 	}
 
-	appendRoute53Req := &proto.AppendRoute53RecordsRequest{
-		Records: []*proto.Route53Record{
+	createRoute53RecordsReq := &proto.CreateRoute53RecordsRequest{
+		Records: []*proto.Route53ResourceRecordSet{
 			{
-				Type:         "TXT",
-				Name:         "ash123",
-				Value:        "ash-test",
+				Type: "TXT",
+				Name: "ash1234.app.dev.netbook.ai",
+				ResourceRecords: []*proto.Route53ResourceRecord{
+					{
+						Value: "test1",
+					},
+					{
+						Value: "test2",
+					},
+				},
 				TtlInSeconds: 250,
 			},
 		},
@@ -618,13 +632,13 @@ func main() {
 		}
 		sugar.Infow("Route53 records deleted successfully", "response", v)
 
-	case "AppendRoute53Records":
-		v, err := client.AppendRoute53Records(context.Background(), appendRoute53Req)
+	case "CreateRoute53Records":
+		v, err := client.CreateRoute53Records(context.Background(), createRoute53RecordsReq)
 		if err != nil {
 			sugar.Errorw("error appending route53 records", "error", err)
 			os.Exit(1)
 		}
-		sugar.Infow("Route53 records appended successfully", "response", v)
+		sugar.Infow("Route53 records created successfully", "response", v)
 
 	default:
 		sugar.Infow("error: invalid method", "method", *method)

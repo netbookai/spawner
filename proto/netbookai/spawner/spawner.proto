@@ -85,8 +85,8 @@ service SpawnerService {
   rpc RegisterClusterOIDC(RegisterClusterOIDCRequest)
       returns (RegisterClusterOIDCResponse) {}
 
-  rpc AppendRoute53Records(AppendRoute53RecordsRequest)
-      returns (AppendRoute53RecordsResponse) {}
+  rpc CreateRoute53Records(CreateRoute53RecordsRequest)
+      returns (CreateRoute53RecordsResponse) {}
 
   rpc GetRoute53TXTRecords(GetRoute53TXTRecordsRequest)
       returns (GetRoute53TXTRecordsResponse) {}
@@ -518,29 +518,32 @@ message RegisterClusterOIDCRequest {
 
 message RegisterClusterOIDCResponse {}
 
-message Route53Record {
-  string id = 1;
+message Route53ResourceRecordSet {
+  //provide fqdn
+  string name = 1;
   string type = 2;
-  string name = 3;
-  string value = 4;
-  int64 ttlInSeconds = 5;
-  int64 priority = 6;
+  int64 ttlInSeconds = 3;
+  repeated Route53ResourceRecord resourceRecords = 4;
 }
 
-message AppendRoute53RecordsRequest {
-  repeated Route53Record records = 1;
+message Route53ResourceRecord{
+  string value = 1;
 }
 
-message AppendRoute53RecordsResponse {}
+message CreateRoute53RecordsRequest {
+  repeated Route53ResourceRecordSet records = 1;
+}
+
+message CreateRoute53RecordsResponse {}
 
 message GetRoute53TXTRecordsRequest {}
 
 message GetRoute53TXTRecordsResponse {
-  repeated Route53Record records = 1;
+  repeated Route53ResourceRecordSet records = 1;
 }
 
 message DeleteRoute53RecordsRequest {
-  repeated Route53Record records = 1;
+  repeated Route53ResourceRecordSet records = 1;
 }
 
 message DeleteRoute53RecordsResponse {}

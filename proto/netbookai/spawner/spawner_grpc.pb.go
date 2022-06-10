@@ -63,7 +63,7 @@ type SpawnerServiceClient interface {
 	GetContainerRegistryAuth(ctx context.Context, in *GetContainerRegistryAuthRequest, opts ...grpc.CallOption) (*GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(ctx context.Context, in *CreateContainerRegistryRepoRequest, opts ...grpc.CallOption) (*CreateContainerRegistryRepoResponse, error)
 	RegisterClusterOIDC(ctx context.Context, in *RegisterClusterOIDCRequest, opts ...grpc.CallOption) (*RegisterClusterOIDCResponse, error)
-	AppendRoute53Records(ctx context.Context, in *AppendRoute53RecordsRequest, opts ...grpc.CallOption) (*AppendRoute53RecordsResponse, error)
+	CreateRoute53Records(ctx context.Context, in *CreateRoute53RecordsRequest, opts ...grpc.CallOption) (*CreateRoute53RecordsResponse, error)
 	GetRoute53TXTRecords(ctx context.Context, in *GetRoute53TXTRecordsRequest, opts ...grpc.CallOption) (*GetRoute53TXTRecordsResponse, error)
 	DeleteRoute53Records(ctx context.Context, in *DeleteRoute53RecordsRequest, opts ...grpc.CallOption) (*DeleteRoute53RecordsResponse, error)
 }
@@ -329,9 +329,9 @@ func (c *spawnerServiceClient) RegisterClusterOIDC(ctx context.Context, in *Regi
 	return out, nil
 }
 
-func (c *spawnerServiceClient) AppendRoute53Records(ctx context.Context, in *AppendRoute53RecordsRequest, opts ...grpc.CallOption) (*AppendRoute53RecordsResponse, error) {
-	out := new(AppendRoute53RecordsResponse)
-	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/AppendRoute53Records", in, out, opts...)
+func (c *spawnerServiceClient) CreateRoute53Records(ctx context.Context, in *CreateRoute53RecordsRequest, opts ...grpc.CallOption) (*CreateRoute53RecordsResponse, error) {
+	out := new(CreateRoute53RecordsResponse)
+	err := c.cc.Invoke(ctx, "/spawner.SpawnerService/CreateRoute53Records", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ type SpawnerServiceServer interface {
 	GetContainerRegistryAuth(context.Context, *GetContainerRegistryAuthRequest) (*GetContainerRegistryAuthResponse, error)
 	CreateContainerRegistryRepo(context.Context, *CreateContainerRegistryRepoRequest) (*CreateContainerRegistryRepoResponse, error)
 	RegisterClusterOIDC(context.Context, *RegisterClusterOIDCRequest) (*RegisterClusterOIDCResponse, error)
-	AppendRoute53Records(context.Context, *AppendRoute53RecordsRequest) (*AppendRoute53RecordsResponse, error)
+	CreateRoute53Records(context.Context, *CreateRoute53RecordsRequest) (*CreateRoute53RecordsResponse, error)
 	GetRoute53TXTRecords(context.Context, *GetRoute53TXTRecordsRequest) (*GetRoute53TXTRecordsResponse, error)
 	DeleteRoute53Records(context.Context, *DeleteRoute53RecordsRequest) (*DeleteRoute53RecordsResponse, error)
 	mustEmbedUnimplementedSpawnerServiceServer()
@@ -495,8 +495,8 @@ func (UnimplementedSpawnerServiceServer) CreateContainerRegistryRepo(context.Con
 func (UnimplementedSpawnerServiceServer) RegisterClusterOIDC(context.Context, *RegisterClusterOIDCRequest) (*RegisterClusterOIDCResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterClusterOIDC not implemented")
 }
-func (UnimplementedSpawnerServiceServer) AppendRoute53Records(context.Context, *AppendRoute53RecordsRequest) (*AppendRoute53RecordsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AppendRoute53Records not implemented")
+func (UnimplementedSpawnerServiceServer) CreateRoute53Records(context.Context, *CreateRoute53RecordsRequest) (*CreateRoute53RecordsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRoute53Records not implemented")
 }
 func (UnimplementedSpawnerServiceServer) GetRoute53TXTRecords(context.Context, *GetRoute53TXTRecordsRequest) (*GetRoute53TXTRecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRoute53TXTRecords not implemented")
@@ -1021,20 +1021,20 @@ func _SpawnerService_RegisterClusterOIDC_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SpawnerService_AppendRoute53Records_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AppendRoute53RecordsRequest)
+func _SpawnerService_CreateRoute53Records_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRoute53RecordsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SpawnerServiceServer).AppendRoute53Records(ctx, in)
+		return srv.(SpawnerServiceServer).CreateRoute53Records(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/spawner.SpawnerService/AppendRoute53Records",
+		FullMethod: "/spawner.SpawnerService/CreateRoute53Records",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SpawnerServiceServer).AppendRoute53Records(ctx, req.(*AppendRoute53RecordsRequest))
+		return srv.(SpawnerServiceServer).CreateRoute53Records(ctx, req.(*CreateRoute53RecordsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1195,8 +1195,8 @@ var SpawnerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SpawnerService_RegisterClusterOIDC_Handler,
 		},
 		{
-			MethodName: "AppendRoute53Records",
-			Handler:    _SpawnerService_AppendRoute53Records_Handler,
+			MethodName: "CreateRoute53Records",
+			Handler:    _SpawnerService_CreateRoute53Records_Handler,
 		},
 		{
 			MethodName: "GetRoute53TXTRecords",

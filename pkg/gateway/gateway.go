@@ -161,9 +161,9 @@ func (g *gateway) GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute5
 	return g.service.GetRoute53TXTRecords(ctx, req)
 }
 
-//AppendRoute53Records append Route53 record for Caddy
-func (g *gateway) AppendRoute53Records(ctx context.Context, req *proto.AppendRoute53RecordsRequest) (*proto.AppendRoute53RecordsResponse, error) {
-	return g.service.AppendRoute53Records(ctx, req)
+//CreateRoute53Records append Route53 record for Caddy
+func (g *gateway) CreateRoute53Records(ctx context.Context, req *proto.CreateRoute53RecordsRequest) (*proto.CreateRoute53RecordsResponse, error) {
+	return g.service.CreateRoute53Records(ctx, req)
 }
 
 //DeleteRoute53Records append Route53 record for Caddy

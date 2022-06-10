@@ -50,7 +50,7 @@ type SpawnerService interface {
 	CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error)
 
 	RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error)
-	AppendRoute53Records(ctx context.Context, req *proto.AppendRoute53RecordsRequest) (*proto.AppendRoute53RecordsResponse, error)
+	CreateRoute53Records(ctx context.Context, req *proto.CreateRoute53RecordsRequest) (*proto.CreateRoute53RecordsResponse, error)
 	GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error)
 	DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error)
 }
@@ -488,45 +488,58 @@ func (s *spawnerService) GetRoute53TXTRecords(ctx context.Context, req *proto.Ge
 	}
 
 	response := &proto.GetRoute53TXTRecordsResponse{
-		Records: make([]*proto.Route53Record, 0, len(records)),
+		Records: make([]*proto.Route53ResourceRecordSet, 0, len(records)),
 	}
 
 	for _, r := range records {
-		response.Records = append(response.Records, &proto.Route53Record{
-			Id:           r.ID,
-			Type:         r.Type,
-			Name:         r.Name,
-			Value:        r.Value,
-			TtlInSeconds: r.TTLInSeconds,
-			Priority:     int64(r.Priority),
-		})
+		responseRecord := &proto.Route53ResourceRecordSet{
+			Type:            r.Type,
+			Name:            r.Name,
+			ResourceRecords: make([]*proto.Route53ResourceRecord, 0, len(r.ResourceRecords)),
+			TtlInSeconds:    r.TTLInSeconds,
+		}
+
+		for _, resourceRecord := range r.ResourceRecords {
+			responseRecord.ResourceRecords = append(responseRecord.ResourceRecords, &proto.Route53ResourceRecord{
+				Value: resourceRecord.Value,
+			})
+		}
+
+		response.Records = append(response.Records, responseRecord)
+
 	}
 
 	return response, nil
 
 }
 
-func (s *spawnerService) AppendRoute53Records(ctx context.Context, req *proto.AppendRoute53RecordsRequest) (*proto.AppendRoute53RecordsResponse, error) {
+func (s *spawnerService) CreateRoute53Records(ctx context.Context, req *proto.CreateRoute53RecordsRequest) (*proto.CreateRoute53RecordsResponse, error) {
 
-	recordsToAppend := make([]types.Route53Record, 0, len(req.Records))
+	recordsToAdd := make([]types.Route53ResourceRecordSet, 0, len(req.Records))
 
 	for _, r := range req.Records {
-		recordsToAppend = append(recordsToAppend, types.Route53Record{
-			ID:           r.Id,
-			Type:         r.Type,
-			Name:         r.Name,
-			Value:        r.Value,
-			TTLInSeconds: r.TtlInSeconds,
-			Priority:     r.Priority,
-		})
+		recordToAdd := types.Route53ResourceRecordSet{
+			Type:            r.Type,
+			Name:            r.Name,
+			ResourceRecords: make([]types.ResourceRecordValue, 0, len(r.ResourceRecords)),
+			TTLInSeconds:    r.TtlInSeconds,
+		}
+
+		for _, resourceRecord := range r.ResourceRecords {
+			recordToAdd.ResourceRecords = append(recordToAdd.ResourceRecords, types.ResourceRecordValue{
+				Value: resourceRecord.Value,
+			})
+		}
+
+		recordsToAdd = append(recordsToAdd, recordToAdd)
 	}
 
-	err := s.appendRoute53Records(ctx, recordsToAppend)
+	err := s.createRoute53Records(ctx, recordsToAdd)
 	if err != nil {
 		return nil, err
 	}
 
-	response := &proto.AppendRoute53RecordsResponse{}
+	response := &proto.CreateRoute53RecordsResponse{}
 
 	return response, nil
 
@@ -534,17 +547,23 @@ func (s *spawnerService) AppendRoute53Records(ctx context.Context, req *proto.Ap
 
 func (s *spawnerService) DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error) {
 
-	recordsToDelete := make([]types.Route53Record, 0, len(req.Records))
+	recordsToDelete := make([]types.Route53ResourceRecordSet, 0, len(req.Records))
 
 	for _, r := range req.Records {
-		recordsToDelete = append(recordsToDelete, types.Route53Record{
-			ID:           r.Id,
-			Type:         r.Type,
-			Name:         r.Name,
-			Value:        r.Value,
-			TTLInSeconds: r.TtlInSeconds,
-			Priority:     r.Priority,
-		})
+		recordToDelete := types.Route53ResourceRecordSet{
+			Type:            r.Type,
+			Name:            r.Name,
+			ResourceRecords: make([]types.ResourceRecordValue, 0, len(r.ResourceRecords)),
+			TTLInSeconds:    r.TtlInSeconds,
+		}
+
+		for _, resourceRecord := range r.ResourceRecords {
+			recordToDelete.ResourceRecords = append(recordToDelete.ResourceRecords, types.ResourceRecordValue{
+				Value: resourceRecord.Value,
+			})
+		}
+
+		recordsToDelete = append(recordsToDelete, recordToDelete)
 	}
 
 	err := s.deleteRoute53Records(ctx, recordsToDelete)
