@@ -57,7 +57,7 @@ func (g *GCPController) createCluster(ctx context.Context, req *proto.ClusterReq
 
 	cluster := &container_proto.Cluster{
 		Name:           req.ClusterName,
-		Description:    "Spawner managed cluster",
+		Description:    "Netbook-Spawner managed cluster",
 		NodePools:      []*container_proto.NodePool{np},
 		ResourceLabels: tags,
 		ReleaseChannel: &container_proto.ReleaseChannel{
