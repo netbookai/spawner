@@ -1,0 +1,14 @@
+{
+    "nodeSpec": {
+        "diskSize": 31,
+        "name": "prosint-1-micro",
+        "count": 3,
+        "machineType": "m",
+        "labels": {
+            "created_by": "cli"
+        }
+    },
+    "region": "us-central1",
+    "clusterName": "my-cluster",
+    "provider": "gcp"
+}

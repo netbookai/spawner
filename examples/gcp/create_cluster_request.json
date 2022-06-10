@@ -1,0 +1,16 @@
+{
+    "provider": "gcp",
+    "region": "us-central1",
+    "labels": {
+        "env": "dev"
+    },
+    "node": {
+        "name": "proident",
+        "diskSize": 10,
+        "labels": {
+            "created_by": "alex"
+        },
+        "instance": "e2-medium",
+        "gpuEnabled": false
+    }
+}
