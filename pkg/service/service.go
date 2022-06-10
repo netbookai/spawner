@@ -13,6 +13,7 @@ import (
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/gcp"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/rancher"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
+	"gitlab.com/netbook-devs/spawner-service/pkg/types"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
@@ -50,6 +51,9 @@ type SpawnerService interface {
 	CreateContainerRegistryRepo(ctx context.Context, in *proto.CreateContainerRegistryRepoRequest) (*proto.CreateContainerRegistryRepoResponse, error)
 
 	RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error)
+	CreateRoute53Records(ctx context.Context, req *proto.CreateRoute53RecordsRequest) (*proto.CreateRoute53RecordsResponse, error)
+	GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error)
+	DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -497,4 +501,100 @@ func (s *spawnerService) RegisterClusterOIDC(ctx context.Context, req *proto.Reg
 		return nil, err
 	}
 	return provider.RegisterClusterOIDC(ctx, req)
+}
+
+func (s *spawnerService) GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error) {
+	records, err := s.getRoute53TXTRecords(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &proto.GetRoute53TXTRecordsResponse{
+		Records: make([]*proto.Route53ResourceRecordSet, 0, len(records)),
+	}
+
+	for _, r := range records {
+		responseRecord := &proto.Route53ResourceRecordSet{
+			Type:            r.Type,
+			Name:            r.Name,
+			ResourceRecords: make([]*proto.Route53ResourceRecord, 0, len(r.ResourceRecords)),
+			TtlInSeconds:    r.TTLInSeconds,
+		}
+
+		for _, resourceRecord := range r.ResourceRecords {
+			responseRecord.ResourceRecords = append(responseRecord.ResourceRecords, &proto.Route53ResourceRecord{
+				Value: resourceRecord.Value,
+			})
+		}
+
+		response.Records = append(response.Records, responseRecord)
+
+	}
+
+	return response, nil
+
+}
+
+func (s *spawnerService) CreateRoute53Records(ctx context.Context, req *proto.CreateRoute53RecordsRequest) (*proto.CreateRoute53RecordsResponse, error) {
+
+	recordsToAdd := make([]types.Route53ResourceRecordSet, 0, len(req.Records))
+
+	for _, r := range req.Records {
+		recordToAdd := types.Route53ResourceRecordSet{
+			Type:            r.Type,
+			Name:            r.Name,
+			ResourceRecords: make([]types.ResourceRecordValue, 0, len(r.ResourceRecords)),
+			TTLInSeconds:    r.TtlInSeconds,
+		}
+
+		for _, resourceRecord := range r.ResourceRecords {
+			recordToAdd.ResourceRecords = append(recordToAdd.ResourceRecords, types.ResourceRecordValue{
+				Value: resourceRecord.Value,
+			})
+		}
+
+		recordsToAdd = append(recordsToAdd, recordToAdd)
+	}
+
+	err := s.createRoute53Records(ctx, recordsToAdd)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &proto.CreateRoute53RecordsResponse{}
+
+	return response, nil
+
+}
+
+func (s *spawnerService) DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error) {
+
+	recordsToDelete := make([]types.Route53ResourceRecordSet, 0, len(req.Records))
+
+	for _, r := range req.Records {
+		recordToDelete := types.Route53ResourceRecordSet{
+			Type:            r.Type,
+			Name:            r.Name,
+			ResourceRecords: make([]types.ResourceRecordValue, 0, len(r.ResourceRecords)),
+			TTLInSeconds:    r.TtlInSeconds,
+		}
+
+		for _, resourceRecord := range r.ResourceRecords {
+			recordToDelete.ResourceRecords = append(recordToDelete.ResourceRecords, types.ResourceRecordValue{
+				Value: resourceRecord.Value,
+			})
+		}
+
+		recordsToDelete = append(recordsToDelete, recordToDelete)
+	}
+
+	err := s.deleteRoute53Records(ctx, recordsToDelete)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &proto.DeleteRoute53RecordsResponse{}
+
+	return response, nil
+
 }

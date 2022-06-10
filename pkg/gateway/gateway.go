@@ -155,3 +155,18 @@ func (g *gateway) DeleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotR
 func (g *gateway) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
 	return g.service.RegisterClusterOIDC(ctx, in)
 }
+
+//GetRoute53TXTRecords Get Route53 record for Caddy
+func (g *gateway) GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error) {
+	return g.service.GetRoute53TXTRecords(ctx, req)
+}
+
+//CreateRoute53Records append Route53 record for Caddy
+func (g *gateway) CreateRoute53Records(ctx context.Context, req *proto.CreateRoute53RecordsRequest) (*proto.CreateRoute53RecordsResponse, error) {
+	return g.service.CreateRoute53Records(ctx, req)
+}
+
+//DeleteRoute53Records append Route53 record for Caddy
+func (g *gateway) DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error) {
+	return g.service.DeleteRoute53Records(ctx, req)
+}

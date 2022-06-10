@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
+	"gitlab.com/netbook-devs/spawner-service/pkg/types"
 )
 
 func (svc *spawnerService) addRoute53Record(ctx context.Context, dnsName, recordName, regionName string, isAwsResource bool) (string, error) {
@@ -14,4 +15,34 @@ func (svc *spawnerService) addRoute53Record(ctx context.Context, dnsName, record
 	}
 
 	return changeId, nil
+}
+
+func (svc *spawnerService) getRoute53TXTRecords(ctx context.Context) ([]types.Route53ResourceRecordSet, error) {
+	records, err := system.GetRoute53TXTRecords(ctx)
+	if err != nil {
+		svc.logger.Error(ctx, "failed to get route53 record", "error", err)
+		return nil, err
+	}
+
+	return records, nil
+}
+
+func (svc *spawnerService) createRoute53Records(ctx context.Context, records []types.Route53ResourceRecordSet) error {
+	err := system.CreateRoute53Records(ctx, records)
+	if err != nil {
+		svc.logger.Error(ctx, "failed to append route53 record", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+func (svc *spawnerService) deleteRoute53Records(ctx context.Context, records []types.Route53ResourceRecordSet) error {
+	err := system.DeleteRoute53Records(ctx, records)
+	if err != nil {
+		svc.logger.Error(ctx, "failed to delete route53 record", "error", err)
+		return err
+	}
+
+	return nil
 }

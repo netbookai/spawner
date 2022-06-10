@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
+	"gitlab.com/netbook-devs/spawner-service/pkg/types"
 )
 
 var regionClassicLoadBalancerHostedID = map[string]string{
@@ -40,6 +42,8 @@ var regionClassicLoadBalancerHostedID = map[string]string{
 	"us-gov-west-1":  "Z33AYJ8TM3BH4J",
 }
 
+const emptyRegion = ""
+
 func getLbHosterID(regionName string) (string, error) {
 	id, ok := regionClassicLoadBalancerHostedID[regionName]
 	if !ok {
@@ -57,6 +61,69 @@ func getRoute53Sess(region string) (*route53.Route53, error) {
 
 	route53Sess := route53.New(sess)
 	return route53Sess, nil
+}
+
+func applyChange(ctx context.Context, records []types.Route53ResourceRecordSet, action string) error {
+
+	hostedZoneId := config.Get().AwsRoute53HostedZoneID
+
+	// Creating AWS Route53 session
+	route53Client, err := getRoute53Sess(emptyRegion)
+	if err != nil {
+		return errors.Wrap(err, "applyChange: failed to create route53 session")
+	}
+
+	input := &route53.ChangeResourceRecordSetsInput{
+		ChangeBatch: &route53.ChangeBatch{
+			Changes: make([]*route53.Change, 0, len(records)),
+		},
+		HostedZoneId: aws.String(hostedZoneId),
+	}
+
+	for _, record := range records {
+
+		changeRequest := &route53.Change{
+			Action: aws.String(action),
+			ResourceRecordSet: &route53.ResourceRecordSet{
+				Name:            aws.String(record.Name),
+				ResourceRecords: make([]*route53.ResourceRecord, 0, len(record.ResourceRecords)),
+				TTL:             aws.Int64(int64(record.TTLInSeconds)),
+				Type:            aws.String(record.Type),
+			},
+		}
+
+		for _, resourceRecord := range record.ResourceRecords {
+
+			// AWS Route53 TXT record value must be enclosed in quotation marks on create
+			if record.Type == route53.RRTypeTxt {
+				resourceRecord.Value = strconv.Quote(resourceRecord.Value)
+			}
+
+			changeRequest.ResourceRecordSet.ResourceRecords = append(changeRequest.ResourceRecordSet.ResourceRecords, &route53.ResourceRecord{
+				Value: aws.String(resourceRecord.Value),
+			})
+
+		}
+
+		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes, changeRequest)
+
+	}
+
+	changeResult, err := route53Client.ChangeResourceRecordSetsWithContext(ctx, input)
+	if err != nil {
+		return errors.Wrap(err, "applyChange")
+	}
+
+	changeInput := &route53.GetChangeInput{
+		Id: changeResult.ChangeInfo.Id,
+	}
+
+	err = route53Client.WaitUntilResourceRecordSetsChangedWithContext(ctx, changeInput)
+	if err != nil {
+		return errors.Wrap(err, "applyChange")
+	}
+
+	return nil
 }
 
 func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName string, isAwsResource bool) (string, error) {
@@ -120,7 +187,7 @@ func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 
 	// logger.Infow("added route53 record set " + recordName)
 	err = route53Client.WaitUntilResourceRecordSetsChanged(&route53.GetChangeInput{
-		Id: *&result.ChangeInfo.Id,
+		Id: result.ChangeInfo.Id,
 	})
 
 	if err != nil {
@@ -128,4 +195,93 @@ func AddRoute53Record(ctx context.Context, dnsName, recordName, regionName strin
 	}
 
 	return *result.ChangeInfo.Id, nil
+}
+
+// GetRoute53TXTRecords will return TXT records only
+func GetRoute53TXTRecords(ctx context.Context) ([]types.Route53ResourceRecordSet, error) {
+
+	hostedZoneId := config.Get().AwsRoute53HostedZoneID
+
+	// Creating AWS Route53 session
+	route53Client, err := getRoute53Sess(emptyRegion)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetRoute53Records: failed to create route53 session")
+	}
+
+	getRecordsInput := &route53.ListResourceRecordSetsInput{
+		HostedZoneId: aws.String(hostedZoneId),
+		MaxItems:     aws.String("1000"),
+	}
+
+	var resourceRecordSets []types.Route53ResourceRecordSet
+	var r53recordSets []*route53.ResourceRecordSet
+
+	// running this loop until we get all the records, getRecordResult.IsTruncated will be false
+	// when we get the last records, route53 returns records in sets of size we mention
+	// in this case we have mentioned value 1000 in input
+	for {
+		getRecordResult, err := route53Client.ListResourceRecordSetsWithContext(ctx, getRecordsInput)
+		if err != nil {
+			return nil, errors.Wrap(err, "GetRoute53Records: failed to get route53 records")
+		}
+
+		r53recordSets = append(r53recordSets, getRecordResult.ResourceRecordSets...)
+		if *getRecordResult.IsTruncated {
+			getRecordsInput.StartRecordName = getRecordResult.NextRecordName
+			getRecordsInput.StartRecordType = getRecordResult.NextRecordType
+			getRecordsInput.StartRecordIdentifier = getRecordResult.NextRecordIdentifier
+		} else {
+			break
+		}
+	}
+
+	for _, recordSet := range r53recordSets {
+		// filtering txt records only
+		if *recordSet.Type != route53.RRTypeTxt {
+			continue
+		}
+
+		resourceRecordSet := types.Route53ResourceRecordSet{
+			Name:            *recordSet.Name,
+			ResourceRecords: make([]types.ResourceRecordValue, 0, len(recordSet.ResourceRecords)),
+			Type:            *recordSet.Type,
+			TTLInSeconds:    int64(*recordSet.TTL),
+		}
+
+		for _, rr := range recordSet.ResourceRecords {
+
+			resourceRecordSet.ResourceRecords = append(resourceRecordSet.ResourceRecords, types.ResourceRecordValue{
+				Value: *rr.Value,
+			})
+		}
+
+		resourceRecordSets = append(resourceRecordSets, resourceRecordSet)
+	}
+
+	return resourceRecordSets, nil
+
+}
+
+// CreateRoute53Records creates new records in the zone
+func CreateRoute53Records(ctx context.Context, records []types.Route53ResourceRecordSet) error {
+
+	err := applyChange(ctx, records, route53.ChangeActionCreate)
+
+	if err != nil {
+		return errors.Wrap(err, "CreateRoute53Records: failed to create record")
+	}
+
+	return nil
+}
+
+// DeleteRoute53Records deletes the records from the zone
+func DeleteRoute53Records(ctx context.Context, records []types.Route53ResourceRecordSet) error {
+
+	err := applyChange(ctx, records, route53.ChangeActionDelete)
+
+	if err != nil {
+		return errors.Wrap(err, "DeleteRoute53Records: failed to delete records")
+	}
+
+	return nil
 }

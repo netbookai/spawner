@@ -92,6 +92,44 @@ func main() {
 		// RegionIdentifier: "Oregon region",
 	}
 
+	getRoute53Req := &proto.GetRoute53TXTRecordsRequest{}
+
+	deleteRoute53Req := &proto.DeleteRoute53RecordsRequest{
+		Records: []*proto.Route53ResourceRecordSet{
+			{
+				Type: "TXT",
+				Name: "ash1234.app.dev.netbook.ai",
+				ResourceRecords: []*proto.Route53ResourceRecord{
+					{
+						Value: "test1",
+					},
+					{
+						Value: "test2",
+					},
+				},
+				TtlInSeconds: 250,
+			},
+		},
+	}
+
+	createRoute53RecordsReq := &proto.CreateRoute53RecordsRequest{
+		Records: []*proto.Route53ResourceRecordSet{
+			{
+				Type: "TXT",
+				Name: "ash1234.app.dev.netbook.ai",
+				ResourceRecords: []*proto.Route53ResourceRecord{
+					{
+						Value: "test1",
+					},
+					{
+						Value: "test2",
+					},
+				},
+				TtlInSeconds: 250,
+			},
+		},
+	}
+
 	clusterStatusReq := &proto.ClusterStatusRequest{
 		ClusterName: clusterName,
 		Region:      region,
@@ -579,6 +617,31 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("ConnectClusterOIDCToTrustPolicy : connect cluster to oidc", "response", v)
+
+	case "GetRoute53TXTRecords":
+		v, err := client.GetRoute53TXTRecords(context.Background(), getRoute53Req)
+		if err != nil {
+			sugar.Errorw("error getting route53 records", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Route53 Records", "response", v)
+
+	case "DeleteRoute53Records":
+		v, err := client.DeleteRoute53Records(context.Background(), deleteRoute53Req)
+		if err != nil {
+			sugar.Errorw("error deleting route53 records", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Route53 records deleted successfully", "response", v)
+
+	case "CreateRoute53Records":
+		v, err := client.CreateRoute53Records(context.Background(), createRoute53RecordsReq)
+		if err != nil {
+			sugar.Errorw("error appending route53 records", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("Route53 records created successfully", "response", v)
+
 	default:
 		sugar.Infow("error: invalid method", "method", *method)
 		os.Exit(1)

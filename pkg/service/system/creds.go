@@ -109,7 +109,7 @@ func (g *GithubPersonalAccessToken) GetGcp() *GCPCredential {
 }
 
 func (g *GithubPersonalAccessToken) AsSecretValue() string {
-	return fmt.Sprintf("%s", g.Token)
+	return g.Token
 }
 
 //GCP credentials, of service account
