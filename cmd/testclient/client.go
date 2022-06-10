@@ -16,13 +16,13 @@ import (
 )
 
 const (
-	clusterName = "oidc_cluster"
-	region      = "us-west-2" //"eastus2" //"us-west-2"
-	provider    = "aws"
+	clusterName = "gcp-cluster-test-3"
+	region      = "us-central1" //"eastus2" //"us-west-2"
+	provider    = "gcp"
+	nodeName    = "add-node-2"
+	instance    = "e2-medium"
+	volumeName  = "vol-50-20220607164454"
 	accountName = "netbook-aws"
-	nodeName    = "rootnode"
-	instance    = "Standard_A2_v2"
-	volumeName  = "vol-50-20220603121711"
 )
 
 func main() {
@@ -152,9 +152,10 @@ func main() {
 
 	addNode := &proto.NodeSpec{
 		Name:          nodeName,
+		Count:         5,
 		Instance:      instance,
 		MigProfile:    proto.MIGProfile_MIG3g,
-		CapacityType:  proto.CapacityType_SPOT,
+		CapacityType:  proto.CapacityType_ONDEMAND,
 		MachineType:   "m",
 		SpotInstances: []string{"t2.small", "t3.small"},
 		DiskSize:      20,
@@ -194,11 +195,12 @@ func main() {
 		Availabilityzone: region,
 		Volumetype:       "StandardSSD_LRS", //"gp2",
 		Size:             50,
-		//	Snapshotid:       "vol-30-20220409151829-snapshot",
+		Snapshotid:       "vol-50-20220607152827-snapshot",
 		//SnapshotUri: "snapshot-uri",
-		Region:      region,
-		Provider:    provider,
-		AccountName: accountName,
+		Region:         region,
+		Provider:       provider,
+		AccountName:    accountName,
+		DeleteSnapshot: true,
 	}
 
 	deleteVolumeReq := &proto.DeleteVolumeRequest{
@@ -431,7 +433,7 @@ func main() {
 			Provider:    provider,
 			Region:      region,
 			AccountName: accountName,
-			SnapshotId:  "vol-50-20220603121711-snapshot",
+			SnapshotId:  fmt.Sprintf("%s-snapshot", volumeName),
 		})
 
 		if err != nil {

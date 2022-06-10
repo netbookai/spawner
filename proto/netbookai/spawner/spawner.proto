@@ -405,6 +405,11 @@ message GithubPersonalAccessToken {
   string token = 1;
 }
 
+message GcpCredentials {
+  string projectID = 1;
+  string certificate = 2;
+}
+
 message WriteCredentialRequest {
   string account = 1;
   string provider = 2 [deprecated = true];
@@ -413,6 +418,7 @@ message WriteCredentialRequest {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
     GithubPersonalAccessToken gitPat = 6;
+    GcpCredentials gcpCred = 7;
   }
 }
 
@@ -434,6 +440,7 @@ message ReadCredentialResponse {
     AwsCredentials awsCred = 3;
     AzureCredentials azureCred = 4;
     GithubPersonalAccessToken gitPat = 6;
+    GcpCredentials gcpCred = 7;
   }
 }
 
