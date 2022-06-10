@@ -174,7 +174,7 @@ func (a *azureController) deleteCluster(ctx context.Context, req *proto.ClusterD
 
 	aksClient, err := getAKSClient(cred)
 	if err != nil {
-		return nil, errors.Wrap(err, "creaetAKSCluster: cannot to get AKS client")
+		return nil, errors.Wrap(err, "deleteCluster: cannot to get AKS client")
 	}
 
 	groupName := cred.ResourceGroup

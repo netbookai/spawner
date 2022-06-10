@@ -27,16 +27,24 @@ type GithubPersonalAccessToken struct {
 	Token string
 }
 
+type GCPCredential struct {
+	Name        string
+	ProjectId   string
+	Certificate string
+}
+
 type Credentials interface {
 	GetAzure() *AzureCredential
 	GetAws() *AwsCredential
 	GetGitPAT() *GithubPersonalAccessToken
+	GetGcp() *GCPCredential
 	AsSecretValue() string
 }
 
 var _ Credentials = (*AzureCredential)(nil)
 var _ Credentials = (*AwsCredential)(nil)
 var _ Credentials = (*GithubPersonalAccessToken)(nil)
+var _ Credentials = (*GCPCredential)(nil)
 
 //Azure credentials
 
@@ -45,6 +53,10 @@ func (a *AzureCredential) GetAzure() *AzureCredential {
 }
 
 func (a *AzureCredential) GetAws() *AwsCredential {
+	return nil
+}
+
+func (a *AzureCredential) GetGcp() *GCPCredential {
 	return nil
 }
 
@@ -64,6 +76,10 @@ func (a *AwsCredential) GetAzure() *AzureCredential {
 
 func (a *AwsCredential) GetAws() *AwsCredential {
 	return a
+}
+
+func (a *AwsCredential) GetGcp() *GCPCredential {
+	return nil
 }
 
 func (a *AwsCredential) AsSecretValue() string {
@@ -88,8 +104,34 @@ func (g *GithubPersonalAccessToken) GetAws() *AwsCredential {
 	return nil
 }
 
+func (g *GithubPersonalAccessToken) GetGcp() *GCPCredential {
+	return nil
+}
+
 func (g *GithubPersonalAccessToken) AsSecretValue() string {
 	return fmt.Sprintf("%s", g.Token)
+}
+
+//GCP credentials, of service account
+
+func (g *GCPCredential) GetAzure() *AzureCredential {
+	return nil
+}
+
+func (g *GCPCredential) GetAws() *AwsCredential {
+	return nil
+}
+
+func (g *GCPCredential) GetGcp() *GCPCredential {
+	return g
+}
+
+func (g *GCPCredential) GetGitPAT() *GithubPersonalAccessToken {
+	return nil
+}
+
+func (g *GCPCredential) AsSecretValue() string {
+	return fmt.Sprintf("%s,%s", g.ProjectId, g.Certificate)
 }
 
 //NewAwsCredential recieves comma separated list of credential parts and creates a AwsCredential
@@ -133,4 +175,15 @@ func NewAzureCredential(blob string) (*AzureCredential, error) {
 //NewGitPAT return new GithubPersonalAccessToken
 func NewGitPAT(blob string) (*GithubPersonalAccessToken, error) {
 	return &GithubPersonalAccessToken{Token: blob}, nil
+}
+
+func NewGcpCredential(blob string) (*GCPCredential, error) {
+	splits := strings.Split(blob, ",")
+	if len(splits) != 2 {
+		return nil, errors.New("NewAzureCredential: invalid credentials found in secrets")
+	}
+	return &GCPCredential{
+		ProjectId:   splits[0],
+		Certificate: splits[1],
+	}, nil
 }

@@ -10,6 +10,7 @@ import (
 	aws "gitlab.com/netbook-devs/spawner-service/pkg/service/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/azure"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/gcp"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/rancher"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 
@@ -55,8 +56,8 @@ type SpawnerService interface {
 type spawnerService struct {
 	awsController   Controller
 	azureController Controller
+	gcpController   Controller
 	logger          log.Logger
-
 	proto.UnimplementedSpawnerServiceServer
 }
 
@@ -66,6 +67,7 @@ func New(logger log.Logger) SpawnerService {
 	svc := &spawnerService{
 		awsController:   aws.NewAWSController(logger),
 		azureController: azure.NewController(logger),
+		gcpController:   gcp.NewController(logger),
 		logger:          logger,
 	}
 	return svc
@@ -77,6 +79,8 @@ func (s *spawnerService) controller(provider string) (Controller, error) {
 		return s.awsController, nil
 	case "azure":
 		return s.azureController, nil
+	case "gcp":
+		return s.gcpController, nil
 	}
 	return nil, fmt.Errorf(ProviderNotFound, provider)
 }
@@ -327,6 +331,16 @@ func (s *spawnerService) WriteCredential(ctx context.Context, req *proto.WriteCr
 				Token: c.Token,
 			}
 		}
+	case constants.GcpLabel:
+		cred_type = "GcpCredential"
+		if c := req.GetGcpCred(); c != nil {
+
+			cred = &system.GCPCredential{
+				Name:        account,
+				ProjectId:   c.GetProjectID(),
+				Certificate: c.GetCertificate(),
+			}
+		}
 	default:
 		return nil, fmt.Errorf("invalid provider '%s'", credType)
 	}
@@ -393,6 +407,14 @@ func (s *spawnerService) ReadCredential(ctx context.Context, req *proto.ReadCred
 		p.Cred = &proto.ReadCredentialResponse_GitPat{
 			GitPat: &proto.GithubPersonalAccessToken{
 				Token: c.Token,
+			},
+		}
+	case constants.GcpLabel:
+		c := creds.GetGcp()
+		p.Cred = &proto.ReadCredentialResponse_GcpCred{
+			GcpCred: &proto.GcpCredentials{
+				ProjectID:   c.ProjectId,
+				Certificate: c.Certificate,
 			},
 		}
 	}
