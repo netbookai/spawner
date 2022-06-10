@@ -18,9 +18,15 @@ func getNodePoolFQN(projectId, location, clusterId, nodeId string) string {
 	return fmt.Sprintf("projects/%s/locations/%s/clusters/%s/nodePools/%s", projectId, location, clusterId, nodeId)
 }
 
-func getDiskType() string {
+//getDefaultDiskType return the name of the disk type
+func getDefaultDiskType() string {
 	// Doc : https://cloud.google.com/compute/docs/disks
 	return "pd-standard"
+}
+
+func getImageType() string {
+	//Doc : https://cloud.google.com/kubernetes-engine/docs/concepts/node-images#available_node_images
+	return "COS_CONTAINERD"
 }
 
 //getNodePool Get the NodePool config for the given NodeSpec
@@ -46,9 +52,8 @@ func getNodePool(node *spawner.NodeSpec) (*container_proto.NodePool, error) {
 	if instance == "" {
 		return nil, errors.New(constants.InvalidInstanceOrMachineType)
 	}
-	//Doc : https://cloud.google.com/kubernetes-engine/docs/concepts/node-images#available_node_images
-	imageType := "COS_CONTAINERD"
-	diskType := getDiskType()
+	imageType := getImageType()
+	diskType := getDefaultDiskType()
 
 	nodeConfig := &container_proto.NodeConfig{
 
@@ -96,7 +101,7 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 
 	defer client.Close()
 
-	fqn := getClusterFQName(cred.ProjectId, req.Region, req.ClusterName)
+	cfqn := getClusterFQName(cred.ProjectId, req.Region, req.ClusterName)
 	//get cluster id -- apparently cluster id is the cluster name,
 	/*
 		cluster, err := client.GetCluster(ctx, &container_proto.GetClusterRequest{
@@ -127,7 +132,7 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 
 	nodeReq := container_proto.CreateNodePoolRequest{
 		NodePool: np,
-		Parent:   fqn,
+		Parent:   cfqn,
 	}
 
 	r, err := client.CreateNodePool(ctx, &nodeReq)

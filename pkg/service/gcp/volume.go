@@ -18,6 +18,7 @@ func diskName(size int32) string {
 	return fmt.Sprintf("vol-%d-%s", size, t)
 }
 
+//diskType return the URL of the disk type
 func diskType(projectId, zone, typ string) string {
 	return fmt.Sprintf("projects/%s/zones/%s/diskTypes/%s", projectId, zone, typ)
 }

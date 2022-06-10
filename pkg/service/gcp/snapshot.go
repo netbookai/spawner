@@ -107,12 +107,12 @@ func (g *GCPController) deleteSnapshotInternal(ctx context.Context, cred *system
 		g.logger.Error(ctx, "failed to get snapshot client", "error", err)
 		return errors.Wrap(err, "failed to get snapshot client")
 	}
-	crr := disk_proto.DeleteSnapshotRequest{
+	dsr := disk_proto.DeleteSnapshotRequest{
 		Project:  cred.ProjectId,
 		Snapshot: snapshot,
 	}
 	// Doc : https://cloud.google.com/compute/docs/reference/rest/v1/snapshots/delete
-	r, err := client.Delete(ctx, &crr)
+	r, err := client.Delete(ctx, &dsr)
 	if err != nil {
 		g.logger.Error(ctx, "failed to delete a snapshot", "error", err, "name", snapshot)
 		return errors.Wrap(err, "deleteSnapshot")
