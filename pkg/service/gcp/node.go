@@ -136,7 +136,7 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 		return nil, errors.Wrap(err, "AddNode: create node pool failed")
 	}
 
-	g.logger.Info(ctx, "nodepool created", "status", r.Status)
+	g.logger.Info(ctx, "nodepool created", "status", r.Status, "cluster", req.ClusterName, "nodepool", np.Name)
 	return &proto.NodeSpawnResponse{}, nil
 }
 
@@ -161,6 +161,6 @@ func (g *GCPController) DeleteNode(ctx context.Context, req *proto.NodeDeleteReq
 		g.logger.Error(ctx, "failed to delete the nodepool", "error", err)
 		return nil, errors.Wrap(err, "failed to delete to node pool")
 	}
-	g.logger.Info(ctx, "nodepool delete", "status", r.Status)
+	g.logger.Info(ctx, "deleting nodepool", "status", r.Status, "cluster", req.ClusterName, "nodepool", req.NodeGroupName)
 	return &proto.NodeDeleteResponse{}, nil
 }
