@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/system"
 	"k8s.io/client-go/dynamic"
@@ -29,6 +30,57 @@ type Session struct {
 	TeamId     string
 }
 
+func getSessionUsingAwsAccessKey(region string) (*session.Session, error) {
+
+	conf := config.Get()
+
+	cred := credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: cred,
+	})
+
+	return sess, err
+}
+
+func getSessionUsingAwsProfile(profile string) (*session.Session, error) {
+
+	sess, err := session.NewSessionWithOptions(
+		session.Options{
+			Profile: profile,
+		},
+	)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find the credential config in system")
+	}
+
+	//NewSessionWithOptions doesn't return error if we pass the invalid profile, checking here
+	// if we got the credentials correctly
+	_, err = sess.Config.Credentials.Get()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find the credential config in system")
+	}
+
+	return sess, nil
+
+}
+
+func getLocalEnvSession(region string) (*session.Session, error) {
+
+	if config.Get().AWSAccessID != "" {
+		// creating creds from config variables
+		return getSessionUsingAwsAccessKey(region)
+
+	}
+
+	log.Println("AWSAccessID is empty, using 'default' profile from user's home directory")
+	return getSessionUsingAwsProfile("default")
+
+}
+
 //NewSession create a session for given user account by fetching user credentials from the secret stores.
 // if running locally and env set to local, it will use credentials from the config
 func NewSession(ctx context.Context, region string, accountName string) (*Session, error) {
@@ -40,8 +92,18 @@ func NewSession(ctx context.Context, region string, accountName string) (*Sessio
 
 	conf := config.Get()
 	if conf.Env == "local" {
-		log.Println("running in dev mode, using ", conf.AWSAccessID)
-		awsCreds = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+		sess, err := getLocalEnvSession(region)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &Session{
+			AwsSession: sess,
+			Region:     region,
+			TeamId:     accountName,
+		}, nil
+
 	} else {
 		//secret manager is hosted in particular region, all writes happen to the same region
 		secretHostRegion := config.Get().SecretHostRegion

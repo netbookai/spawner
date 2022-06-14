@@ -69,6 +69,57 @@ func getSystemCredential() (*sts.Credentials, error) {
 	return result.Credentials, nil
 }
 
+func getSessionUsingAwsAccessKey(region string) (*session.Session, error) {
+
+	conf := config.Get()
+
+	cred := credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: cred,
+	})
+
+	return sess, err
+}
+
+func getSessionUsingAwsProfile(profile string) (*session.Session, error) {
+
+	sess, err := session.NewSessionWithOptions(
+		session.Options{
+			Profile: profile,
+		},
+	)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find the credential config in system")
+	}
+
+	//NewSessionWithOptions doesn't return error if we pass the invalid profile, checking here
+	// if we got the credentials correctly
+	_, err = sess.Config.Credentials.Get()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find the credential config in system")
+	}
+
+	return sess, nil
+
+}
+
+func getLocalEnvSession(region string) (*session.Session, error) {
+
+	if config.Get().AWSAccessID != "" {
+		// creating creds from config variables
+		return getSessionUsingAwsAccessKey(region)
+
+	}
+
+	log.Println("AWSAccessID is empty, using 'default' profile from user's home directory")
+	return getSessionUsingAwsProfile("default")
+
+}
+
 //createSession create new application session
 func createSession(region string) (*session.Session, error) {
 	conf := config.Get()
@@ -76,8 +127,14 @@ func createSession(region string) (*session.Session, error) {
 	var cred *credentials.Credentials
 
 	if conf.Env == "local" {
-		log.Println("running in dev mode, using ", conf.AWSAccessID)
-		cred = credentials.NewStaticCredentials(conf.AWSAccessID, conf.AWSSecretKey, conf.AWSToken)
+
+		sess, err := getLocalEnvSession(region)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return sess, nil
 
 	} else {
 		stsCreds, stserr := getSystemCredential()
