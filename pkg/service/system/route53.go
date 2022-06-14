@@ -249,9 +249,12 @@ func GetRoute53TXTRecords(ctx context.Context) ([]types.Route53ResourceRecordSet
 		}
 
 		for _, rr := range recordSet.ResourceRecords {
-
+			unquotedStr, err := strconv.Unquote(*rr.Value)
+			if err != nil {
+				return nil, errors.Wrap(err, "GetRoute53Records: failed to unquote route53 records")
+			}
 			resourceRecordSet.ResourceRecords = append(resourceRecordSet.ResourceRecords, types.ResourceRecordValue{
-				Value: *rr.Value,
+				Value: unquotedStr,
 			})
 		}
 
@@ -265,7 +268,7 @@ func GetRoute53TXTRecords(ctx context.Context) ([]types.Route53ResourceRecordSet
 // CreateRoute53Records creates new records in the zone
 func CreateRoute53Records(ctx context.Context, records []types.Route53ResourceRecordSet) error {
 
-	err := applyChange(ctx, records, route53.ChangeActionCreate)
+	err := applyChange(ctx, records, route53.ChangeActionUpsert)
 
 	if err != nil {
 		return errors.Wrap(err, "CreateRoute53Records: failed to create record")
