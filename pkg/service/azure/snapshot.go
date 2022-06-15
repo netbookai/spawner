@@ -202,13 +202,13 @@ func (a *azureController) copySnapshot(ctx context.Context, req *proto.CopySnaps
 	cred, err := getCredentials(ctx, account)
 	if err != nil {
 		a.logger.Error(ctx, "failed to get the azure credentials", "error", err)
-		return nil, errors.Wrap(err, "deleteSnapshot")
+		return nil, errors.Wrap(err, "copySnapshot")
 	}
 
 	sc, err := getSnapshotClient(cred)
 	if err != nil {
 		a.logger.Error(ctx, "faied to get the snapshot client", "error", err)
-		return nil, errors.Wrap(err, "deleteSnapshot")
+		return nil, errors.Wrap(err, "copySnapshot")
 	}
 	name := fmt.Sprintf("copy-%s", req.SnapshotId)
 	region := req.Region
