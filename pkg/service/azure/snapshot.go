@@ -234,6 +234,7 @@ func (a *azureController) copySnapshot(ctx context.Context, req *proto.CopySnaps
 		a.logger.Error(ctx, "failed to copy snapshot", "error", err)
 		return nil, errors.Wrap(err, "createOrUpdate of snapshot failed")
 	}
+	a.logger.Info(ctx, "waiting on snapshot copy operation", "polling-url", res.PollingURL(), "status", res.Status())
 	err = res.WaitForCompletionRef(ctx, sc.Client)
 	if err != nil {
 		a.logger.Error(ctx, "failed to wait on copy snapshot", "error", err)

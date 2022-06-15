@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
@@ -348,6 +349,7 @@ func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapsho
 	}
 	copyDesc := fmt.Sprintf("copy of snapshot: %s", snapshotId)
 
+	name := fmt.Sprintf("copy-%s", snapshotId)
 	labels := req.GetLabels()
 
 	if labels == nil {
@@ -355,6 +357,10 @@ func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapsho
 	}
 
 	tags := awsTags(labels)
+	tags = append(tags, &ec2.Tag{
+		Key:   aws.String(constants.NameLabel),
+		Value: aws.String(name),
+	})
 	res, err := ec2Client.CopySnapshotWithContext(ctx, &ec2.CopySnapshotInput{
 		Description:      &copyDesc,
 		SourceRegion:     &region,
