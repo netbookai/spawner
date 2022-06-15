@@ -55,7 +55,16 @@ func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 
 	ec2Client := session.getEC2Client()
 
+	//TODO: move this to helper func
+	t := time.Now().Format("20060102150405")
+	name := fmt.Sprintf("vol-%d-%s", size, t)
+
 	tags := awsTags(labels)
+
+	tags = append(tags, &ec2.Tag{
+		Key:   aws.String(constants.NameLabel),
+		Value: aws.String(name),
+	})
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
 		VolumeType:       aws.String(volumeType),
@@ -71,7 +80,7 @@ func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	//calling aws sdk CreateVolume function
 	result, err := ec2Client.CreateVolumeWithContext(ctx, input)
 	if err != nil {
-		logger.Error(ctx, "failed to create volume", "error", err)
+		logger.Error(ctx, "failed to create volume", "error", err, "name", name)
 		return nil, errors.Wrap(err, "CreateVolume ")
 	}
 
@@ -80,7 +89,7 @@ func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 	})
 
 	if err != nil {
-		logger.Error(ctx, "failed to wait till volume is available", "error", err)
+		logger.Error(ctx, "failed to wait till volume is available", "error", err, "name", name)
 		return nil, errors.Wrap(err, "CreateVolume ")
 	}
 
@@ -173,7 +182,11 @@ func (svc awsController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 	}
 
 	tags := awsTags(labels)
-
+	name := fmt.Sprintf("snapof-%s", volumeid)
+	tags = append(tags, &ec2.Tag{
+		Key:   aws.String(constants.NameLabel),
+		Value: aws.String(name),
+	})
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
 		TagSpecifications: []*ec2.TagSpecification{
@@ -197,17 +210,17 @@ func (svc awsController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 	//calling aws sdk method to snapshot volume
 	result, err := ec2Client.CreateSnapshotWithContext(ctx, input)
 	if err != nil {
-		logger.Error(ctx, "failed to create a snapshot", "error", err, "volumeid", volumeid)
+		logger.Error(ctx, "failed to create a snapshot", "error", err, "volumeid", volumeid, "name", name)
 		return nil, errors.Wrap(err, "CreateSnapshot")
 	}
 
-	logger.Info(ctx, "created snapshot", "snapshot-id", result.SnapshotId)
+	logger.Info(ctx, "created snapshot", "snapshot-id", result.SnapshotId, "name", name)
 
 	err = ec2Client.WaitUntilSnapshotCompletedWithContext(ctx, &ec2.DescribeSnapshotsInput{
 		SnapshotIds: []*string{result.SnapshotId},
 	})
 	if err != nil {
-		logger.Error(ctx, "failed to wait on snapshot completion", "error", err)
+		logger.Error(ctx, "failed to wait on snapshot completion", "error", err, "name", name)
 		return nil, errors.Wrap(err, "CreateSnapshot")
 	}
 
@@ -374,10 +387,10 @@ func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapsho
 	})
 
 	if err != nil {
-		a.logger.Error(ctx, "failed to copy snapshot", "error", err, "snapshotid", req.SnapshotId)
+		a.logger.Error(ctx, "failed to copy snapshot", "error", err, "snapshotid", req.SnapshotId, "name", name)
 		return nil, errors.Wrap(err, "CopySnapshot")
 	}
-	a.logger.Info(ctx, "snapshot copied", "snapshotid", req.SnapshotId, "new-snaphsot", *res.SnapshotId)
+	a.logger.Info(ctx, "snapshot copied", "snapshotid", req.SnapshotId, "new-snaphsot", *res.SnapshotId, "name", name)
 	return &proto.CopySnapshotResponse{NewSnapshotId: *res.SnapshotId}, nil
 
 }
