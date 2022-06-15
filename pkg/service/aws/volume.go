@@ -9,11 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/helper"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func awsTags(label map[string]string) []*ec2.Tag {
+func awsTags(name string, label map[string]string) []*ec2.Tag {
 	for k, v := range labels.DefaultTags() {
 		label[k] = *v
 	}
@@ -25,7 +26,12 @@ func awsTags(label map[string]string) []*ec2.Tag {
 			Value: aws.String(value),
 		})
 	}
-	return tags
+	//add resource name
+
+	return append(tags, &ec2.Tag{
+		Key:   aws.String(constants.NameLabel),
+		Value: aws.String(name),
+	})
 }
 
 //CreateVolume create aws volume
@@ -55,16 +61,9 @@ func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 
 	ec2Client := session.getEC2Client()
 
-	//TODO: move this to helper func
-	t := time.Now().Format("20060102150405")
-	name := fmt.Sprintf("vol-%d-%s", size, t)
+	name := helper.DisplayName(helper.VolumeKind, size)
+	tags := awsTags(name, labels)
 
-	tags := awsTags(labels)
-
-	tags = append(tags, &ec2.Tag{
-		Key:   aws.String(constants.NameLabel),
-		Value: aws.String(name),
-	})
 	input := &ec2.CreateVolumeInput{
 		AvailabilityZone: aws.String(availabilityZone),
 		VolumeType:       aws.String(volumeType),
@@ -113,6 +112,7 @@ func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 			if err != nil {
 				//we will silently log error and return here for now, we dont want to tell the user that volume creation failed in this case.
 				logger.Error(ctx, "failed to delete the snapshot", "error", err)
+				return
 			}
 			logger.Info(ctx, "snapshot deleted", "ID", snapshotId)
 		}()
@@ -181,12 +181,9 @@ func (svc awsController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 		labels = map[string]string{}
 	}
 
-	tags := awsTags(labels)
-	name := fmt.Sprintf("snapof-%s", volumeid)
-	tags = append(tags, &ec2.Tag{
-		Key:   aws.String(constants.NameLabel),
-		Value: aws.String(name),
-	})
+	name := helper.SnapshotDisplayName(volumeid)
+	tags := awsTags(name, labels)
+
 	input := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
 		TagSpecifications: []*ec2.TagSpecification{
@@ -246,7 +243,12 @@ func (svc awsController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 		labels = map[string]string{}
 	}
 
-	tags := awsTags(labels)
+	name := helper.SnapshotDisplayName(volumeid)
+	tags := awsTags(name, labels)
+	tags = append(tags, &ec2.Tag{
+		Key:   aws.String(constants.NameLabel),
+		Value: aws.String(name),
+	})
 
 	inputSnapshot := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
@@ -333,6 +335,7 @@ func (a *awsController) DeleteSnapshot(ctx context.Context, req *proto.DeleteSna
 	return &proto.DeleteSnapshotResponse{}, nil
 }
 
+//CopySnapshot copy the snapshot onto new spashot
 func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
 
 	region := req.Region
@@ -362,18 +365,14 @@ func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapsho
 	}
 	copyDesc := fmt.Sprintf("copy of snapshot: %s", snapshotId)
 
-	name := fmt.Sprintf("copy-%s", snapshotId)
 	labels := req.GetLabels()
 
 	if labels == nil {
 		labels = map[string]string{}
 	}
 
-	tags := awsTags(labels)
-	tags = append(tags, &ec2.Tag{
-		Key:   aws.String(constants.NameLabel),
-		Value: aws.String(name),
-	})
+	name := helper.CopySnapName(snapshotId)
+	tags := awsTags(name, labels)
 	res, err := ec2Client.CopySnapshotWithContext(ctx, &ec2.CopySnapshotInput{
 		Description:      &copyDesc,
 		SourceRegion:     &region,

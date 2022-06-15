@@ -8,6 +8,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/helper"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
@@ -60,7 +61,7 @@ func (a *azureController) createDiskSnapshot(ctx context.Context, sc *compute.Sn
 
 func (a *azureController) createSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 
-	name := fmt.Sprintf("%s-snapshot", req.Volumeid)
+	name := helper.SnapshotDisplayName(req.Volumeid)
 	region := req.Region
 	tags := labels.DefaultTags()
 
@@ -103,7 +104,7 @@ func (a *azureController) createSnapshot(ctx context.Context, req *proto.CreateS
 
 func (a *azureController) createSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 
-	name := fmt.Sprintf("%s-snapshot", req.Volumeid)
+	name := helper.SnapshotDisplayName(req.Volumeid)
 	region := req.Region
 
 	account := req.AccountName
@@ -153,6 +154,12 @@ func (a *azureController) createSnapshotAndDelete(ctx context.Context, req *prot
 func (a *azureController) deleteSnapshotInternal(ctx context.Context, sc *compute.SnapshotsClient, groupName, snapshotId string) error {
 
 	future, err := sc.Delete(ctx, groupName, snapshotId)
+
+	if err != nil {
+
+		a.logger.Error(ctx, "failed to delete snapshot", "snapshot", snapshotId, "error", err)
+		return errors.Wrap(err, "failed to delete snapshot")
+	}
 	a.logger.Debug(ctx, "waiting on the delete snapshot future response")
 	err = future.WaitForCompletionRef(ctx, sc.Client)
 	if err != nil {
@@ -210,7 +217,7 @@ func (a *azureController) copySnapshot(ctx context.Context, req *proto.CopySnaps
 		a.logger.Error(ctx, "faied to get the snapshot client", "error", err)
 		return nil, errors.Wrap(err, "copySnapshot")
 	}
-	name := fmt.Sprintf("copy-%s", req.SnapshotId)
+	name := helper.CopySnapName(req.SnapshotId)
 	region := req.Region
 	uri := req.SnapshotUri
 	tags := labels.DefaultTags()
