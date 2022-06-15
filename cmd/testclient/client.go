@@ -17,8 +17,8 @@ import (
 
 const (
 	clusterName = "gcp-cluster-test-3"
-	region      = "us-central1" //"eastus2" //"us-west-2"
-	provider    = "gcp"
+	region      = "us-west-2" //"us-central1" //"eastus2"
+	provider    = "aws"
 	nodeName    = "add-node-2"
 	instance    = "e2-medium"
 	volumeName  = "vol-50-20220607164454"
@@ -641,6 +641,18 @@ func main() {
 			os.Exit(1)
 		}
 		sugar.Infow("Route53 records created successfully", "response", v)
+	case "CopySnapshot":
+		v, err := client.CopySnapshot(context.Background(), &proto.CopySnapshotRequest{
+			Provider:    provider,
+			Region:      region,
+			AccountName: accountName,
+			SnapshotId:  "snap-001c9501528bc1a33",
+		})
+		if err != nil {
+			sugar.Errorw("error copying snapshot", "error", err)
+			os.Exit(1)
+		}
+		sugar.Infow("snapshot copied", "response", v)
 
 	default:
 		sugar.Infow("error: invalid method", "method", *method)

@@ -95,3 +95,9 @@ func (g *GCPController) GetContainerRegistryAuth(ctx context.Context, in *proto.
 func (g *GCPController) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
 	return &proto.RegisterClusterOIDCResponse{}, nil
 }
+
+//CopySnapshot
+func (g *GCPController) CopySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+
+	return g.copySnapshot(ctx, in)
+}

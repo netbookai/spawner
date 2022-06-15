@@ -54,6 +54,7 @@ type SpawnerService interface {
 	CreateRoute53Records(ctx context.Context, req *proto.CreateRoute53RecordsRequest) (*proto.CreateRoute53RecordsResponse, error)
 	GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error)
 	DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error)
+	CopySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -597,4 +598,13 @@ func (s *spawnerService) DeleteRoute53Records(ctx context.Context, req *proto.De
 
 	return response, nil
 
+}
+
+func (s *spawnerService) CopySnapshot(ctx context.Context, req *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+
+	provider, err := s.controller(req.Provider)
+	if err != nil {
+		return nil, err
+	}
+	return provider.CopySnapshot(ctx, req)
 }

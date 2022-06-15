@@ -104,3 +104,7 @@ func (a *azureController) DeleteSnapshot(ctx context.Context, req *proto.DeleteS
 func (a *azureController) RegisterClusterOIDC(ctx context.Context, in *proto.RegisterClusterOIDCRequest) (*proto.RegisterClusterOIDCResponse, error) {
 	return &proto.RegisterClusterOIDCResponse{}, nil
 }
+
+func (a *azureController) CopySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+	return a.copySnapshot(ctx, in)
+}
