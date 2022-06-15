@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -316,4 +317,61 @@ func (a *awsController) DeleteSnapshot(ctx context.Context, req *proto.DeleteSna
 	a.logger.Info(ctx, "snapshot deleted", "snapshotid", req.SnapshotId)
 
 	return &proto.DeleteSnapshotResponse{}, nil
+}
+
+func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+
+	region := req.Region
+	snapshotId := req.SnapshotId
+	session, err := NewSession(ctx, region, req.AccountName)
+
+	if err != nil {
+		a.logger.Error(ctx, "Can't start AWS session", "error", err)
+		return nil, errors.Wrap(err, "CopySnapshot: failed to get session")
+	}
+
+	ec2Client := session.getEC2Client()
+
+	//check if snapshot exist
+
+	snap, err := ec2Client.DescribeSnapshotsWithContext(ctx, &ec2.DescribeSnapshotsInput{
+		SnapshotIds: []*string{&snapshotId},
+	})
+	if err != nil {
+		a.logger.Error(ctx, "failed to fetch the snapshot", "error", err, "snapshotid", snapshotId)
+		return nil, errors.Wrap(err, "faild to fetch source snapshot")
+	}
+
+	if len(snap.Snapshots) == 0 {
+		a.logger.Error(ctx, "failed to fetch the snapshot, got 0 snapshots in response", "snapshotid", snapshotId)
+		return nil, errors.New("CopySnapshot: failed to fetch the source snapshot")
+	}
+	copyDesc := fmt.Sprintf("copy of snapshot: %s", snapshotId)
+
+	labels := req.GetLabels()
+
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	tags := awsTags(labels)
+	res, err := ec2Client.CopySnapshotWithContext(ctx, &ec2.CopySnapshotInput{
+		Description:      &copyDesc,
+		SourceRegion:     &region,
+		SourceSnapshotId: &snapshotId,
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				ResourceType: aws.String(ec2.ResourceTypeSnapshot),
+				Tags:         tags,
+			},
+		},
+	})
+
+	if err != nil {
+		a.logger.Error(ctx, "failed to copy snapshot", "error", err, "snapshotid", req.SnapshotId)
+		return nil, errors.Wrap(err, "CopySnapshot")
+	}
+	a.logger.Info(ctx, "snapshot copied", "snapshotid", req.SnapshotId, "new-snaphsot", *res.SnapshotId)
+	return &proto.CopySnapshotResponse{NewSnapshotId: *res.SnapshotId}, nil
+
 }

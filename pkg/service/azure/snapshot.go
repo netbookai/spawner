@@ -194,3 +194,60 @@ func (a *azureController) deleteSnapshot(ctx context.Context, req *proto.DeleteS
 	a.logger.Info(ctx, "snapshot deleted", "snapshotid", req.SnapshotId)
 	return &proto.DeleteSnapshotResponse{}, nil
 }
+
+func (a *azureController) copySnapshot(ctx context.Context, req *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+
+	account := req.AccountName
+
+	cred, err := getCredentials(ctx, account)
+	if err != nil {
+		a.logger.Error(ctx, "failed to get the azure credentials", "error", err)
+		return nil, errors.Wrap(err, "deleteSnapshot")
+	}
+
+	sc, err := getSnapshotClient(cred)
+	if err != nil {
+		a.logger.Error(ctx, "faied to get the snapshot client", "error", err)
+		return nil, errors.Wrap(err, "deleteSnapshot")
+	}
+	name := fmt.Sprintf("copy-%s", req.SnapshotId)
+	region := req.Region
+	uri := req.SnapshotUri
+	tags := labels.DefaultTags()
+
+	for k, v := range req.Labels {
+		v := v
+		tags[k] = &v
+	}
+
+	res, err := sc.CreateOrUpdate(ctx, cred.ResourceGroup, name, compute.Snapshot{
+		SnapshotProperties: &compute.SnapshotProperties{
+			CreationData: &compute.CreationData{
+				CreateOption:     compute.DiskCreateOptionCopy,
+				SourceResourceID: &uri,
+			},
+		},
+		Location: &region,
+		Tags:     tags,
+	})
+	if err != nil {
+		a.logger.Error(ctx, "failed to copy snapshot", "error", err)
+		return nil, errors.Wrap(err, "createOrUpdate of snapshot failed")
+	}
+	err = res.WaitForCompletionRef(ctx, sc.Client)
+	if err != nil {
+		a.logger.Error(ctx, "failed to wait on copy snapshot", "error", err)
+		return nil, errors.Wrap(err, "wait on the operation failed")
+	}
+
+	snapshot, err := res.Result(*sc)
+	if err != nil {
+
+		a.logger.Error(ctx, "failed to get result of copy snapshot", "error", err)
+		return nil, errors.Wrap(err, "failed to get the result of operation")
+	}
+	return &proto.CopySnapshotResponse{
+		NewSnapshotId:  name,
+		NewSnapshotUri: *snapshot.ID,
+	}, nil
+}

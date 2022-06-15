@@ -170,3 +170,8 @@ func (g *gateway) CreateRoute53Records(ctx context.Context, req *proto.CreateRou
 func (g *gateway) DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error) {
 	return g.service.DeleteRoute53Records(ctx, req)
 }
+
+//CopySnapshot copy snapshot and return the new snapshot id
+func (g *gateway) CopySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+	return g.service.CopySnapshot(ctx, in)
+}

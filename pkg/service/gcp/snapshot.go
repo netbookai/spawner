@@ -138,3 +138,9 @@ func (g *GCPController) deleteSnapshot(ctx context.Context, req *proto.DeleteSna
 	}
 	return &proto.DeleteSnapshotResponse{}, err
 }
+
+//copySnapshot
+func (g *GCPController) copySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+	//TODO: impl copy
+	return &proto.CopySnapshotResponse{}, nil
+}
