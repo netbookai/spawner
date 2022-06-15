@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
@@ -34,10 +33,10 @@ func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 	}
 
 	labels := map[string]*string{
-		constants.NodeNameLabel:          &nodeSpec.Name,
-		constants.InstanceLabel:          &instance,
-		constants.NodeLabelSelectorLabel: &nodeSpec.Name,
-		"type":                           aws.String("nodegroup")}
+		NodeNameLabel.Key():          &nodeSpec.Name,
+		InstanceLabel.Key():          &instance,
+		NodeLabelSelectorLabel.Key(): &nodeSpec.Name,
+		ResourceType.Key():           aws.String("nodegroup")}
 
 	return merge(DefaultTags(), labels, aws.StringMap(nodeSpec.Labels))
 }
@@ -50,7 +49,7 @@ func ScopeTag() string {
 func DefaultTags() map[string]*string {
 	scope := ScopeTag()
 	return map[string]*string{
-		constants.Scope:        &scope,
-		constants.CreatorLabel: &constants.SpawnerServiceLabel,
+		Scope.Key():        &scope,
+		CreatorLabel.Key(): aws.String(Spawner),
 	}
 }

@@ -4,24 +4,10 @@ package constants
 //calling StrPtr() or aws.String() seems like repetetive
 
 var (
-	NameLabel           = "Name" //Capital N for Aws
-	CreatorLabel        = "creator"
-	SpawnerServiceLabel = "spawner-service"
-	Scope               = "scope"
-
-	ProvisionerLabel         = "provisioner"
-	ClusterNameLabel         = "cluster-name"
-	WorkspaceLabel           = "workspaceid"
-	NodeNameLabel            = "node-name"
-	InstanceLabel            = "instance"
-	NodeLabelSelectorLabel   = "nodeLabelSelector"
-	AwsLabel                 = "aws"
-	VpcTagKey                = "vpc"
-	NBTypeTagkey             = "nb-type"
-	NBRegionWkspNetworkStack = "nb-region-ntwk-stk"
-	WorkspaceId              = "workspaceid"
-	AzureLabel               = "azure"
-	GcpLabel                 = "gcp"
+	WorkspaceId = "workspaceid"
+	AwsLabel    = "aws"
+	AzureLabel  = "azure"
+	GcpLabel    = "gcp"
 )
 
 type CloudProvider string
