@@ -7,26 +7,15 @@ import (
 
 // contains the set of function which helps with generating resource names, display names
 
-type Kind string
-
-const (
-	VolumeKind   Kind = "vol"
-	SnapshotKind Kind = "snap"
-)
-
-func (k Kind) String() string {
-	return string(k)
-}
-
 //now return the current time in yyyyMMddhhmmss format
 func now() string {
 	return time.Now().Format("20060102150405")
 }
 
-//DisplayName return the display name for volume or snapshot as per the kind
+//VolumeName return the display name for volume or snapshot as per the kind
 // kind is either
-func DisplayName(kind Kind, size int64) string {
-	return fmt.Sprintf("%s-%d-%s", kind, size, now())
+func VolumeName(size int64) string {
+	return fmt.Sprintf("vol-%d-%s", size, now())
 }
 
 //SnapshotDisplayName

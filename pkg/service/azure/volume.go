@@ -14,10 +14,6 @@ import (
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
 
-func diskName(size int32) string {
-	return helper.DisplayName(helper.VolumeKind, int64(size))
-}
-
 func getDiskSku(vt string) (*compute.DiskSku, error) {
 	ds := &compute.DiskSku{}
 	// Doc : https://docs.microsoft.com/en-us/rest/api/compute/disks/create-or-update#diskstorageaccounttypes
@@ -45,7 +41,7 @@ func (a *azureController) createVolume(ctx context.Context, req *proto.CreateVol
 		return nil, err
 	}
 	size := int32(req.GetSize())
-	name := diskName(size)
+	name := helper.VolumeName(req.GetSize())
 	tags := labels.DefaultTags()
 
 	for k, v := range req.Labels {

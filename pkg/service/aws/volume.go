@@ -61,7 +61,7 @@ func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 
 	ec2Client := session.getEC2Client()
 
-	name := helper.DisplayName(helper.VolumeKind, size)
+	name := helper.VolumeName(size)
 	tags := awsTags(name, labels)
 
 	input := &ec2.CreateVolumeInput{
