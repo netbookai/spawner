@@ -8,8 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/constants"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/helper"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
@@ -61,7 +61,7 @@ func (svc awsController) CreateVolume(ctx context.Context, req *proto.CreateVolu
 
 	ec2Client := session.getEC2Client()
 
-	name := helper.VolumeName(size)
+	name := common.VolumeName(size)
 	tags := awsTags(name, labels)
 
 	input := &ec2.CreateVolumeInput{
@@ -181,7 +181,7 @@ func (svc awsController) CreateSnapshot(ctx context.Context, req *proto.CreateSn
 		labels = map[string]string{}
 	}
 
-	name := helper.SnapshotDisplayName(volumeid)
+	name := common.SnapshotDisplayName(volumeid)
 	tags := awsTags(name, labels)
 
 	input := &ec2.CreateSnapshotInput{
@@ -243,7 +243,7 @@ func (svc awsController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 		labels = map[string]string{}
 	}
 
-	name := helper.SnapshotDisplayName(volumeid)
+	name := common.SnapshotDisplayName(volumeid)
 	tags := awsTags(name, labels)
 	tags = append(tags, &ec2.Tag{
 		Key:   aws.String(constants.NameLabel),
@@ -371,7 +371,7 @@ func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapsho
 		labels = map[string]string{}
 	}
 
-	name := helper.CopySnapName(snapshotId)
+	name := common.CopySnapshotName(snapshotId)
 	tags := awsTags(name, labels)
 	res, err := ec2Client.CopySnapshotWithContext(ctx, &ec2.CopySnapshotInput{
 		Description:      &copyDesc,

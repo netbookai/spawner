@@ -61,10 +61,7 @@ func (svc awsController) createClusterInternal(ctx context.Context, session *Ses
 	tags := labels.DefaultTags()
 	tags[constants.ClusterNameLabel] = &clusterName
 	//override with additional labels from request
-	for k, v := range req.Labels {
-		v := v
-		tags[k] = &v
-	}
+	labels.MergeRequestLabel(tags, req.Labels)
 
 	iamClient := session.getIAMClient()
 	roleName := AWS_CLUSTER_ROLE_NAME

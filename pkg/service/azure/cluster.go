@@ -38,11 +38,8 @@ func (a *azureController) createCluster(ctx context.Context, req *proto.ClusterR
 
 	a.logger.Info(ctx, "creating cluster in AKS", "name", clusterName, "resource-group", groupName)
 	tags := labels.DefaultTags()
-	for k, v := range req.Labels {
-		v := v
-		tags[k] = &v
+	labels.MergeRequestLabel(tags, req.Labels)
 
-	}
 	nodeTags := labels.GetNodeLabel(req.Node)
 
 	//Doc : https://docs.microsoft.com/en-us/rest/api/aks/managed-clusters/create-or-update

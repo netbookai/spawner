@@ -9,7 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/pkg/errors"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/helper"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
@@ -41,13 +41,10 @@ func (a *azureController) createVolume(ctx context.Context, req *proto.CreateVol
 		return nil, err
 	}
 	size := int32(req.GetSize())
-	name := helper.VolumeName(req.GetSize())
+	name := common.VolumeName(req.GetSize())
 	tags := labels.DefaultTags()
 
-	for k, v := range req.Labels {
-		v := v
-		tags[k] = &v
-	}
+	labels.MergeRequestLabel(tags, req.Labels)
 
 	a.logger.Info(ctx, "creating disk", "name", name, "size", req.Size)
 

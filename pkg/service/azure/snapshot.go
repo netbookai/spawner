@@ -8,7 +8,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2021-12-01/compute"
 	"github.com/pkg/errors"
-	"gitlab.com/netbook-devs/spawner-service/pkg/service/helper"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
@@ -61,9 +61,8 @@ func (a *azureController) createDiskSnapshot(ctx context.Context, sc *compute.Sn
 
 func (a *azureController) createSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 
-	name := helper.SnapshotDisplayName(req.Volumeid)
+	name := common.SnapshotDisplayName(req.Volumeid)
 	region := req.Region
-	tags := labels.DefaultTags()
 
 	account := req.AccountName
 
@@ -73,10 +72,8 @@ func (a *azureController) createSnapshot(ctx context.Context, req *proto.CreateS
 	}
 	groupName := cred.ResourceGroup
 
-	for k, v := range req.Labels {
-		v := v
-		tags[k] = &v
-	}
+	tags := labels.DefaultTags()
+	labels.MergeRequestLabel(tags, req.Labels)
 	dc, err := getDisksClient(cred)
 	if err != nil {
 		return nil, err
@@ -104,7 +101,7 @@ func (a *azureController) createSnapshot(ctx context.Context, req *proto.CreateS
 
 func (a *azureController) createSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 
-	name := helper.SnapshotDisplayName(req.Volumeid)
+	name := common.SnapshotDisplayName(req.Volumeid)
 	region := req.Region
 
 	account := req.AccountName
@@ -115,11 +112,7 @@ func (a *azureController) createSnapshotAndDelete(ctx context.Context, req *prot
 		return nil, err
 	}
 	tags := labels.DefaultTags()
-
-	for k, v := range req.Labels {
-		v := v
-		tags[k] = &v
-	}
+	labels.MergeRequestLabel(tags, req.Labels)
 
 	dc, err := getDisksClient(cred)
 	if err != nil {
@@ -217,15 +210,11 @@ func (a *azureController) copySnapshot(ctx context.Context, req *proto.CopySnaps
 		a.logger.Error(ctx, "faied to get the snapshot client", "error", err)
 		return nil, errors.Wrap(err, "copySnapshot")
 	}
-	name := helper.CopySnapName(req.SnapshotId)
+	name := common.CopySnapshotName(req.SnapshotId)
 	region := req.Region
 	uri := req.SnapshotUri
 	tags := labels.DefaultTags()
-
-	for k, v := range req.Labels {
-		v := v
-		tags[k] = &v
-	}
+	labels.MergeRequestLabel(tags, req.Labels)
 
 	res, err := sc.CreateOrUpdate(ctx, cred.ResourceGroup, name, compute.Snapshot{
 		SnapshotProperties: &compute.SnapshotProperties{

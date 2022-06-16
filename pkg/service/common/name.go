@@ -1,4 +1,4 @@
-package helper
+package common
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func SnapshotDisplayName(volumeId string) string {
 	return fmt.Sprintf("snapof-%s-%s", volumeId, now())
 }
 
-//CopySnapName
-func CopySnapName(snapshotId string) string {
+//CopySnapshotName
+func CopySnapshotName(snapshotId string) string {
 	return fmt.Sprintf("copy-%s-%s", snapshotId, now())
 }
