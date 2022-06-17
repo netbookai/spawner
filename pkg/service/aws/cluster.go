@@ -61,10 +61,7 @@ func (svc awsController) createClusterInternal(ctx context.Context, session *Ses
 	tags := labels.DefaultTags()
 	tags[constants.ClusterNameLabel] = &clusterName
 	//override with additional labels from request
-	for k, v := range req.Labels {
-		v := v
-		tags[k] = &v
-	}
+	labels.MergeRequestLabel(tags, req.Labels)
 
 	iamClient := session.getIAMClient()
 	roleName := AWS_CLUSTER_ROLE_NAME
@@ -72,20 +69,20 @@ func (svc awsController) createClusterInternal(ctx context.Context, session *Ses
 	eksRole, newRole, err := svc.createRoleOrGetExisting(ctx, iamClient, roleName, "eks cluster and service access role", EKS_ASSUME_ROLE_DOC)
 
 	if err != nil {
-		svc.logger.Error(ctx, "failed to create role %w", err)
+		svc.logger.Error(ctx, "failed to create role", "error", err)
 		return nil, err
 	}
 
 	if newRole {
 		err = svc.attachPolicy(ctx, iamClient, roleName, EKS_CLUSTER_POLICY_ARN)
 		if err != nil {
-			svc.logger.Error(ctx, "failed to attach policy '%s' to role '%s' %w", EKS_CLUSTER_POLICY_ARN, roleName, err)
+			svc.logger.Error(ctx, "failed to attach policy to role", "cluster-policy-arn", EKS_CLUSTER_POLICY_ARN, "role", roleName, "error", err)
 			return nil, err
 		}
 
 		err = svc.attachPolicy(ctx, iamClient, roleName, EKS_SERVICE_POLICY_ARN)
 		if err != nil {
-			svc.logger.Error(ctx, "failed to attach policy '%s' to role '%s' %w", EKS_SERVICE_POLICY_ARN, roleName, err)
+			svc.logger.Error(ctx, "failed to attach policy to role", "service-policy-arn", EKS_SERVICE_POLICY_ARN, "role", roleName, "error", err)
 			return nil, err
 		}
 	}
@@ -148,7 +145,7 @@ func (ctrl awsController) CreateCluster(ctx context.Context, req *proto.ClusterR
 	}
 	eksClient := session.getEksClient()
 
-	ctrl.logger.Debug(ctx, "checking cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debug(ctx, "checking cluster status", "cluster", clusterName, "region", region)
 	exist, err := isExist(ctx, eksClient, clusterName)
 
 	if err != nil {
@@ -156,11 +153,11 @@ func (ctrl awsController) CreateCluster(ctx context.Context, req *proto.ClusterR
 	}
 
 	if exist {
-		ctrl.logger.Info(ctx, "cluster '%s', already exist", clusterName)
+		ctrl.logger.Info(ctx, "cluster already exist", "cluster", clusterName)
 		return nil, errors.New("cluster already exist")
 	}
 
-	ctrl.logger.Debug(ctx, "cluster '%s' does not exist, creating ...", clusterName)
+	ctrl.logger.Debug(ctx, "cluster does not exist, creating ...", "cluster", clusterName)
 	cluster, err := ctrl.createClusterInternal(ctx, session, clusterName, req)
 	if err != nil {
 		ctrl.logger.Error(ctx, "failed to create cluster ", "cluster", clusterName, "error", err)
@@ -230,7 +227,7 @@ func (ctrl awsController) GetClusters(ctx context.Context, req *proto.GetCluster
 		input := &eks.ListNodegroupsInput{ClusterName: cluster}
 		nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 		if err != nil {
-			ctrl.logger.Error(ctx, "failed to fetch nodegroups %s", err.Error())
+			ctrl.logger.Error(ctx, "failed to fetch nodegroups", "error", err)
 		}
 
 		nodes := []*proto.NodeSpec{}
@@ -275,7 +272,7 @@ func (ctrl awsController) GetCluster(ctx context.Context, req *proto.GetClusterR
 	accountName := req.AccountName
 	session, err := NewSession(ctx, region, accountName)
 
-	ctrl.logger.Debug(ctx, "fetching cluster status for '%s', region '%s'", clusterName, region)
+	ctrl.logger.Debug(ctx, "fetching cluster status", "cluster", clusterName, "region", region)
 	if err != nil {
 		return nil, err
 	}
@@ -429,10 +426,8 @@ func (ctrl awsController) DeleteCluster(ctx context.Context, req *proto.ClusterD
 	})
 
 	if err != nil {
-		ctrl.logger.Error(ctx, "failed to delete cluster '%s': %s", clusterName, err.Error())
-		return &proto.ClusterDeleteResponse{
-			Error: err.Error(),
-		}, err
+		ctrl.logger.Error(ctx, "failed to delete cluster", "cluster", clusterName, "error", err)
+		return &proto.ClusterDeleteResponse{}, err
 	}
 
 	ctrl.logger.Info(ctx, "requested cluster to be deleted. It might take some time, check AWS console for more.", "cluster", clusterName, "status", *deleteOut.Cluster.Status)

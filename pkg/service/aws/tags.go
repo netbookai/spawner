@@ -37,7 +37,7 @@ func asTags(label map[string]string) []*ec2.Tag {
 func (a *awsController) addTagToNodeInstances(ctx context.Context, region, clusterName, accountName, nodegroup string, label map[string]string) error {
 	session, err := NewSession(ctx, region, accountName)
 
-	a.logger.Debug(ctx, "fetching cluster status for '%s', region '%s'", clusterName, region)
+	a.logger.Debug(ctx, "fetching cluster status", "cluster", clusterName, "region", region)
 	if err != nil {
 		return errors.Wrap(err, "addTag")
 	}

@@ -21,6 +21,19 @@ func merge(maps ...map[string]*string) map[string]*string {
 	return m
 }
 
+//MergeRequestLabel merges the MergeRequestLabel to tags by taking pointer to the each value of a corresponding key in MergeRequestLabel
+//tags will be modified after this call.
+func MergeRequestLabel(tags map[string]*string, requestlabels map[string]string) {
+
+	for k, v := range requestlabels {
+		//need a copy of the value in v and use that pointer.
+		// Using v would result in consuming the latest updated value in v, which is last element in the list
+		copyVal := v
+		tags[k] = &copyVal
+	}
+
+}
+
 func GetNodeLabel(nodeSpec *proto.NodeSpec) map[string]*string {
 
 	instance := ""

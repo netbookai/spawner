@@ -9,15 +9,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/pkg/errors"
+	"gitlab.com/netbook-devs/spawner-service/pkg/service/common"
 	"gitlab.com/netbook-devs/spawner-service/pkg/service/labels"
 	proto "gitlab.com/netbook-devs/spawner-service/proto/netbookai/spawner"
 )
-
-func diskName(size int32) string {
-	t := time.Now().Format("20060102150405")
-
-	return fmt.Sprintf("vol-%d-%s", size, t)
-}
 
 func getDiskSku(vt string) (*compute.DiskSku, error) {
 	ds := &compute.DiskSku{}
@@ -46,8 +41,10 @@ func (a *azureController) createVolume(ctx context.Context, req *proto.CreateVol
 		return nil, err
 	}
 	size := int32(req.GetSize())
-	name := diskName(size)
+	name := common.VolumeName(req.GetSize())
 	tags := labels.DefaultTags()
+
+	labels.MergeRequestLabel(tags, req.Labels)
 
 	a.logger.Info(ctx, "creating disk", "name", name, "size", req.Size)
 

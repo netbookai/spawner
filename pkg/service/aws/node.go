@@ -55,7 +55,7 @@ func (ctrl awsController) getDefaultNode(ctx context.Context, client *eks.EKS, c
 	input := &eks.ListNodegroupsInput{ClusterName: &clusterName}
 	nodeGroupList, err := client.ListNodegroupsWithContext(ctx, input)
 	if err != nil {
-		ctrl.logger.Error(ctx, "failed to fetch nodegroups: %s", err.Error())
+		ctrl.logger.Error(ctx, "failed to fetch nodegroups", "error", err, "nogegroup", nodeName, "cluster", clusterName)
 		return nil, err
 	}
 
@@ -166,7 +166,7 @@ func (ctrl awsController) getNewNodeGroupSpecFromCluster(ctx context.Context, se
 	nodeRole, newRole, err := ctrl.createRoleOrGetExisting(ctx, iamClient, roleName, "node group instance policy role", EC2_ASSUME_ROLE_DOC)
 
 	if err != nil {
-		ctrl.logger.Error(ctx, "failed to create node group role '%s' %w", AWS_NODE_GROUP_ROLE_NAME, err)
+		ctrl.logger.Error(ctx, "failed to create node group role", "group-role-name", AWS_NODE_GROUP_ROLE_NAME, "error", err)
 		return nil, err
 	}
 
@@ -233,7 +233,7 @@ func (ctrl awsController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 		return nil, err
 	}
 
-	ctrl.logger.Info(ctx, "querying default nodes on cluster '%s' in region '%s'", clusterName, region)
+	ctrl.logger.Info(ctx, "querying default nodes on cluster", "cluster", clusterName, "region", region)
 	defaultNode, err := ctrl.getDefaultNode(ctx, client, clusterName, nodeSpec.Name)
 
 	var newNodeGroupInput *eks.CreateNodegroupInput
@@ -245,14 +245,14 @@ func (ctrl awsController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 
 		if errors.Is(err, ERR_NO_NODEGROUP) {
 			//no node group present,
-			ctrl.logger.Info(ctx, "default nodegroup not found in cluster '%s', creating NodegroupRequest from cluster config ", clusterName)
+			ctrl.logger.Info(ctx, "default nodegroup not found in cluster, creating NodegroupRequest from cluster config ", "cluster", clusterName)
 			newNodeGroupInput, err = ctrl.getNewNodeGroupSpecFromCluster(ctx, session, cluster, nodeSpec)
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		ctrl.logger.Info(ctx, "found default nodegroup '%s' in cluster '%s', creating NodegroupRequest from default node config", *defaultNode.NodegroupName, clusterName)
+		ctrl.logger.Info(ctx, "found default nodegroup in cluster, creating NodegroupRequest from default node config", "default-node", *defaultNode.NodegroupName, "cluster", clusterName)
 		newNodeGroupInput, err = ctrl.getNodeSpecFromDefault(ctx, session, defaultNode, clusterName, nodeSpec)
 		if err != nil {
 			return nil, err
@@ -261,10 +261,10 @@ func (ctrl awsController) AddNode(ctx context.Context, req *proto.NodeSpawnReque
 
 	out, err := client.CreateNodegroupWithContext(ctx, newNodeGroupInput)
 	if err != nil {
-		ctrl.logger.Error(ctx, "failed to add a node '%s': %w", nodeSpec.Name, err)
+		ctrl.logger.Error(ctx, "failed to add a node", "nodegroup", nodeSpec.Name, "error", err, "cluster", clusterName)
 		return nil, err
 	}
-	ctrl.logger.Info(ctx, "creating nodegroup '%s' on cluster '%s', Status : %s, it might take some time. Please check AWS console.", nodeSpec.Name, clusterName, *out.Nodegroup.Status)
+	ctrl.logger.Info(ctx, "creating nodegroup in cluster, it might take some time. Please check AWS console.", "nodegroup", nodeSpec.Name, "cluster", clusterName, "status", *out.Nodegroup.Status)
 	return &proto.NodeSpawnResponse{}, err
 }
 
@@ -355,6 +355,7 @@ func (ctrl awsController) waitForAllNodegroupsDeletion(ctx context.Context, clie
 		}
 	}
 	if aggErr != nil {
+		ctrl.logger.Error(ctx, "waitForAllNodegroupsDeletion failed", "error", err)
 		return errors.Wrap(aggErr, "waitForAllNodegroupsDeletion: couldn't wait on all node deletion")
 	}
 	return nil
@@ -397,13 +398,13 @@ func (ctrl awsController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 	}
 
 	if scope, ok := nodeGroup.Nodegroup.Tags[constants.Scope]; !ok || *scope != labels.ScopeTag() {
-		ctrl.logger.Error(ctx, "nodegroup is not available in scope", "scope", labels.ScopeTag())
+		ctrl.logger.Error(ctx, "nodegroup is not available in scope", "scope", labels.ScopeTag(), "cluster", clusterName, "nodegroup", nodeName)
 		return nil, fmt.Errorf("nodegroup '%s' not available in scope '%s'", nodeName, labels.ScopeTag())
 	}
 
 	err = ctrl.deleteNode(ctx, client, clusterName, nodeName)
 	if err != nil {
-		ctrl.logger.Error(ctx, "failed to delete nodegroup", "nodename", nodeName)
+		ctrl.logger.Error(ctx, "failed to delete nodegroup", "nodename", nodeName, "cluster", clusterName)
 		return &proto.NodeDeleteResponse{Error: err.Error()}, err
 	}
 	//wait for node to be deleted.
@@ -414,8 +415,8 @@ func (ctrl awsController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 		NodegroupName: &nodeName,
 	})
 
-	//we will ignore context cancelled error to avoid duplicate
 	if err != nil {
+		ctrl.logger.Error(ctx, "failed to wait until nodegroup is deleted", "nodename", nodeName, "cluster", clusterName)
 		return nil, errors.Wrap(err, "DeleteNode: failed to wait until node deletion")
 	}
 
