@@ -416,7 +416,7 @@ func (ctrl awsController) DeleteNode(ctx context.Context, req *proto.NodeDeleteR
 	})
 
 	if err != nil {
-		ctrl.logger.Error(ctx, "failed to until nodegroup is deleted", "nodename", nodeName, "cluster", clusterName)
+		ctrl.logger.Error(ctx, "failed to wait until nodegroup is deleted", "nodename", nodeName, "cluster", clusterName)
 		return nil, errors.Wrap(err, "DeleteNode: failed to wait until node deletion")
 	}
 
