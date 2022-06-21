@@ -245,10 +245,6 @@ func (svc awsController) CreateSnapshotAndDelete(ctx context.Context, req *proto
 
 	name := common.SnapshotDisplayName(volumeid)
 	tags := awsTags(name, labels)
-	tags = append(tags, &ec2.Tag{
-		Key:   aws.String(constants.NameLabel),
-		Value: aws.String(name),
-	})
 
 	inputSnapshot := &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeid),
@@ -373,6 +369,7 @@ func (a *awsController) CopySnapshot(ctx context.Context, req *proto.CopySnapsho
 
 	name := common.CopySnapshotName(snapshotId)
 	tags := awsTags(name, labels)
+
 	res, err := ec2Client.CopySnapshotWithContext(ctx, &ec2.CopySnapshotInput{
 		Description:      &copyDesc,
 		SourceRegion:     &region,
