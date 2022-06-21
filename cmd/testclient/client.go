@@ -39,19 +39,19 @@ func main() {
 
 	if *grpcAddr == "" {
 		sugar.Errorf("host address is empty '%s'", *grpcAddr)
-		os.Exit(1)
+		return
 	}
 	conn, err := grpc.Dial(*grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		sugar.Errorw("error connecting to remote", "error", err)
-		os.Exit(1)
+		return
 	}
 	defer conn.Close()
 	client := proto.NewSpawnerServiceClient(conn)
 
 	if err != nil {
 		sugar.Errorw("error connecting to remote", "error", err)
-		os.Exit(1)
+		return
 	}
 
 	node := &proto.NodeSpec{
@@ -286,7 +286,7 @@ func main() {
 
 		if err != nil {
 			sugar.Errorw("Echo", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("Echo", "response", v)
 
@@ -295,7 +295,7 @@ func main() {
 
 		if err != nil {
 			sugar.Errorw("HealthCheck", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("HealthCheck", "response", v)
 
@@ -303,21 +303,21 @@ func main() {
 		v, err := client.CreateCluster(context.Background(), createClusterReq)
 		if err != nil {
 			sugar.Errorw("error creating cluster", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("CreateCluster method", "response", v)
 	case "AddToken":
 		v, err := client.AddToken(context.Background(), addTokenReq)
 		if err != nil {
 			sugar.Errorw("error adding token", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("AddToken method", "reponse", v)
 	case "GetToken":
 		v, err := client.GetToken(context.Background(), getTokenReq)
 		if err != nil {
 			sugar.Errorw("error getting token", "error", err)
-			os.Exit(1)
+			return
 		}
 		base64Ca := base64.StdEncoding.EncodeToString([]byte(v.CaData))
 		sugar.Infow("base64 token", "Ca", base64Ca)
@@ -326,21 +326,21 @@ func main() {
 		v, err := client.AddRoute53Record(context.Background(), addRoute53RecordReq)
 		if err != nil {
 			sugar.Errorw("error creating Alias record", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("AddRoute53Record method", "response", v)
 	case "GetCluster":
 		v, err := client.GetCluster(context.Background(), getClusterReq)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("GetCluster method", "response", v)
 	case "GetClusters":
 		v, err := client.GetClusters(context.Background(), getClustersReq)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("GetClusters method", "response", v)
 	case "ClusterStatus":
@@ -350,28 +350,28 @@ func main() {
 		v, err := client.ClusterStatus(ctx, clusterStatusReq)
 		if err != nil {
 			sugar.Errorw("error fetching cluster status", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("ClusterStatus method", "response", v)
 	case "AddNode":
 		v, err := client.AddNode(context.Background(), addNodeReq)
 		if err != nil {
 			sugar.Errorw("error adding node", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("AddNode method", "response", v)
 	case "DeleteCluster":
 		v, err := client.DeleteCluster(context.Background(), deleteClusterReq)
 		if err != nil {
 			sugar.Errorw("error deleting cluster", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("DeleteCluster method", "response", v)
 	case "DeleteAllClustersInRegion":
 		v, err := client.GetClusters(context.Background(), getClustersReq)
 		if err != nil {
 			sugar.Errorw("error getting clusters", "account", getClustersReq.AccountName, "provider", getClustersReq.Provider, "region", getClustersReq.Region, "error", err)
-			os.Exit(1)
+			return
 		}
 		clusters := make([]string, 0)
 		for _, cluster := range v.Clusters {
@@ -400,7 +400,7 @@ func main() {
 		v, err := client.DeleteNode(context.Background(), deleteNodeReq)
 		if err != nil {
 			sugar.Errorw("error deleting node", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("DeleteNode method", "response", v)
 
@@ -408,7 +408,7 @@ func main() {
 		v, err := client.CreateVolume(context.Background(), createVolumeReq)
 		if err != nil {
 			sugar.Errorw("error creating volume", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("CreateVolume method", "response", v)
 
@@ -416,7 +416,7 @@ func main() {
 		v, err := client.DeleteVolume(context.Background(), deleteVolumeReq)
 		if err != nil {
 			sugar.Errorw("error deleting volume", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("DeleteVolume method", "response", v)
 
@@ -424,7 +424,7 @@ func main() {
 		v, err := client.CreateSnapshot(context.Background(), createSnapshotReq)
 		if err != nil {
 			sugar.Errorw("error creating snapshot", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("CreateSnapshot method", "response", v)
 
@@ -438,7 +438,6 @@ func main() {
 
 		if err != nil {
 			sugar.Errorw("error deleting snapshot", "error", err)
-
 			return
 		}
 		sugar.Info("snapshot deleted", "response", v)
@@ -447,7 +446,7 @@ func main() {
 		v, err := client.CreateSnapshotAndDelete(context.Background(), createSnapshotAndDeleteReq)
 		if err != nil {
 			sugar.Errorw("error creating snapshot and deleting volume", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("CreateSnapshotAndDelete method", "response", v)
 
@@ -457,21 +456,21 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error registering cluster with rancher", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("RegisterWithRancher method", "response", v)
 	case "GetWorkspacesCost":
 		v, err := client.GetWorkspacesCost(context.Background(), getWorkspacesCost)
 		if err != nil {
 			sugar.Errorw("error getting workspaces cost", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
 	case "GetApplicationsCost":
 		v, err := client.GetApplicationsCost(context.Background(), getApplicationsCost)
 		if err != nil {
 			sugar.Errorw("error getting applications cost", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("GetApplicationsCost method", "response", v)
 	case "ReadCredentialAws":
@@ -481,6 +480,7 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error reading credentials", "error", err)
+			return
 		}
 		sugar.Infow("ReadCredential", "response", v)
 
@@ -498,6 +498,7 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error writing credentials", "error", err)
+			return
 		}
 		sugar.Infow("WriteCredentialAws", "response", v)
 	case "ReadCredentialAzure":
@@ -507,6 +508,7 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error reading credentials", "error", err)
+			return
 		}
 		sugar.Infow("ReadCredential", "response", v)
 
@@ -577,7 +579,7 @@ func main() {
 		v, err := client.GetCostByTime(context.Background(), getCostByTime)
 		if err != nil {
 			sugar.Errorw("error getting cost by time", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("GetWorkspaceCost method", "response", v)
 	case "GetContainerRegistryAuth":
@@ -588,7 +590,7 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error getting ecr auth details", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("GetContainerRegistryAuth method", "response", v)
 	case "CreateContainerRegistryRepo":
@@ -600,7 +602,7 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error creating container repo", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("CreateContainerRegistryRepo: created repo", "response", v)
 
@@ -614,7 +616,7 @@ func main() {
 
 		if err != nil {
 			sugar.Errorw("error connecting cluster oidc to policy", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("ConnectClusterOIDCToTrustPolicy : connect cluster to oidc", "response", v)
 
@@ -622,7 +624,7 @@ func main() {
 		v, err := client.GetRoute53TXTRecords(context.Background(), getRoute53Req)
 		if err != nil {
 			sugar.Errorw("error getting route53 records", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("Route53 Records", "response", v)
 
@@ -630,7 +632,7 @@ func main() {
 		v, err := client.DeleteRoute53Records(context.Background(), deleteRoute53Req)
 		if err != nil {
 			sugar.Errorw("error deleting route53 records", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("Route53 records deleted successfully", "response", v)
 
@@ -638,7 +640,7 @@ func main() {
 		v, err := client.CreateRoute53Records(context.Background(), createRoute53RecordsReq)
 		if err != nil {
 			sugar.Errorw("error appending route53 records", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("Route53 records created successfully", "response", v)
 	case "CopySnapshot":
@@ -650,13 +652,13 @@ func main() {
 		})
 		if err != nil {
 			sugar.Errorw("error copying snapshot", "error", err)
-			os.Exit(1)
+			return
 		}
 		sugar.Infow("snapshot copied", "response", v)
 
 	default:
-		sugar.Infow("error: invalid method", "method", *method)
-		os.Exit(1)
+		sugar.Errorw("error: invalid method", "method", *method)
+		return
 	}
 }
 
