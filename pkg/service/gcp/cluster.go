@@ -24,7 +24,7 @@ func getClusterFQName(projectId, region, cluster string) string {
 	return fmt.Sprintf("projects/%s/locations/%s/clusters/%s", projectId, region, cluster)
 }
 
-func (g *GCPController) createCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
+func (g *gcpController) createCluster(ctx context.Context, req *proto.ClusterRequest) (*proto.ClusterResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -92,7 +92,7 @@ func (g *GCPController) createCluster(ctx context.Context, req *proto.ClusterReq
 	}, nil
 }
 
-func (g *GCPController) getClusterInternal(ctx context.Context, cred *system.GCPCredential, region, clusterName string) (*container_proto.Cluster, error) {
+func (g *gcpController) getClusterInternal(ctx context.Context, cred *system.GCPCredential, region, clusterName string) (*container_proto.Cluster, error) {
 
 	client, err := getClusterManagerClient(ctx, cred)
 	if err != nil {
@@ -122,7 +122,7 @@ func (g *GCPController) getClusterInternal(ctx context.Context, cred *system.GCP
 	return cluster, nil
 }
 
-func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
+func (g *gcpController) getCluster(ctx context.Context, req *proto.GetClusterRequest) (*proto.ClusterSpec, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -142,7 +142,7 @@ func (g *GCPController) getCluster(ctx context.Context, req *proto.GetClusterReq
 	}, nil
 }
 
-func (g *GCPController) getClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
+func (g *gcpController) getClusters(ctx context.Context, req *proto.GetClustersRequest) (*proto.GetClustersResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
 		return nil, errors.Wrap(err, "getClusters:")
@@ -183,7 +183,7 @@ func (g *GCPController) getClusters(ctx context.Context, req *proto.GetClustersR
 	}, nil
 }
 
-func (g *GCPController) clusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
+func (g *gcpController) clusterStatus(ctx context.Context, req *proto.ClusterStatusRequest) (*proto.ClusterStatusResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -228,7 +228,7 @@ func (g *GCPController) clusterStatus(ctx context.Context, req *proto.ClusterSta
 	}, nil
 }
 
-func (g *GCPController) deleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
+func (g *gcpController) deleteCluster(ctx context.Context, req *proto.ClusterDeleteRequest) (*proto.ClusterDeleteResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
 		return nil, errors.Wrap(err, "deleteCluster:")

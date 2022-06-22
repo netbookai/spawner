@@ -55,6 +55,8 @@ type SpawnerService interface {
 	GetRoute53TXTRecords(ctx context.Context, req *proto.GetRoute53TXTRecordsRequest) (*proto.GetRoute53TXTRecordsResponse, error)
 	DeleteRoute53Records(ctx context.Context, req *proto.DeleteRoute53RecordsRequest) (*proto.DeleteRoute53RecordsResponse, error)
 	CopySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error)
+
+	PresignS3Url(ctx context.Context, in *proto.PresignS3UrlRequest) (*proto.PresignS3UrlResponse, error)
 }
 
 //spawnerService manage provider and clusters
@@ -607,4 +609,8 @@ func (s *spawnerService) CopySnapshot(ctx context.Context, req *proto.CopySnapsh
 		return nil, err
 	}
 	return provider.CopySnapshot(ctx, req)
+}
+
+func (s *spawnerService) PresignS3Url(ctx context.Context, in *proto.PresignS3UrlRequest) (*proto.PresignS3UrlResponse, error) {
+	return s.awsController.PresignS3Url(ctx, in)
 }

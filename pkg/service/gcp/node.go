@@ -87,7 +87,7 @@ func getNodePool(node *spawner.NodeSpec) (*container_proto.NodePool, error) {
 	}
 	return &np, nil
 }
-func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
+func (g *gcpController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest) (*proto.NodeSpawnResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -145,7 +145,7 @@ func (g *GCPController) AddNode(ctx context.Context, req *proto.NodeSpawnRequest
 	return &proto.NodeSpawnResponse{}, nil
 }
 
-func (g *GCPController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
+func (g *gcpController) DeleteNode(ctx context.Context, req *proto.NodeDeleteRequest) (*proto.NodeDeleteResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
 		return nil, errors.Wrap(err, "delete node ")

@@ -13,7 +13,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func (g *GCPController) getToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
+func (g *gcpController) getToken(ctx context.Context, req *proto.GetTokenRequest) (*proto.GetTokenResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -59,7 +59,7 @@ func (g *GCPController) getToken(ctx context.Context, req *proto.GetTokenRequest
 	}, nil
 }
 
-func (g *GCPController) getKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
+func (g *gcpController) getKubeConfig(ctx context.Context, req *proto.GetKubeConfigRequest) (*proto.GetKubeConfigResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
