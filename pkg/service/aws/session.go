@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/pkg/errors"
 	"gitlab.com/netbook-devs/spawner-service/pkg/config"
@@ -206,6 +207,10 @@ func (ses *Session) getRoute53Client() *route53.Route53 {
 
 func (ses *Session) getEcrClient() *ecr.ECR {
 	return ecr.New(ses.AwsSession)
+}
+
+func (ses *Session) getS3Client() *s3.S3 {
+	return s3.New(ses.AwsSession)
 }
 
 func (ses *Session) getK8sDynamicClient(cluster *eks.Cluster) (dynamic.Interface, error) {

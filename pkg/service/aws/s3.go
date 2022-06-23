@@ -14,7 +14,7 @@ func (a *awsController) PresignS3Url(ctx context.Context, req *proto.PresignS3Ur
 
 	//this is constant value for all aws api except for this one.
 	// default of 15min is set in all other api's
-	requestExpireTime := 10 * time.Minute
+	requestExpireTime := 30 * time.Minute
 
 	//creating session
 	session, err := NewSession(ctx, req.Region, req.AccountName)
