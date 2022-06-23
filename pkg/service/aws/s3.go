@@ -12,9 +12,14 @@ import (
 
 func (a *awsController) PresignS3Url(ctx context.Context, req *proto.PresignS3UrlRequest) (*proto.PresignS3UrlResponse, error) {
 
-	//this is constant value for all aws api except for this one.
-	// default of 15min is set in all other api's
-	requestExpireTime := 30 * time.Minute
+	//default timeout for signed url
+	timeout := time.Duration(10)
+
+	// read the timeout for url from the request, if its not set, defualts to 10min
+	if req.TimeoutInMinute == 0 {
+		timeout = time.Duration(req.TimeoutInMinute)
+	}
+	requestExpireTime := timeout * time.Minute
 
 	//creating session
 	session, err := NewSession(ctx, req.Region, req.AccountName)
