@@ -658,9 +658,10 @@ func main() {
 
 	case "PresignS3":
 		v, err := client.PresignS3Url(context.Background(), &proto.PresignS3UrlRequest{
-			Region:      region,
+			Region:      "us-west-2",
 			AccountName: accountName,
 			Bucket:      "nishanth-test",
+			File:        "/hello.txt",
 		})
 		if err != nil {
 			sugar.Errorw("erro presigning s3 url", "error", err)
