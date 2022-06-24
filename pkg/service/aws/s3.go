@@ -16,7 +16,7 @@ func (a *awsController) PresignS3Url(ctx context.Context, req *proto.PresignS3Ur
 	timeout := time.Duration(10)
 
 	// read the timeout for url from the request, if its not set, defualts to 10min
-	if req.TimeoutInMinute == 0 {
+	if req.TimeoutInMinute != 0 {
 		timeout = time.Duration(req.TimeoutInMinute)
 	}
 	requestExpireTime := timeout * time.Minute
@@ -38,15 +38,14 @@ func (a *awsController) PresignS3Url(ctx context.Context, req *proto.PresignS3Ur
 
 	// NOTE: there is no context version of this API in this implementation.
 	// We need v2 api's, which is out of the scope for the migration
-
 	request.SetContext(ctx)
 	url, err := request.Presign(requestExpireTime)
 	if err != nil {
 		a.logger.Error(ctx, "failed to presign bucket resource", "bucket", req.Bucket, "file", req.File)
-		return nil, errors.Wrap(err, "PresignS3Url")
+		return nil, errors.Wrap(err, "PresignS3Url: failed to presign")
 	}
 
-	a.logger.Error(ctx, "bucket file signed successfully", "url", url, "bucket", req.Bucket, "file", req.File)
+	a.logger.Info(ctx, "bucket file signed successfully", "url", url, "bucket", req.Bucket, "file", req.File)
 	return &proto.PresignS3UrlResponse{
 		SignedUrl: url,
 	}, nil
