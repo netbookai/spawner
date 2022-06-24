@@ -44,10 +44,11 @@ func getSessionUsingAwsAccessKey(region string) (*session.Session, error) {
 	return sess, err
 }
 
-func getSessionUsingAwsProfile(profile string) (*session.Session, error) {
+func getSessionUsingAwsProfile(profile, region string) (*session.Session, error) {
 
 	sess, err := session.NewSessionWithOptions(
 		session.Options{
+			Config:  aws.Config{Region: &region},
 			Profile: profile,
 		},
 	)
@@ -77,7 +78,7 @@ func getLocalEnvSession(region string) (*session.Session, error) {
 	}
 
 	log.Println("AWSAccessID is empty, using 'default' profile from user's home directory")
-	return getSessionUsingAwsProfile("default")
+	return getSessionUsingAwsProfile("default", region)
 
 }
 
