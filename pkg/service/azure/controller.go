@@ -108,3 +108,7 @@ func (a *azureController) RegisterClusterOIDC(ctx context.Context, in *proto.Reg
 func (a *azureController) CopySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
 	return a.copySnapshot(ctx, in)
 }
+
+func (a *azureController) PresignS3Url(ctx context.Context, in *proto.PresignS3UrlRequest) (*proto.PresignS3UrlResponse, error) {
+	return &proto.PresignS3UrlResponse{}, nil
+}

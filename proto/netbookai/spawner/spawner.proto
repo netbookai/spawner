@@ -94,6 +94,8 @@ service SpawnerService {
   rpc DeleteRoute53Records(DeleteRoute53RecordsRequest)
       returns (DeleteRoute53RecordsResponse) {}
   rpc CopySnapshot(CopySnapshotRequest) returns (CopySnapshotResponse) {}
+
+  rpc PresignS3Url(PresignS3UrlRequest) returns (PresignS3UrlResponse) {}
 }
 
 message Empty {}
@@ -568,4 +570,16 @@ message CopySnapshotRequest {
 message CopySnapshotResponse {
   string newSnapshotId = 1;
   string newSnapshotUri = 2;
+}
+
+message PresignS3UrlRequest {
+  string region = 1;
+  string accountName = 2;
+  string bucket = 3;
+  string file = 4;
+  int32 timeoutInMinute = 5;
+}
+
+message PresignS3UrlResponse {
+  string signedUrl = 1;
 }

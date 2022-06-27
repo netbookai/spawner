@@ -11,7 +11,7 @@ import (
 	disk_proto "google.golang.org/genproto/googleapis/cloud/compute/v1"
 )
 
-func (g *GCPController) createSnapshotInternal(ctx context.Context, cred *system.GCPCredential, disk, zone string, reqLabels map[string]string) (string, error) {
+func (g *gcpController) createSnapshotInternal(ctx context.Context, cred *system.GCPCredential, disk, zone string, reqLabels map[string]string) (string, error) {
 
 	client, err := getDiskClient(ctx, cred)
 	if err != nil {
@@ -53,7 +53,7 @@ func (g *GCPController) createSnapshotInternal(ctx context.Context, cred *system
 	return snapshotName, nil
 }
 
-func (g *GCPController) createSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
+func (g *gcpController) createSnapshot(ctx context.Context, req *proto.CreateSnapshotRequest) (*proto.CreateSnapshotResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -72,7 +72,7 @@ func (g *GCPController) createSnapshot(ctx context.Context, req *proto.CreateSna
 	}, nil
 }
 
-func (g *GCPController) createSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
+func (g *gcpController) createSnapshotAndDelete(ctx context.Context, req *proto.CreateSnapshotAndDeleteRequest) (*proto.CreateSnapshotAndDeleteResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
 		return nil, errors.Wrap(err, "createSnapshot ")
@@ -100,7 +100,7 @@ func (g *GCPController) createSnapshotAndDelete(ctx context.Context, req *proto.
 	}, nil
 }
 
-func (g *GCPController) deleteSnapshotInternal(ctx context.Context, cred *system.GCPCredential, snapshot string) error {
+func (g *gcpController) deleteSnapshotInternal(ctx context.Context, cred *system.GCPCredential, snapshot string) error {
 
 	client, err := getSnapshotClient(ctx, cred)
 	if err != nil {
@@ -126,7 +126,7 @@ func (g *GCPController) deleteSnapshotInternal(ctx context.Context, cred *system
 	return nil
 }
 
-func (g *GCPController) deleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
+func (g *gcpController) deleteSnapshot(ctx context.Context, req *proto.DeleteSnapshotRequest) (*proto.DeleteSnapshotResponse, error) {
 
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
@@ -140,7 +140,7 @@ func (g *GCPController) deleteSnapshot(ctx context.Context, req *proto.DeleteSna
 }
 
 //copySnapshot
-func (g *GCPController) copySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
+func (g *gcpController) copySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
 	//TODO: impl copy
 	return &proto.CopySnapshotResponse{}, nil
 }

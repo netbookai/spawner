@@ -656,6 +656,18 @@ func main() {
 		}
 		sugar.Infow("snapshot copied", "response", v)
 
+	case "PresignS3":
+		v, err := client.PresignS3Url(context.Background(), &proto.PresignS3UrlRequest{
+			Region:      "us-west-2",
+			AccountName: accountName,
+			Bucket:      "nishanth-test",
+			File:        "/hello.txt",
+		})
+		if err != nil {
+			sugar.Errorw("erro presigning s3 url", "error", err)
+			return
+		}
+		sugar.Infow("successfully signed s3", "signed-url", v.SignedUrl)
 	default:
 		sugar.Errorw("error: invalid method", "method", *method)
 		return

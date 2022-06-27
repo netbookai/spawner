@@ -175,3 +175,7 @@ func (g *gateway) DeleteRoute53Records(ctx context.Context, req *proto.DeleteRou
 func (g *gateway) CopySnapshot(ctx context.Context, in *proto.CopySnapshotRequest) (*proto.CopySnapshotResponse, error) {
 	return g.service.CopySnapshot(ctx, in)
 }
+
+func (g *gateway) PresignS3Url(ctx context.Context, in *proto.PresignS3UrlRequest) (*proto.PresignS3UrlResponse, error) {
+	return g.service.PresignS3Url(ctx, in)
+}

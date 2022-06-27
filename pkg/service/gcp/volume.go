@@ -23,7 +23,7 @@ func diskType(projectId, zone, typ string) string {
 	return fmt.Sprintf("projects/%s/zones/%s/diskTypes/%s", projectId, zone, typ)
 }
 
-func (g *GCPController) createVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
+func (g *gcpController) createVolume(ctx context.Context, req *proto.CreateVolumeRequest) (*proto.CreateVolumeResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
 		return nil, errors.Wrap(err, "createVolume ")
@@ -104,7 +104,7 @@ func (g *GCPController) createVolume(ctx context.Context, req *proto.CreateVolum
 	}, nil
 }
 
-func (g *GCPController) deleteVolumeInternal(ctx context.Context, cred *system.GCPCredential, disk, zone string) error {
+func (g *gcpController) deleteVolumeInternal(ctx context.Context, cred *system.GCPCredential, disk, zone string) error {
 
 	client, err := getDiskClient(ctx, cred)
 	if err != nil {
@@ -130,7 +130,7 @@ func (g *GCPController) deleteVolumeInternal(ctx context.Context, cred *system.G
 	return nil
 }
 
-func (g *GCPController) deleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
+func (g *gcpController) deleteVolume(ctx context.Context, req *proto.DeleteVolumeRequest) (*proto.DeleteVolumeResponse, error) {
 	cred, err := getCredentials(ctx, req.AccountName)
 	if err != nil {
 		return nil, errors.Wrap(err, "createCluster ")
