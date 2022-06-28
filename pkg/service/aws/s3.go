@@ -2,6 +2,8 @@ package aws
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,9 +33,16 @@ func (a *awsController) PresignS3Url(ctx context.Context, req *proto.PresignS3Ur
 
 	s3Client := session.getS3Client()
 
+	file := req.File
+	//must start with `/`
+	if !strings.HasPrefix(file, "/") {
+		// we will prefix with / if not exist.
+		file = fmt.Sprintf("/%s", file)
+	}
+
 	request, _ := s3Client.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(req.Bucket),
-		Key:    aws.String(req.File),
+		Key:    &file,
 	})
 
 	// NOTE: there is no context version of this API in this implementation.
