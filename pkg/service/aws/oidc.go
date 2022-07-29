@@ -237,7 +237,7 @@ func (a *awsController) RegisterClusterOIDC(ctx context.Context, req *proto.Regi
 	})
 
 	if err != nil {
-		a.logger.Error(ctx, "failed to fetch open id provider", "error", err)
+		a.logger.Warn(ctx, "failed to fetch open id provider", "error", err)
 
 		a.logger.Info(ctx, "generating OIDC thumbprint ", "issuer", issuer)
 		thumbprint, err := getOIDCThumbprint(ctx, issuer) //sample: "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
