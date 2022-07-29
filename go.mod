@@ -15,7 +15,7 @@ require (
 	github.com/Azure/go-autorest/autorest/adal v0.9.14
 	github.com/Azure/go-autorest/autorest/date v0.3.0
 	github.com/Azure/go-autorest/autorest/to v0.4.0
-	github.com/aws/aws-sdk-go v1.43.11
+	github.com/aws/aws-sdk-go v1.43.28
 	github.com/davecgh/go-spew v1.1.1
 	github.com/google/uuid v1.3.0
 	github.com/googleapis/gax-go/v2 v2.3.0
@@ -40,7 +40,7 @@ require (
 	k8s.io/apimachinery v0.23.3
 	k8s.io/client-go v0.23.3
 	k8s.io/kops v1.23.0
-	sigs.k8s.io/aws-iam-authenticator v0.5.4
+	sigs.k8s.io/aws-iam-authenticator v0.5.9
 )
 
 require (
