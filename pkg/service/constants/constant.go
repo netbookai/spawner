@@ -55,6 +55,6 @@ const (
 )
 
 const (
-	OIDCNamespace      = "oidc"
-	OIDCServiceAccount = "awskube2iam"
+	OIDCNamespace      = "s3"
+	OIDCServiceAccount = "s3-mounter"
 )
