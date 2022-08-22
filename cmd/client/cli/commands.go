@@ -417,7 +417,7 @@ func kubeConfig() *cobra.Command {
 
 			//set the current cluster context as new context
 			if !skipMerge {
-				mergo.Merge(newConfig, currentKC, mergo.WithOverride)
+				mergo.Merge(currentKC, newConfig, mergo.WithOverride)
 			}
 			newConfig.CurrentContext = res.ClusterName
 
